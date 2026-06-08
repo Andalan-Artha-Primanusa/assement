@@ -11,25 +11,26 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg lg:col-span-2">
                     <div class="p-6">
                         <p class="text-sm font-medium text-gray-500">Bank soal aktif</p>
-                        <div class="mt-2 flex items-end justify-between gap-4">
-                            <div>
-                                <p class="text-4xl font-semibold text-gray-900">{{ $activeQuestionCount }}</p>
-                                <p class="mt-2 text-sm text-gray-600">
-                                    Sistem akan memilih maksimal {{ config('assessment.question_limit') }} soal secara acak saat assessment dimulai.
-                                </p>
-                                <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                                    <span class="rounded-full bg-sky-50 px-3 py-1 text-sky-700">
-                                        Paket: {{ $assignedPackage?->name ?? 'Semua paket aktif' }}
-                                    </span>
-                                    <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                                        Akses sampai: {{ Auth::user()->assessment_access_expires_at?->format('d M Y H:i') ?? 'tanpa batas' }}
-                                    </span>
-                                    <span class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
-                                        Durasi: {{ round(Auth::user()->assessmentDurationMinutes() / 60, 2) }} jam
-                                    </span>
-                                </div>
+                    <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-4xl font-semibold text-gray-900">{{ $activeQuestionCount }}</p>
+                            <p class="mt-2 text-sm text-gray-600">
+                                Sistem akan memilih maksimal {{ config('assessment.question_limit') }} soal secara acak saat assessment dimulai.
+                            </p>
+                            <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+                                <span class="rounded-full bg-sky-50 px-3 py-1 text-sky-700">
+                                    Paket: {{ $assignedPackage?->name ?? 'Semua paket aktif' }}
+                                </span>
+                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                                    Akses sampai: {{ Auth::user()->assessment_access_expires_at?->format('d M Y H:i') ?? 'tanpa batas' }}
+                                </span>
+                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
+                                    Durasi: {{ round(Auth::user()->assessmentDurationMinutes() / 60, 2) }} jam
+                                </span>
                             </div>
+                        </div>
 
+                        <div class="shrink-0">
                             @if ($openAssessment)
                                 <a href="{{ route('assessment.show', $openAssessment) }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                                     Lanjutkan
@@ -37,12 +38,13 @@
                             @else
                                 <form method="POST" action="{{ route('assessment.start') }}">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                                    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 min-h-[44px]">
                                         Mulai Assessment
                                     </button>
                                 </form>
                             @endif
                         </div>
+                    </div>
                     </div>
                 </div>
 
