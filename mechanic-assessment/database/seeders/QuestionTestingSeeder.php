@@ -43,6 +43,7 @@ class QuestionTestingSeeder extends Seeder
 
     private function answerKey(): array
     {
+        
         return [
             1 => 'a', 2 => 'd', 3 => 'd', 4 => 'c', 5 => 'c',
             6 => 'c', 7 => 'd', 8 => 'a', 9 => 'd', 10 => 'd',
