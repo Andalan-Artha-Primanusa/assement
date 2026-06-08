@@ -1,0 +1,55 @@
+<?php
+
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AssessmentExportController;
+use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\QuestionImportController;
+use App\Http\Controllers\Admin\QuestionPackageController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'assessment.guard'])
+    ->name('dashboard');
+
+Route::middleware(['auth', 'assessment.guard'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/assessment/start', [AssessmentController::class, 'start'])->name('assessment.start');
+    Route::post('/assessment/{assessment}/security-violation', [AssessmentController::class, 'securityViolation'])->name('assessment.security-violation');
+    Route::get('/assessment/{assessment}', [AssessmentController::class, 'show'])->name('assessment.show');
+    Route::post('/assessment/{assessment}', [AssessmentController::class, 'submit'])->name('assessment.submit');
+    Route::get('/assessment/{assessment}/result', [AssessmentController::class, 'result'])->name('assessment.result');
+});
+
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('assessments', [AssessmentController::class, 'adminIndex'])->name('assessments.index');
+        Route::get('assessments/export', [AssessmentController::class, 'export'])->name('assessments.export');
+        Route::get('assessments/{assessment}/pdf', [AssessmentExportController::class, 'pdf'])->name('assessments.pdf');
+        Route::post('assessments/{assessment}/unblock', [AssessmentController::class, 'unblock'])->name('assessments.unblock');
+        Route::post('assessments/{assessment}/extend', [AssessmentController::class, 'extend'])->name('assessments.extend');
+        Route::resource('packages', QuestionPackageController::class)->except('show');
+        Route::resource('questions', QuestionController::class);
+        Route::get('questions/import', [QuestionImportController::class, 'create'])->name('questions.import');
+        Route::post('questions/import', [QuestionImportController::class, 'store'])->name('questions.import.store');
+        Route::post('users/invite', [UserController::class, 'invite'])->name('users.invite');
+        Route::post('users/invite-bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');
+        Route::resource('users', UserController::class);
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    });
+
+require __DIR__.'/auth.php';

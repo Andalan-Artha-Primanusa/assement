@@ -1,0 +1,90 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Import Soal dari Excel') }}</h2>
+            <a href="{{ route('admin.questions.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Kembali</a>
+        </div>
+    </x-slot>
+
+    <div class="py-6 sm:py-12">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                <h3 class="text-lg font-semibold text-gray-900">Upload File Excel</h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    Format kolom: <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">text, option_a, option_b, option_c, option_d, correct_option, category, difficulty</code>
+                </p>
+                <p class="mt-1 text-xs text-gray-500">
+                    Baris pertama akan di-skip jika berisi header (text/soal). correct_option: a/b/c/d. Category & difficulty opsional.
+                </p>
+
+                <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5">
+                    @csrf
+
+                    <div>
+                        <x-input-label for="file" value="File Excel (.xlsx)" />
+                        <input id="file" type="file" name="file" accept=".xlsx,.xls,.csv" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100" required>
+                        <x-input-error :messages="$errors->get('file')" class="mt-2" />
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <div>
+                            <x-input-label for="question_package_id" value="Paket Soal (opsional)" />
+                            <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Tanpa paket</option>
+                                @foreach ($packages as $package)
+                                    <option value="{{ $package->id }}">{{ $package->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="category" value="Kategori Default" />
+                            <input id="category" type="text" name="category" value="Mechanic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <x-input-label for="difficulty" value="Kesulitan Default" />
+                            <input id="difficulty" type="text" name="difficulty" value="basic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <x-primary-button>Import Soal</x-primary-button>
+                        <a href="{{ route('admin.questions.index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-800">Batal</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="mt-6 bg-white p-6 shadow-sm sm:rounded-lg">
+                <h4 class="font-semibold text-gray-900">Contoh Format Excel</h4>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-xs font-mono">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left">text</th>
+                                <th class="px-3 py-2 text-left">option_a</th>
+                                <th class="px-3 py-2 text-left">option_b</th>
+                                <th class="px-3 py-2 text-left">option_c</th>
+                                <th class="px-3 py-2 text-left">option_d</th>
+                                <th class="px-3 py-2 text-left">correct</th>
+                                <th class="px-3 py-2 text-left">category</th>
+                                <th class="px-3 py-2 text-left">difficulty</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr>
+                                <td class="px-3 py-2">Apa fungsi oli mesin?</td>
+                                <td class="px-3 py-2">Melumasi</td>
+                                <td class="px-3 py-2">Mendinginkan</td>
+                                <td class="px-3 py-2">Membersihkan</td>
+                                <td class="px-3 py-2">Semua benar</td>
+                                <td class="px-3 py-2 text-emerald-600">d</td>
+                                <td class="px-3 py-2">Mesin</td>
+                                <td class="px-3 py-2">basic</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Simpan sebagai .xlsx dari Excel.</p>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

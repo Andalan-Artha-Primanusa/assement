@@ -1,0 +1,72 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Hasil Assessment') }}</h2>
+            <a href="{{ route('dashboard') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Kembali ke dashboard</a>
+        </div>
+    </x-slot>
+
+    <div class="py-6 sm:py-12">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            @if ($assessment->auto_submitted_at)
+                <div class="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Assessment otomatis dianggap selesai pada {{ $assessment->auto_submitted_at->format('d M Y H:i') }} karena pelanggaran melebihi batas.
+                </div>
+            @endif
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm text-gray-500">Peserta</p>
+                    <p class="mt-2 text-xl font-semibold text-gray-900">{{ $assessment->user->name }}</p>
+                </div>
+                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm text-gray-500">Paket soal</p>
+                    <p class="mt-2 text-xl font-semibold text-gray-900">{{ $assessment->questionPackage?->name ?? 'Semua paket' }}</p>
+                </div>
+                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm text-gray-500">Jawaban benar</p>
+                    <p class="mt-2 text-3xl font-semibold text-emerald-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</p>
+                </div>
+                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm text-gray-500">Nilai</p>
+                    <p class="mt-2 text-3xl font-semibold text-indigo-700">{{ number_format($assessment->score, 2) }}</p>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                @foreach ($assessment->answers as $answer)
+                    @php($question = $answer->question)
+                    <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">No. {{ $answer->position }}</span>
+                                    <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $answer->is_correct ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                        {{ $answer->is_correct ? 'Benar' : 'Salah' }}
+                                    </span>
+                                </div>
+                                <p class="mt-3 whitespace-pre-line font-medium text-gray-900">{{ $question->text }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid gap-2 text-sm">
+                            @foreach (['a', 'b', 'c', 'd'] as $option)
+                                @php($isCorrectOption = $question->correct_option === $option)
+                                @php($isSelected = $answer->selected_option === $option)
+                                <div class="rounded-md border px-4 py-3 {{ $isCorrectOption ? 'border-emerald-300 bg-emerald-50' : ($isSelected ? 'border-rose-300 bg-rose-50' : 'border-gray-200') }}">
+                                    <span class="font-semibold uppercase text-gray-900">{{ $option }}.</span>
+                                    <span class="text-gray-700">{{ $question->optionText($option) }}</span>
+                                    @if ($isCorrectOption)
+                                        <span class="ml-2 text-xs font-semibold text-emerald-700">Kunci</span>
+                                    @elseif ($isSelected)
+                                        <span class="ml-2 text-xs font-semibold text-rose-700">Dipilih</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</x-app-layout>
