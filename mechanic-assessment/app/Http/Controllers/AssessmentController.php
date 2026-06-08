@@ -239,7 +239,7 @@ class AssessmentController extends Controller
     {
         $this->authorizeAssessment($request, $assessment);
 
-        $assessment->load('user', 'questionPackage', 'answers.question');
+        $assessment->load('user', 'questionPackage');
 
         return view('assessment.result', compact('assessment'));
     }

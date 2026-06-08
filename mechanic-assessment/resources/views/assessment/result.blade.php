@@ -33,40 +33,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 space-y-4">
-                @foreach ($assessment->answers as $answer)
-                    @php($question = $answer->question)
-                    <div class="bg-white p-6 shadow-sm sm:rounded-lg">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">No. {{ $answer->position }}</span>
-                                    <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $answer->is_correct ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
-                                        {{ $answer->is_correct ? 'Benar' : 'Salah' }}
-                                    </span>
-                                </div>
-                                <p class="mt-3 whitespace-pre-line font-medium text-gray-900">{{ $question->text }}</p>
-                            </div>
-                        </div>
 
-                        <div class="mt-4 grid gap-2 text-sm">
-                            @foreach (['a', 'b', 'c', 'd'] as $option)
-                                @php($isCorrectOption = $question->correct_option === $option)
-                                @php($isSelected = $answer->selected_option === $option)
-                                <div class="rounded-md border px-4 py-3 {{ $isCorrectOption ? 'border-emerald-300 bg-emerald-50' : ($isSelected ? 'border-rose-300 bg-rose-50' : 'border-gray-200') }}">
-                                    <span class="font-semibold uppercase text-gray-900">{{ $option }}.</span>
-                                    <span class="text-gray-700">{{ $question->optionText($option) }}</span>
-                                    @if ($isCorrectOption)
-                                        <span class="ml-2 text-xs font-semibold text-emerald-700">Kunci</span>
-                                    @elseif ($isSelected)
-                                        <span class="ml-2 text-xs font-semibold text-rose-700">Dipilih</span>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endforeach
-            </div>
         </div>
     </div>
 </x-app-layout>
