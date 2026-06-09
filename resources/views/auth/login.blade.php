@@ -2,8 +2,13 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    <!-- Logo -->
+    <div class="flex justify-center mb-8">
+        <img src="images/amologo.png" alt="Logo" class="w-auto h-80">
+    </div>
+
     <div class="mb-8">
-        <p class="text-sm font-semibold uppercase text-indigo-600">Login peserta dan admin</p>
+        <p class="text-sm font-semibold text-indigo-600 uppercase">Login peserta dan admin</p>
         <h1 class="mt-2 text-3xl font-semibold text-gray-900">Masuk ke assessment</h1>
         <p class="mt-2 text-sm text-gray-600">Gunakan akun yang sudah dibuat oleh admin.</p>
     </div>
@@ -14,7 +19,7 @@
         <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="mt-2 block w-full px-4 py-3" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+            <x-text-input id="email" class="block w-full px-4 py-3 mt-2" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
@@ -22,7 +27,7 @@
         <div>
             <x-input-label for="password" :value="__('Password')" />
 
-            <x-text-input id="password" class="mt-2 block w-full px-4 py-3"
+            <x-text-input id="password" class="block w-full px-4 py-3 mt-2"
                             type="password"
                             name="password"
                             required autocomplete="current-password" />
@@ -33,13 +38,13 @@
         <!-- Remember Me -->
         <div class="block">
             <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+                <input id="remember_me" type="checkbox" class="text-indigo-600 border-gray-300 rounded shadow-sm focus:ring-indigo-500" name="remember">
+                <span class="text-sm text-gray-600 ms-2">{{ __('Remember me') }}</span>
             </label>
         </div>
 
         <div>
-            <x-primary-button class="w-full justify-center py-3">
+            <x-primary-button class="justify-center w-full py-3">
                 {{ __('Masuk') }}
             </x-primary-button>
         </div>
