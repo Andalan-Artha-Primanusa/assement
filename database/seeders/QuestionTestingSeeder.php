@@ -11,21 +11,44 @@ class QuestionTestingSeeder extends Seeder
     public function run(): void
     {
         $packages = QuestionPackage::whereIn('name', [
-            QuestionPackageSeeder::BASIC,
-            QuestionPackageSeeder::POWER_TRAIN,
-            QuestionPackageSeeder::HYDRAULIC_ELECTRICAL,
+            QuestionPackageSeeder::MECHANIC,
+            QuestionPackageSeeder::AUTO_ELECTRICIAN,
+            QuestionPackageSeeder::TYREMAN,
         ])->get()->keyBy('name');
 
-        $questions = $this->getQuestions();
+        $this->seedQuestions(
+            $packages[QuestionPackageSeeder::MECHANIC] ?? null,
+            $this->getQuestions(),
+            'mechanic'
+        );
 
+        $this->seedQuestions(
+            $packages[QuestionPackageSeeder::AUTO_ELECTRICIAN] ?? null,
+            $this->parseQuestions($this->autoElectricianQuestions()),
+            'auto_electrician'
+        );
+
+        $this->seedQuestions(
+            $packages[QuestionPackageSeeder::TYREMAN] ?? null,
+            $this->parseQuestions($this->tyremanQuestions()),
+            'tyreman'
+        );
+    }
+
+    /**
+     * @param  array<int, array{number:int,text:string,options:array{a:string,b:string,c:string,d:string}}>  $questions
+     */
+    private function seedQuestions(?QuestionPackage $package, array $questions, string $type): void
+    {
         foreach ($questions as $q) {
-            $category = $this->categoryForNumber($q['number']);
-            $difficulty = $this->difficultyForNumber($q['number']);
-            $packageName = $this->packageNameForNumber($q['number']);
-            $package = $packages[$packageName] ?? null;
+            $category = $this->categoryFor($type, $q['number']);
+            $difficulty = $this->difficultyFor($type, $q['number']);
 
             Question::updateOrCreate(
-                ['text' => $q['text']],
+                [
+                    'question_package_id' => $package?->id,
+                    'text' => $q['text'],
+                ],
                 [
                     'question_package_id' => $package?->id,
                     'category' => $category,
@@ -34,16 +57,26 @@ class QuestionTestingSeeder extends Seeder
                     'option_b' => $q['options']['b'],
                     'option_c' => $q['options']['c'],
                     'option_d' => $q['options']['d'],
-                    'correct_option' => $this->answerKey()[$q['number']] ?? 'a',
+                    'correct_option' => $this->answerKeyFor($type, $q['number']),
                     'is_active' => true,
                 ]
             );
         }
     }
 
-    private function answerKey(): array
+    private function answerKeyFor(string $type, int $number): string
     {
-        
+        if ($type === 'mechanic') {
+            return $this->mechanicAnswerKey()[$number] ?? 'a';
+        }
+
+        // The Auto Electrician and Tyreman PDFs do not include an answer key.
+        // Keep a valid default so admins can update the key from the CMS.
+        return 'a';
+    }
+
+    private function mechanicAnswerKey(): array
+    {
         return [
             1 => 'a', 2 => 'd', 3 => 'd', 4 => 'c', 5 => 'c',
             6 => 'c', 7 => 'd', 8 => 'a', 9 => 'd', 10 => 'd',
@@ -58,8 +91,26 @@ class QuestionTestingSeeder extends Seeder
         ];
     }
 
-    private function categoryForNumber(int $number): string
+    private function categoryFor(string $type, int $number): string
     {
+        if ($type === 'auto_electrician') {
+            return match (true) {
+                $number <= 12 => 'Electrical Basic',
+                $number <= 25 => 'Battery',
+                $number <= 38 => 'Electrical Component',
+                $number <= 45 => 'Starting & Charging',
+                default => 'Electrical Code & Electronics',
+            };
+        }
+
+        if ($type === 'tyreman') {
+            return match (true) {
+                $number <= 10 => 'Tyre Basic',
+                $number <= 19 => 'Tyre Tools & Safety',
+                default => 'Tyre Damage',
+            };
+        }
+
         return match (true) {
             $number <= 3 => 'Safety',
             $number <= 15 => 'Maintenance & Tools',
@@ -71,8 +122,16 @@ class QuestionTestingSeeder extends Seeder
         };
     }
 
-    private function difficultyForNumber(int $number): string
+    private function difficultyFor(string $type, int $number): string
     {
+        if ($type === 'tyreman') {
+            return match (true) {
+                $number <= 10 => 'basic',
+                $number <= 20 => 'intermediate',
+                default => 'advanced',
+            };
+        }
+
         return match (true) {
             $number <= 15 => 'basic',
             $number <= 35 => 'intermediate',
@@ -80,13 +139,57 @@ class QuestionTestingSeeder extends Seeder
         };
     }
 
-    private function packageNameForNumber(int $number): string
+    /**
+     * @return array<int, array{number:int,text:string,options:array{a:string,b:string,c:string,d:string}}>
+     */
+    private function parseQuestions(string $source): array
     {
-        return match (true) {
-            $number <= 20 => QuestionPackageSeeder::BASIC,
-            $number <= 40 => QuestionPackageSeeder::POWER_TRAIN,
-            default => QuestionPackageSeeder::HYDRAULIC_ELECTRICAL,
-        };
+        preg_match_all('/(?:^|\n)\s*(\d+)\.\s*(.*?)(?=(?:\n\s*\d+\.\s)|\z)/s', $source, $blocks, PREG_SET_ORDER);
+
+        return collect($blocks)
+            ->map(function (array $block): ?array {
+                $number = (int) $block[1];
+                $body = trim(preg_replace('/[ \t]+/', ' ', $block[2]));
+                $body = trim(preg_replace('/\s+/', ' ', $body));
+
+                preg_match_all('/(^|\s)([abcd])\.\s+/i', $body, $markers, PREG_OFFSET_CAPTURE);
+
+                if (count($markers[0]) < 4) {
+                    return null;
+                }
+
+                $firstOptionOffset = $markers[0][0][1];
+                $questionText = trim(substr($body, 0, $firstOptionOffset));
+                $options = [];
+
+                foreach ($markers[0] as $index => $marker) {
+                    $label = strtolower($markers[2][$index][0]);
+                    $start = $marker[1] + strlen($marker[0]);
+                    $end = isset($markers[0][$index + 1])
+                        ? $markers[0][$index + 1][1]
+                        : strlen($body);
+
+                    $options[$label] = trim(substr($body, $start, $end - $start), " \t\n\r\0\x0B.");
+                }
+
+                if ($questionText === '' || count(array_intersect_key($options, array_flip(['a', 'b', 'c', 'd']))) < 4) {
+                    return null;
+                }
+
+                return [
+                    'number' => $number,
+                    'text' => trim($questionText, " \t\n\r\0\x0B."),
+                    'options' => [
+                        'a' => $options['a'],
+                        'b' => $options['b'],
+                        'c' => $options['c'],
+                        'd' => $options['d'],
+                    ],
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function getQuestions(): array
@@ -343,5 +446,465 @@ class QuestionTestingSeeder extends Seeder
                 'options' => ['a' => 'Fuse', 'b' => 'Heater relay', 'c' => 'Circuit breaker', 'd' => 'Heater signal'],
             ],
         ];
+    }
+
+    private function autoElectricianQuestions(): string
+    {
+        return <<<'QUESTIONS'
+1. Bagian terkecil dari suatu atom adalah
+a. Elektron
+b. Proton
+c. Neutron
+d. Mikron
+
+2. Elektron yang terdapat pada kulit paling luar disebut
+a. Variabel
+b. Outer
+c. Neutron
+d. Valensi
+
+3. Bahan semikonduktor adalah bahan yang atomnya memiliki
+a. Elektron lebih dari 4
+b. Elektron kurang dari 4
+c. Semua salah
+d. Elektron terluar sama dengan 4
+
+4. Yang mempunyai muatan negatif adalah
+a. Proton
+b. Neutron
+c. Elektron
+d. Semua salah
+
+5. Jumlah muatan listrik yang mengalir melalui suatu titik tertentu selama satu detik adalah pengertian dari
+a. Tegangan
+b. Daya
+c. Arus
+d. Coulomb
+
+6. Satuan dari Arus listrik adalah
+a. Coulomb
+b. Watt
+c. Ampere
+d. Jawaban a dan b, benar
+
+7. Rumus untuk menghitung tegangan adalah
+a. V = I / R
+b. V = I2 x R
+c. V = R / I
+d. V = I x R
+
+8. Arus yang mengalir dalam polaritas yang tetap adalah
+a. 5,2 mm
+b. 5,25 mm
+c. 12,2 mm
+d. 12,25 mm
+
+9. Alat yang digunakan untuk memegang atau membatasi gerakan dari pin atau shaft adalah
+a. Alternating Current
+b. Arus Diam
+c. State Current
+d. Direct Current
+
+10. Satuan tenaga listrik dinyatakan dengan
+a. Ampere
+b. Power
+c. Joule
+d. Watt
+
+11. Satu Horsepower sama dengan
+a. 746 Watt
+b. 735 Watt
+c. 746 Kilowatt
+d. 735 Kilowatt
+
+12. Makin besar hambatan listrik pada penghantar, maka
+a. Semakin kecil arus yang mengalir
+b. Semakin besar arus yang mengalir
+c. Tidak ada perubahan arus
+d. Semua jawaban salah
+
+13. Sumber energi listrik utama pada unit adalah
+a. Kondensator
+b. Accumulator
+c. Alternator
+d. Engine
+
+14. Battery dapat dibedakan berdasarkan kontruksinya yaitu
+a. Baterai Compound dan Baterai Solid
+b. Baterai Basah dan Baterai Kering
+c. Baterai Keras dan Baterai Lunak
+d. Baterai Besar dan Baterai Kecil
+
+15. Battery dapat dibedakan berdasarkan tipenya yaitu
+a. Baterai Compound dan Baterai Solid
+b. Baterai Keras dan Baterai Lunak
+c. Baterai Besar dan Baterai Kecil
+d. Baterai Basah dan Baterai Kering
+
+16. Mencegah masuknya debu dan kotoran ke dalam sel baterai adalah fungsi dari
+a. Blind plug
+b. Vent plug
+c. Bracket
+d. Housing
+
+17. Standard berat jenis (specific gravity) elektrolit batterai pada temperature standard (200 Celsius) adalah
+a. 1,42
+b. 1,35
+c. 1,20
+d. 1,28
+
+18. Bahan utama plat positif dan plat negatif pada baterai adalah
+a. Aluminium
+b. Besi
+c. Tembaga
+d. Timbal
+
+19. Perubahan berat jenis elektrolit dipengaruhi oleh
+a. Discharge rate
+b. Charge rate
+c. Semua jawaban benar
+d. Temperature
+
+20. Larutan elektrolit merupakan
+a. Asam sulfat
+b. Air
+c. Semua jawaban benar
+d. Hasil campuran asam sulfat dan air
+
+21. Terminal Voltage adalah
+a. Batas tegangan baterai yang diizinkan saat discharging
+b. Batas tegangan baterai yang diizinkan saat discharging dan recharging
+c. Semua jawaban salah
+d. Batas tegangan baterai yang diizinkan saat recharging
+
+22. Self discharge bisa terjadi karena
+a. Penguapan
+b. Kebocoran udara
+c. Reaksi kimia
+d. Baterai bocor
+
+23. Hal-hal yang mempengaruhi efektifitas charging battery di unit, kecuali
+a. Temperatur baterai
+b. Kapasitas baterai
+c. Kondisi plat pada baterai
+d. Kebersihan elektrolit
+
+24. Jumlah listrik yang dapat dihasilkan dengan melepaskan arus tetap sampai dicapai voltage akhir merupakan penjelasan dari
+a. Arus baterai
+b. Tegangan baterai
+c. Kapasitas baterai
+d. Kehandalan baterai
+
+25. Penyebab semakin cepatnya kerusakan baterai
+a. Semua jawaban benar
+b. Level elektrolit rendah
+c. Overcharging
+d. Korosi pada terminal baterai
+
+26. Mencegah kerusakan komponen karena short circuit dan dapat digunakan berulang kali adalah fungsi dari
+a. Circuit Breaker
+b. Temperatur baterai
+c. Switch
+d. Contactor
+
+27. Mencegah kerusakan komponen karena short circuit dan hanya dapat digunakan satu kali adalah fungsi dari
+a. Fuse
+b. Circuit Breaker
+c. Switch
+d. Contactor
+
+28. Fungsi dari switch adalah untuk
+a. Memutuskan
+b. Memutus dan menghubungkan
+c. Menghubungkan
+d. Mengisolasi
+
+29. Jenis-jenis resistor, kecuali
+a. Resistor keramik
+b. Resistor tetap
+c. Resistor variabel
+d. Resistor non linier
+
+30. Resistor 4 gelang dengan nilai 390 Ohm dan toleransi 5% memiliki warna
+a. Jingga, cokelat, putih, emas
+b. Jingga, putih, hitam, emas
+c. Putih, jingga, hitam, emas
+d. Jingga, putih, cokelat, emas
+
+31. Jenis rangkaian dasar listrik, kecuali
+a. Rangkaian bertingkat
+b. Rangkaian seri
+c. Rangkaian seri paralel
+d. Rangkaian paralel
+
+32. Besi yang dibuat menjadi magnet dengan cara tertentu disebut
+a. Permanen magnet
+b. Magnet alami
+c. Magnet buatan
+d. Remanen magnet
+
+33. Medan magnet yang ditimbulkan akibat adanya arus pada sebuah konduktor disebut
+a. Radiasi magnet
+b. Remanen magnet
+c. Arus magnet
+d. Elektromagnet
+
+34. Fungsi rotor coil pada alternator adalah
+a. Pembangkit medan magnet
+b. Menghasilkan arus listrik
+c. Mengubah garis gaya magnet
+d. Menjaga arus listrik tetap mengalir
+
+35. Alat yang bekerja dengan cara merubah garis - garis gaya magnet yang memotong lilitan menjadi tenaga listrik disebut
+a. Generator
+b. Transformator
+c. Alternator
+d. Motor listrik
+
+36. Multimeter dapat digunakan sebagai
+a. Volt meter
+b. Ampere meter
+c. Ohm meter
+d. Semua jawaban benar
+
+37. Untuk mengukur spesifik grafity dari baterai, menggunakan
+a. Hydrometer
+b. Flowmeter
+c. AVO meter
+d. Ohm meter
+
+38. Tool yang berfungsi untuk melekatkan kabel pada konektor, disebut
+a. Clamp
+b. Driver
+c. Crimping
+d. Socket
+
+39. Komponen - komponen utama yang termasuk dalam starting system
+a. Baterai, starting switch, baterai relay, starting motor, safety relay, alternator
+b. Baterai, starting switch, baterai relay, starting motor, safety relay
+c. Baterai, starting switch, baterai telay, fuse, staring motor
+d. Baterai, starting swich, starting motor
+
+40. Memutuskan ataupun menghubungkan komponen-komponen dalam starting sistem adalah fungsi
+a. Connector
+b. Starting motor
+c. Starting switch
+d. Baterai relay
+
+41. Jenis baterai relay
+a. Positif baterai relay
+b. Negatif baterai relay
+c. Semua jawaban salah
+d. Jawaban a dan b, benar
+
+42. Berikut adalah gambar dari
+a. Baterai relay
+b. Safety relay
+c. Starting motor
+d. Alternator
+
+43. Sistem yang berfungsi mengisi battery agar full charge adalah
+a. Refil sistem
+b. Alternating sistem
+c. Charging sistem
+d. Reuse sistem
+
+44. Sistem untuk memanaskan udara yang akan masuk ke ruang bakar dengan tujuan mempermudah menghidupkan engine pada waktu udara sekeliling engine masih dingin disebut
+a. Warming
+b. Starting
+c. Preheating
+d. Cooling
+
+45. Komponen yang termasuk dalam preheating, kecuali
+a. Glow plug
+b. Brush
+c. APS
+d. Thermostat
+
+46. Kode warna LgY menunjukan bahwa kabel tersebut berwarna
+a. Kuning
+b. Hijau muda
+c. Hijau muda dan kuning
+d. Hijau dan kuning
+
+47. Jenis resistor yang tahanannya dapat diubah-ubah yang diakibatkan oleh pengaruh suhu (temperatur) adalah
+a. LDR
+b. Resistor variabel
+c. Thermistor
+d. Potentiometer
+
+48. Komponen elektronika yang mempunyai sifat dapat menyimpan muatan listrik adalah
+a. Transistor
+b. Kapasitor
+c. Resistor
+d. Dioda
+
+49. Light Dependent Resistor merupakan jenis resistor yang perubahan resistansinya ditentukan oleh
+a. Suhu
+b. Tekanan
+c. Cahaya
+d. Tegangan
+
+50. Komponen elektronika yang merupakan pertemuan junction antara material P dan N adalah
+a. Resistor
+b. Kapasitor
+c. Transistor
+d. Trimpot
+QUESTIONS;
+    }
+
+    private function tyremanQuestions(): string
+    {
+        return <<<'QUESTIONS'
+1. Berikut ini yang bukan merupakan 4 fungsi ban adalah
+a. Mengendalikan beban Unit
+b. Menyangga beban
+c. Menyerap Guncangan
+d. Meneruskan pengereman & traksi kepermukaan jalan
+
+2. Jika di area sidewall tyre terdapat tulisan 27.00R49 merupakan gambaran dimensi fisik ban meliputi keterangan berikut ini, kecuali
+a. Section width
+b. Tyre construction
+c. Rim diameter
+d. Section height
+
+3. Menurut type konstruksinya tyre dibagi menjadi 2 yaitu
+a. Tube type dan tubeless
+b. Pneumatic dan Solid
+c. Tubeless dan radial
+d. Radial dan Bias
+
+4. Berdasarkan type penyimpanan anginya ban dibagi menjadi 2 yaitu
+a. Radial dan Bias
+b. Pneumatic dan Solid
+c. Tube type dan tubeless
+d. Tubeless dan radial
+
+5. Manakah pernyataan berikut merupakan fungsi dari casing ply
+a. Menahan ban duduk di Rim
+b. Pelindung wire terhadap gesekan dengan rim
+c. Menahan beban dan tekanan udara
+d. Penerus torsi, daya pengereman danmencengram jalan
+
+6. Serial number tyre B8S000987, arti dari huruf S dari serial number tersebut adalah
+a. Tahun Pembuatan
+b. Tanggal Pembuatan
+c. Bulan Pembuatan
+d. Kota pembuatan
+
+7. Dibawah ini adalah bagian structural tyre,kecuali :
+a. Casing
+b. Belt 4
+c. Bead bundle/wire
+d. Bead chaffer
+
+8. Apakah yang di maksud dengan bagian struktural tyre:
+a. Bagian pendukung pada tyre
+b. Bagian telapak pada tyre
+c. Bagian inner linner
+d. Bagian yang memiliki fungsi utama pada tyre
+
+9. Manakah di bawah ini yang termasuk bagian-bagian bead
+a. Bead flange
+b. Bead toe
+c. Bead heel
+d. Semua benar
+
+10. Aktifitas pemeriksaaan kondisi tyre secara rutin disebut
+a. Disposisi Tyre
+b. Washing Tyre
+c. Receiving Tyre
+d. Inspeksi tyre
+
+11. Berapa standar minimal jarak radius yang diizinkan ketika melakukan pengisian tyre
+a. 1 meter
+b. 2 meter
+c. 3 meter
+d. 4 meter
+
+12. Alat yang di gunakan sebagai tempat untuk menempatkan tyre yang dapat berputar ,naik dan turundisebut ?
+a. Tyre stand
+b. Tyre Changer
+c. Tyre lever
+d. Tyre cage
+
+13. Alat yang di gunakan sebagai tempat untuk menempatkan tyre yang sedang dilakukan pengisian angin disebut ?
+a. Tyre Changer
+b. Tyre cage
+c. Tyre stand
+d. Tyre lever
+
+14. Berikut ini merupakan fungsi regulator pada air line system adalah
+a. Mengatur tekanan udara
+b. Menyaring air
+c. Memisahkan air
+d. Menyaring partikel kotoran
+
+15. Berikut ini merupakan tindakan yang tepat saat anda bekerja kemudian alat yang anda gunakanmengalami kerusakan
+a. Tetap memaksa bekerja agar produksitercapai
+b. Meminjam peralatan rekan kerja yg lain
+c. Stop pekerjaan,lapor GL,Perbaiki sendiri
+d. Stop Pekerjaan,Pasang TAG peralatan rusak,& Lapor atasan
+
+16. Berikut ini merupakan ukuran ban yang sesuai dengan unitnya adalah
+a. 27.00 R49 (HD 465)
+b. 23.5 R25 (GR825)
+c. 24.00 R49 (HD 785)
+d. 29.5 R29 (HM 400)
+
+17. Peralatan yang digunakan untuk menahan dan mengangkat posisi tyre adalah
+a. Tyre Inflator
+b. Curing Tools
+c. Suporting Tools
+d. Tyre Handler
+
+18. Peralatan yang digunakan untuk mengukur kedalaman thread tyre disebut
+a. Tyre Lever
+b. Core Remover
+c. Pressure gauge
+d. Thread depth gauge
+
+19. Peralatan yang digunakan untuk mengetahui atau mengecek tekanan angin dalam tyre disebut
+a. Thread Depth Gauge
+b. Dial Gauge
+c. Pressure Gauge
+d. Vernier Caliper
+
+20. Keausan tyre sampai pada batas limit TUR (Keausan Normal)
+a. Cut/Separation
+b. O-Ring Problem
+c. Impact
+d. Smooth
+
+21. Fungsi dari rock ejector adalah
+a. Pemisah antara ban satu dengan yang lain
+b. Pembersih kotoran atau batu yang terjepit
+c. Penyeimbang Unit
+d. Semua jawaban salah
+
+22. Terpisahnya lapisan belt pada tread
+a. Tread Lifting
+b. Seized Brake
+c. Tread Separation
+d. Foreign Object
+
+23. Coel kecil dalam jumlah yang banyak di daerah tread
+a. Stone Drilling
+b. Tread Chiping
+c. Soulder Wear
+d. Center Wear
+
+24. Keretakan di area sidewall akibat dari under pressure
+a. Tread Chunking
+b. Radial Crack
+c. Radial Crack
+d. Pre Worn
+
+25. Terpisahnya lapisan tyre karena panas berlebih bukan karena terpotong
+a. Heat Separation
+b. Worn To Ply
+c. Run Flat
+d. Bead Faique
+QUESTIONS;
     }
 }

@@ -14,7 +14,7 @@
                 </div>
             @endif
 
-            <div class="grid gap-4 sm:grid-cols-3">
+            <div class="grid gap-4 sm:grid-cols-4">
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Peserta</p>
                     <p class="mt-2 text-xl font-semibold text-gray-900">{{ $assessment->user->name }}</p>
@@ -24,12 +24,14 @@
                     <p class="mt-2 text-xl font-semibold text-gray-900">{{ $assessment->questionPackage?->name ?? 'Semua paket' }}</p>
                 </div>
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm text-gray-500">Jawaban benar</p>
+                    <p class="mt-2 text-3xl font-semibold text-emerald-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</p>
+                </div>
+                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Nilai</p>
                     <p class="mt-2 text-3xl font-semibold text-indigo-700">{{ number_format($assessment->score, 2) }}</p>
                 </div>
             </div>
-
-
         </div>
     </div>
 </x-app-layout>

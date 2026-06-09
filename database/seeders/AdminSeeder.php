@@ -18,6 +18,7 @@ class AdminSeeder extends Seeder
                 'name' => 'Admin Screening',
                 'password' => 'password',
                 'is_admin' => true,
+                'email_verified_at' => now(),
             ]
         );
     }

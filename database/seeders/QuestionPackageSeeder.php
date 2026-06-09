@@ -8,6 +8,12 @@ use Illuminate\Database\Seeder;
 
 class QuestionPackageSeeder extends Seeder
 {
+    public const MECHANIC = 'Screening Mechanic';
+
+    public const AUTO_ELECTRICIAN = 'Screening Auto Electrician';
+
+    public const TYREMAN = 'Screening Tyreman';
+
     public const BASIC = 'Paket Mechanic Basic';
 
     public const POWER_TRAIN = 'Paket Power Train & Undercarriage';
@@ -19,9 +25,9 @@ class QuestionPackageSeeder extends Seeder
         $admin = User::where('email', 'admin@example.com')->first();
 
         $packages = [
-            self::BASIC => 'Safety, maintenance, tools, dan basic engine untuk screening awal mechanic.',
-            self::POWER_TRAIN => 'Power train, steering, undercarriage, dan troubleshooting komponen mekanikal.',
-            self::HYDRAULIC_ELECTRICAL => 'Hydraulic, electrical, dan soal advanced untuk kandidat yang lebih senior.',
+            self::MECHANIC => 'Paket screening mechanic dari SOAL SCREENING MECHANIC.pdf.',
+            self::AUTO_ELECTRICIAN => 'Paket screening auto electrician dari SOAL SCREENING AUTO ELECTRICIAN.pdf.',
+            self::TYREMAN => 'Paket screening tyreman dari SOAL SCREENING TYREMAN.pdf.',
         ];
 
         foreach ($packages as $name => $description) {

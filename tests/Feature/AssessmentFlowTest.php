@@ -22,7 +22,7 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('CMS Admin');
+            ->assertSee('Dashboard Admin');
     }
 
     public function test_non_admin_can_not_open_cms_routes(): void

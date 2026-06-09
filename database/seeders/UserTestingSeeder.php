@@ -14,36 +14,36 @@ class UserTestingSeeder extends Seeder
     public function run(): void
     {
         $packages = QuestionPackage::whereIn('name', [
-            QuestionPackageSeeder::BASIC,
-            QuestionPackageSeeder::POWER_TRAIN,
-            QuestionPackageSeeder::HYDRAULIC_ELECTRICAL,
+            QuestionPackageSeeder::MECHANIC,
+            QuestionPackageSeeder::AUTO_ELECTRICIAN,
+            QuestionPackageSeeder::TYREMAN,
         ])->get()->keyBy('name');
 
         $users = [
             [
                 'name' => 'Peserta Demo',
                 'email' => 'peserta@example.com',
-                'package' => QuestionPackageSeeder::BASIC,
+                'package' => QuestionPackageSeeder::MECHANIC,
             ],
             [
                 'name' => 'Testing Mechanic 01',
                 'email' => 'mechanic01@example.com',
-                'package' => QuestionPackageSeeder::BASIC,
+                'package' => QuestionPackageSeeder::MECHANIC,
             ],
             [
-                'name' => 'Testing Mechanic 02',
-                'email' => 'mechanic02@example.com',
-                'package' => QuestionPackageSeeder::POWER_TRAIN,
+                'name' => 'Testing Auto Electrician 01',
+                'email' => 'autoelectrician01@example.com',
+                'package' => QuestionPackageSeeder::AUTO_ELECTRICIAN,
             ],
             [
-                'name' => 'Testing Mechanic 03',
-                'email' => 'mechanic03@example.com',
-                'package' => QuestionPackageSeeder::HYDRAULIC_ELECTRICAL,
+                'name' => 'Testing Tyreman 01',
+                'email' => 'tyreman01@example.com',
+                'package' => QuestionPackageSeeder::TYREMAN,
             ],
             [
-                'name' => 'Testing Mechanic 04',
-                'email' => 'mechanic04@example.com',
-                'package' => QuestionPackageSeeder::HYDRAULIC_ELECTRICAL,
+                'name' => 'Testing Auto Electrician 02',
+                'email' => 'autoelectrician02@example.com',
+                'package' => QuestionPackageSeeder::AUTO_ELECTRICIAN,
             ],
         ];
 
@@ -56,6 +56,7 @@ class UserTestingSeeder extends Seeder
                     'name' => $user['name'],
                     'password' => 'password',
                     'is_admin' => false,
+                    'email_verified_at' => now(),
                     'question_package_id' => $package?->id,
                     'assessment_access_expires_at' => now()->addDays(30),
                     'assessment_duration_minutes' => 120,

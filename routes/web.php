@@ -18,7 +18,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified', 'assessment.guard'])
+    ->middleware(['auth', 'assessment.guard'])
     ->name('dashboard');
 
 Route::middleware(['auth', 'assessment.guard'])->group(function () {

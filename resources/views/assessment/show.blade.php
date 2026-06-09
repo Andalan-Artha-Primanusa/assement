@@ -25,6 +25,11 @@
             );
         }
 
+        #screenshot-overlay, #assessment-content {
+            transition: opacity 0.05s;
+            will-change: opacity;
+        }
+
         @media print {
             body * {
                 visibility: hidden !important;
@@ -41,7 +46,10 @@
     </style>
 
     <div class="assessment-secure assessment-watermark py-6 sm:py-12" id="assessment-page">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div id="screenshot-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black" style="opacity:0;pointer-events:none;will-change:opacity">
+            <p class="text-2xl font-bold text-white">Dilarang mengambil screenshot!</p>
+        </div>
+        <div id="assessment-content" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div id="security-lock-message" class="mb-6 hidden rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                 Assessment dikunci karena sistem mendeteksi aktivitas di luar halaman tes. Minta admin untuk membuka akses.
             </div>
@@ -118,6 +126,7 @@
             const csrfToken = @json(csrf_token());
             const endsAt = new Date(@json($assessment->ends_at?->toIso8601String()));
             const lockMessage = document.getElementById('security-lock-message');
+            const screenshotOverlay = document.getElementById('screenshot-overlay');
             const form = document.getElementById('assessment-form');
             const cameraPreview = document.getElementById('camera-preview');
             const cameraBadge = document.getElementById('camera-badge');
@@ -147,6 +156,40 @@
                 form.classList.add('pointer-events-none', 'opacity-30', 'blur-sm');
                 lockMessage.classList.remove('hidden');
             };
+
+            const contentContainer = document.getElementById('assessment-content');
+
+            const showScreenshotOverlay = () => {
+                screenshotOverlay.style.opacity = '1';
+                screenshotOverlay.style.pointerEvents = 'auto';
+                contentContainer.style.opacity = '0';
+            };
+
+            const hideScreenshotOverlay = () => {
+                screenshotOverlay.style.opacity = '0';
+                screenshotOverlay.style.pointerEvents = 'none';
+                contentContainer.style.opacity = '1';
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    showScreenshotOverlay();
+                    reportViolation('Peserta meninggalkan tab assessment.', true);
+                } else {
+                    hideScreenshotOverlay();
+                }
+            });
+
+            window.addEventListener('blur', () => {
+                showScreenshotOverlay();
+                reportViolation('Jendela assessment kehilangan fokus.');
+            });
+
+            window.addEventListener('focus', hideScreenshotOverlay);
+
+            window.addEventListener('beforeunload', () => {
+                reportViolation('Peserta membuka halaman lain saat assessment berlangsung.', true);
+            });
 
             const appendSelectedAnswers = (payload) => {
                 document.querySelectorAll('input[type="radio"]:checked').forEach((input) => {
@@ -274,20 +317,6 @@
                 }
             }, 3000);
 
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'hidden') {
-                    reportViolation('Peserta meninggalkan tab assessment.', true);
-                }
-            });
-
-            window.addEventListener('blur', () => {
-                reportViolation('Jendela assessment kehilangan fokus.');
-            });
-
-            window.addEventListener('beforeunload', () => {
-                reportViolation('Peserta membuka halaman lain saat assessment berlangsung.', true);
-            });
-
             document.addEventListener('contextmenu', (event) => event.preventDefault());
             document.addEventListener('copy', (event) => event.preventDefault());
             document.addEventListener('cut', (event) => event.preventDefault());
@@ -298,9 +327,16 @@
                 const isPrintScreen = event.key === 'PrintScreen';
                 const isBlockedShortcut = (event.ctrlKey || event.metaKey) && ['p', 's', 'u'].includes(key);
 
-                if (isPrintScreen || isBlockedShortcut) {
+                if (isPrintScreen) {
                     event.preventDefault();
-                    reportViolation(isPrintScreen ? 'Percobaan screenshot terdeteksi.' : 'Shortcut terlarang digunakan.');
+                    showScreenshotOverlay();
+                    reportViolation('Percobaan screenshot terdeteksi.');
+                    setTimeout(hideScreenshotOverlay, 500);
+                }
+
+                if (isBlockedShortcut) {
+                    event.preventDefault();
+                    reportViolation('Shortcut terlarang digunakan.');
                 }
             });
 
