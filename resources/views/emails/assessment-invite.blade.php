@@ -119,15 +119,26 @@
                         <td style="padding: 28px 40px 0 40px;">
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;">
                                 <tr>
-                                    <td style="padding: 16px 20px;">
-                                        <table cellpadding="0" cellspacing="0">
+                                    <td style="padding: 20px;">
+                                        <table cellpadding="0" cellspacing="0" width="100%">
                                             <tr>
                                                 <td style="vertical-align: top; padding-right: 10px;">
-                                                    <span style="font-size: 16px;">&#9888;</span>
+                                                    <span style="font-size: 18px;">&#9888;</span>
                                                 </td>
-                                                <td style="font-size: 13px; color: #991b1b; line-height: 1.6;">
-                                                    <strong>Peringatan Penting</strong><br>
-                                                    Jangan membuka tab, aplikasi, atau halaman lain selama assessment berlangsung. Akses akan terkunci otomatis jika terdeteksi.
+                                                <td style="font-size: 13px; color: #991b1b; line-height: 1.7;">
+                                                    <strong style="font-size: 14px;">Peringatan Penting</strong><br><br>
+                                                    Selama assessment berlangsung, <strong>dilarang membuka tab, aplikasi, atau halaman lain</strong>. Sistem akan mendeteksi setiap kali Anda meninggalkan halaman assessment.<br><br>
+                                                    <table width="100%" cellpadding="8" cellspacing="0" style="background-color: #fff; border: 1px solid #fecaca; border-radius: 6px;">
+                                                        <tr>
+                                                            <td style="font-size: 13px; color: #991b1b; line-height: 1.6;">
+                                                                <strong>&#9888; Pelanggaran 1:</strong> Assessment akan <strong>dikunci sementara</strong>. Anda perlu menunggu admin membuka akses.<br><br>
+                                                                <strong>&#9888; Pelanggaran 2:</strong> Assessment akan <strong>dikunci kembali</strong>.<br><br>
+                                                                <strong>&#9888; Pelanggaran 3 (melebihi batas):</strong> Assessment akan <strong>otomatis selesai dan dinilai</strong> dengan jawaban saat ini. <strong>Tidak bisa diulang.</strong>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                    <br>
+                                                    Pastikan Anda fokus dan tidak membuka halaman lain selama mengerjakan assessment.
                                                 </td>
                                             </tr>
                                         </table>
