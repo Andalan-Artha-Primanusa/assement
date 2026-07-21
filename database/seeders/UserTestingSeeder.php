@@ -14,36 +14,47 @@ class UserTestingSeeder extends Seeder
     public function run(): void
     {
         $packages = QuestionPackage::whereIn('name', [
-            QuestionPackageSeeder::MECHANIC,
-            QuestionPackageSeeder::AUTO_ELECTRICIAN,
-            QuestionPackageSeeder::TYREMAN,
+            QuestionPackageSeeder::MECHANIC_M1,
+            QuestionPackageSeeder::MECHANIC_M2,
+            QuestionPackageSeeder::MECHANIC_M3,
+            QuestionPackageSeeder::OPERATOR,
         ])->get()->keyBy('name');
 
         $users = [
             [
-                'name' => 'Peserta Demo',
-                'email' => 'peserta@example.com',
-                'package' => QuestionPackageSeeder::MECHANIC,
+                'name' => 'Peserta Demo M1',
+                'email' => 'peserta.m1@example.com',
+                'package' => QuestionPackageSeeder::MECHANIC_M1,
             ],
             [
-                'name' => 'Testing Mechanic 01',
-                'email' => 'mechanic01@example.com',
-                'package' => QuestionPackageSeeder::MECHANIC,
+                'name' => 'Peserta Demo M2',
+                'email' => 'peserta.m2@example.com',
+                'package' => QuestionPackageSeeder::MECHANIC_M2,
             ],
             [
-                'name' => 'Testing Auto Electrician 01',
-                'email' => 'autoelectrician01@example.com',
-                'package' => QuestionPackageSeeder::AUTO_ELECTRICIAN,
+                'name' => 'Peserta Demo M3',
+                'email' => 'peserta.m3@example.com',
+                'package' => QuestionPackageSeeder::MECHANIC_M3,
             ],
             [
-                'name' => 'Testing Tyreman 01',
-                'email' => 'tyreman01@example.com',
-                'package' => QuestionPackageSeeder::TYREMAN,
+                'name' => 'Testing Mekanik 01',
+                'email' => 'mekanik01@example.com',
+                'package' => QuestionPackageSeeder::MECHANIC_M1,
             ],
             [
-                'name' => 'Testing Auto Electrician 02',
-                'email' => 'autoelectrician02@example.com',
-                'package' => QuestionPackageSeeder::AUTO_ELECTRICIAN,
+                'name' => 'Testing Mekanik 02',
+                'email' => 'mekanik02@example.com',
+                'package' => QuestionPackageSeeder::MECHANIC_M2,
+            ],
+            [
+                'name' => 'Testing Operator 01',
+                'email' => 'operator01@example.com',
+                'package' => QuestionPackageSeeder::OPERATOR,
+            ],
+            [
+                'name' => 'Testing Operator 02',
+                'email' => 'operator02@example.com',
+                'package' => QuestionPackageSeeder::OPERATOR,
             ],
         ];
 

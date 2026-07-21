@@ -8,36 +8,67 @@ use Illuminate\Database\Seeder;
 
 class QuestionPackageSeeder extends Seeder
 {
-    public const MECHANIC = 'Screening Mechanic';
-
-    public const AUTO_ELECTRICIAN = 'Screening Auto Electrician';
-
-    public const TYREMAN = 'Screening Tyreman';
-
-    public const BASIC = 'Paket Mechanic Basic';
-
-    public const POWER_TRAIN = 'Paket Power Train & Undercarriage';
-
-    public const HYDRAULIC_ELECTRICAL = 'Paket Hydraulic & Electrical';
+    public const MECHANIC_M1 = 'Screening Mechanic M1';
+    public const MECHANIC_M2 = 'Screening Mechanic M2';
+    public const MECHANIC_M3 = 'Screening Mechanic M3';
+    public const OPERATOR = 'Screening Operator';
 
     public function run(): void
     {
-        $admin = User::where('email', 'admin@example.com')->first();
+        $adminMekanik = User::where('email', 'admin.mekanik@andalan.co.id')->first();
+        $adminOperator = User::where('email', 'admin.operator@andalan.co.id')->first();
 
-        $packages = [
-            self::MECHANIC => 'Paket screening mechanic dari SOAL SCREENING MECHANIC.pdf.',
-            self::AUTO_ELECTRICIAN => 'Paket screening auto electrician dari SOAL SCREENING AUTO ELECTRICIAN.pdf.',
-            self::TYREMAN => 'Paket screening tyreman dari SOAL SCREENING TYREMAN.pdf.',
+        $mekanikPackages = [
+            self::MECHANIC_M1 => [
+                'description' => 'Paket screening mekanik level M1 (Dasar).',
+                'level' => 'M1',
+                'min_score_pertimbangan' => 60,
+                'min_score_lolos' => 65,
+                'created_by' => $adminMekanik?->id,
+            ],
+            self::MECHANIC_M2 => [
+                'description' => 'Paket screening mekanik level M2 (Menengah).',
+                'level' => 'M2',
+                'min_score_pertimbangan' => 55,
+                'min_score_lolos' => 60,
+                'created_by' => $adminMekanik?->id,
+            ],
+            self::MECHANIC_M3 => [
+                'description' => 'Paket screening mekanik level M3 (Lanjutan).',
+                'level' => 'M3',
+                'min_score_pertimbangan' => 50,
+                'min_score_lolos' => 55,
+                'created_by' => $adminMekanik?->id,
+            ],
         ];
 
-        foreach ($packages as $name => $description) {
+        foreach ($mekanikPackages as $name => $data) {
             QuestionPackage::updateOrCreate(
                 ['name' => $name],
-                [
-                    'description' => $description,
+                array_merge($data, [
+                    'type' => 'mekanik',
                     'is_active' => true,
-                    'created_by' => $admin?->id,
-                ]
+                ])
+            );
+        }
+
+        $operatorPackages = [
+            self::OPERATOR => [
+                'description' => 'Paket screening operator.',
+                'level' => null,
+                'min_score_pertimbangan' => 65,
+                'min_score_lolos' => 70,
+                'created_by' => $adminOperator?->id,
+            ],
+        ];
+
+        foreach ($operatorPackages as $name => $data) {
+            QuestionPackage::updateOrCreate(
+                ['name' => $name],
+                array_merge($data, [
+                    'type' => 'operator',
+                    'is_active' => true,
+                ])
             );
         }
     }

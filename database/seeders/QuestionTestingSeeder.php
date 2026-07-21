@@ -11,27 +11,38 @@ class QuestionTestingSeeder extends Seeder
     public function run(): void
     {
         $packages = QuestionPackage::whereIn('name', [
-            QuestionPackageSeeder::MECHANIC,
-            QuestionPackageSeeder::AUTO_ELECTRICIAN,
-            QuestionPackageSeeder::TYREMAN,
+            QuestionPackageSeeder::MECHANIC_M1,
+            QuestionPackageSeeder::MECHANIC_M2,
+            QuestionPackageSeeder::MECHANIC_M3,
+            QuestionPackageSeeder::OPERATOR,
         ])->get()->keyBy('name');
 
+        $mechanicQuestions = $this->getQuestions();
+
+        $half = (int) ceil(count($mechanicQuestions) / 3);
+
         $this->seedQuestions(
-            $packages[QuestionPackageSeeder::MECHANIC] ?? null,
-            $this->getQuestions(),
+            $packages[QuestionPackageSeeder::MECHANIC_M1] ?? null,
+            array_slice($mechanicQuestions, 0, $half),
             'mechanic'
         );
 
         $this->seedQuestions(
-            $packages[QuestionPackageSeeder::AUTO_ELECTRICIAN] ?? null,
-            $this->parseQuestions($this->autoElectricianQuestions()),
-            'auto_electrician'
+            $packages[QuestionPackageSeeder::MECHANIC_M2] ?? null,
+            array_slice($mechanicQuestions, $half, $half),
+            'mechanic'
         );
 
         $this->seedQuestions(
-            $packages[QuestionPackageSeeder::TYREMAN] ?? null,
-            $this->parseQuestions($this->tyremanQuestions()),
-            'tyreman'
+            $packages[QuestionPackageSeeder::MECHANIC_M3] ?? null,
+            array_slice($mechanicQuestions, $half * 2),
+            'mechanic'
+        );
+
+        $this->seedQuestions(
+            $packages[QuestionPackageSeeder::OPERATOR] ?? null,
+            $this->parseQuestions($this->autoElectricianQuestions()),
+            'operator'
         );
     }
 
