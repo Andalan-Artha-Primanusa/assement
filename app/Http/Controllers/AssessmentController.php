@@ -154,7 +154,7 @@ class AssessmentController extends Controller
             return back()->with('status', $message);
         }
 
-        $limit = min((int) config('assessment.question_limit', 10), $activeQuestionCount);
+        $limit = $activeQuestionCount;
         $durationMinutes = $request->user()->assessmentDurationMinutes();
 
         $assessment = DB::transaction(function () use ($request, $limit, $durationMinutes, $package, $questionQuery) {
