@@ -58,9 +58,7 @@
             <x-nav-link :href="route('admin.packages.index')" :active="request()->routeIs('admin.packages.*')">
                 {{ __('Paket') }}
             </x-nav-link>
-            <x-nav-link :href="route('admin.questions.index')" :active="request()->routeIs('admin.questions.*')">
-                {{ __('Soal') }}
-            </x-nav-link>
+
             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">
                 {{ __('User') }}
             </x-nav-link>
