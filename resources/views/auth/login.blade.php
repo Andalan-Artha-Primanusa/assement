@@ -4,7 +4,7 @@
 
     <!-- Logo -->
     <div class="flex justify-center mb-8">
-        <img src="images/amologo.png" alt="Logo" class="w-auto h-80">
+        <img src="images/amologo.png" alt="Logo" class="w-auto h-40">
     </div>
 
     <div class="mb-8">
