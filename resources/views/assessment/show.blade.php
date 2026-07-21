@@ -88,11 +88,7 @@
                                 {{ $answer->position }}
                             </div>
                             <div class="w-full min-w-0">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">{{ $question->category }}</span>
-                                    <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">{{ ucfirst($question->difficulty) }}</span>
-                                </div>
-                                <p class="mt-3 whitespace-pre-line text-sm sm:text-base font-medium text-gray-900">{{ $question->text }}</p>
+                                <p class="whitespace-pre-line text-sm sm:text-base font-medium text-gray-900">{{ $question->text }}</p>
 
                                 <div class="mt-5 grid gap-3">
                                     @foreach (['a', 'b', 'c', 'd'] as $option)
