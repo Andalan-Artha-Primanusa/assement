@@ -55,11 +55,17 @@ class QuestionPackageController extends Controller
 
     public function update(Request $request, QuestionPackage $package): RedirectResponse
     {
-        $package->update([
-            'name' => $request->validate(['name' => ['required', 'string', 'max:255']])['name'],
-            'description' => $request->input('description'),
-            'is_active' => $request->boolean('is_active'),
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
+            'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'min_score_lolos' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
+
+        $data['is_active'] = $request->boolean('is_active');
+
+        $package->update($data);
 
         ActivityLog::log('package_update', 'Mengupdate paket '.$package->name, QuestionPackage::class, $package->id);
 

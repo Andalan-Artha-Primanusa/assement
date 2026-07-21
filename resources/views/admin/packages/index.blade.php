@@ -2,10 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Paket Soal') }}</h2>
-            <div class="flex gap-2">
-                <a href="{{ route('admin.questions.index') }}" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">Semua Soal</a>
-                <a href="{{ route('admin.packages.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah Paket</a>
-            </div>
+            <a href="{{ route('admin.packages.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah Paket</a>
         </div>
     </x-slot>
 
@@ -18,36 +15,36 @@
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-6 py-3">Nama Paket</th>
                                 <th class="px-6 py-3">Deskripsi</th>
-                                <th class="px-6 py-3">Jumlah Soal</th>
-                                <th class="px-6 py-3">User</th>
+                                <th class="px-6 py-3 text-center">Jumlah Soal</th>
+                                <th class="px-6 py-3 text-center">User</th>
                                 <th class="px-6 py-3">Pembuat</th>
-                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3 text-center">Status</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($packages as $package)
-                                <tr>
+                                <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 font-medium text-gray-900">{{ $package->name }}</td>
                                     <td class="max-w-xs px-6 py-4 text-gray-700">
                                         <p class="line-clamp-2">{{ $package->description ?? '-' }}</p>
                                     </td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $package->questions_count }}</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $package->users_count }}</td>
+                                    <td class="px-6 py-4 text-center text-gray-700">{{ $package->questions_count }}</td>
+                                    <td class="px-6 py-4 text-center text-gray-700">{{ $package->users_count }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ $package->creator?->name ?? '-' }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $package->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
                                             {{ $package->is_active ? 'Aktif' : 'Nonaktif' }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex items-center justify-end gap-3">
-                                            <a href="{{ route('admin.packages.questions', $package) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Soal</a>
-                                            <a href="{{ route('admin.packages.edit', $package) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Edit</a>
-                                            <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" onsubmit="return confirm('Hapus paket {{ $package->name }}?')">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <a href="{{ route('admin.packages.questions', $package) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Soal</a>
+                                            <a href="{{ route('admin.packages.edit', $package) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
+                                            <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" onsubmit="return confirm('Hapus paket {{ $package->name }}?')" class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button class="font-medium text-rose-600 hover:text-rose-800">Hapus</button>
+                                                <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
                                             </form>
                                         </div>
                                     </td>

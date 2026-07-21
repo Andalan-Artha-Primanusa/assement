@@ -31,19 +31,19 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
-                <th class="px-4 sm:px-6 py-3">Peserta</th>
-                <th class="px-4 sm:px-6 py-3">Paket</th>
-                <th class="px-4 sm:px-6 py-3">Mulai</th>
-                <th class="px-4 sm:px-6 py-3">Berakhir</th>
-                <th class="px-4 sm:px-6 py-3">Benar</th>
-                <th class="px-4 sm:px-6 py-3">Nilai</th>
-                <th class="px-4 sm:px-6 py-3">Status</th>
-                <th class="px-4 sm:px-6 py-3 text-right">Aksi</th>
+                                <th class="px-4 sm:px-6 py-3">Peserta</th>
+                                <th class="px-4 sm:px-6 py-3">Paket</th>
+                                <th class="px-4 sm:px-6 py-3">Mulai</th>
+                                <th class="px-4 sm:px-6 py-3">Berakhir</th>
+                                <th class="px-4 sm:px-6 py-3 text-center">Benar</th>
+                                <th class="px-4 sm:px-6 py-3 text-center">Nilai</th>
+                                <th class="px-4 sm:px-6 py-3 text-center">Status</th>
+                                <th class="px-4 sm:px-6 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($assessments as $assessment)
-                                <tr>
+                                <tr class="hover:bg-gray-50">
                                     <td class="px-4 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ $assessment->user->name }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap">{{ $assessment->questionPackage?->name ?? '-' }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap">{{ $assessment->started_at?->format('d M Y H:i') }}</td>
@@ -57,9 +57,9 @@
                                             -
                                         @endif
                                     </td>
-                                    <td class="px-4 sm:px-6 py-4 text-gray-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</td>
-                                    <td class="px-4 sm:px-6 py-4 font-semibold text-gray-900">{{ $assessment->score ? number_format($assessment->score, 2) : '-' }}</td>
-                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                    <td class="px-4 sm:px-6 py-4 text-center text-gray-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</td>
+                                    <td class="px-4 sm:px-6 py-4 text-center font-semibold text-gray-900">{{ $assessment->score ? number_format($assessment->score, 2) : '-' }}</td>
+                                    <td class="px-4 sm:px-6 py-4 text-center whitespace-nowrap">
                                         @if ($assessment->isSubmitted())
                                             <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai</span>
                                         @elseif ($assessment->isBlocked())
@@ -71,18 +71,18 @@
                                     <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                                         <div class="flex items-center justify-end gap-1">
                                             @if ($assessment->isSubmitted())
-                                                <a href="{{ route('assessment.result', $assessment) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Detail</a>
-                                                <a href="{{ route('admin.assessments.pdf', $assessment) }}" class="font-medium text-emerald-600 hover:text-emerald-800">PDF</a>
+                                                <a href="{{ route('assessment.result', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
+                                                <a href="{{ route('admin.assessments.pdf', $assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">PDF</a>
                                             @elseif ($assessment->isBlocked())
                                                 <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}" class="inline">
                                                     @csrf
-                                                    <button class="font-medium text-emerald-600 hover:text-emerald-800">Buka</button>
+                                                    <button class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Buka</button>
                                                 </form>
                                             @else
                                                 <form method="POST" action="{{ route('admin.assessments.extend', $assessment) }}" class="inline-flex items-center gap-1">
                                                     @csrf
-                                                    <input type="number" name="extra_minutes" value="15" min="1" max="1440" class="w-16 rounded border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[36px]">
-                                                    <button class="rounded-md bg-amber-50 px-2 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 min-h-[36px]">+Waktu</button>
+                                                    <input type="number" name="extra_minutes" value="15" min="1" max="1440" class="w-14 rounded border-gray-300 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    <button class="rounded-md bg-amber-50 px-2 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">+Waktu</button>
                                                 </form>
                                             @endif
                                         </div>

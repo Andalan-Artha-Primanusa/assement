@@ -5,7 +5,7 @@
             <div class="flex gap-2">
                 <a href="{{ route('admin.questions.create', ['question_package_id' => $package->id]) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 inline-flex items-center min-h-[44px]">Tambah Soal</a>
                 <a href="{{ route('admin.questions.import') }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 inline-flex items-center min-h-[44px]">Import Excel</a>
-                <a href="{{ route('admin.packages.index') }}" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">Kembali</a>
+                <a href="{{ route('admin.packages.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Kembali</a>
             </div>
         </div>
     </x-slot>
@@ -36,32 +36,32 @@
                                 <th class="px-6 py-3">Soal</th>
                                 <th class="px-6 py-3">Kategori</th>
                                 <th class="px-6 py-3">Level</th>
-                                <th class="px-6 py-3">Kunci</th>
-                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3 text-center">Kunci</th>
+                                <th class="px-6 py-3 text-center">Status</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($questions as $question)
-                                <tr>
+                                <tr class="hover:bg-gray-50">
                                     <td class="max-w-xl px-6 py-4 text-gray-900">
                                         <p class="line-clamp-2">{{ $question->text }}</p>
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->category }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ ucfirst($question->difficulty) }}</td>
-                                    <td class="px-6 py-4 font-semibold uppercase text-gray-900">{{ $question->correct_option }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-6 py-4 text-center font-semibold uppercase text-gray-900">{{ $question->correct_option }}</td>
+                                    <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $question->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
                                             {{ $question->is_active ? 'Aktif' : 'Nonaktif' }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="flex items-center justify-end gap-3">
-                                            <a href="{{ route('admin.questions.edit', $question) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Edit</a>
-                                            <form method="POST" action="{{ route('admin.questions.destroy', $question) }}" onsubmit="return confirm('Hapus soal ini?')">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <a href="{{ route('admin.questions.edit', $question) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
+                                            <form method="POST" action="{{ route('admin.questions.destroy', $question) }}" onsubmit="return confirm('Hapus soal ini?')" class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button class="font-medium text-rose-600 hover:text-rose-800">Hapus</button>
+                                                <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
                                             </form>
                                         </div>
                                     </td>

@@ -13,13 +13,30 @@ class QuestionPackage extends Model
         'description',
         'is_active',
         'created_by',
+        'min_score_pertimbangan',
+        'min_score_lolos',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'min_score_pertimbangan' => 'decimal:2',
+            'min_score_lolos' => 'decimal:2',
         ];
+    }
+
+    public function getGrade(float $score): string
+    {
+        if ($this->min_score_lolos !== null && $score >= (float) $this->min_score_lolos) {
+            return 'Lolos';
+        }
+
+        if ($this->min_score_pertimbangan !== null && $score >= (float) $this->min_score_pertimbangan) {
+            return 'Dipertimbangkan';
+        }
+
+        return 'Tidak Lolos';
     }
 
     public function creator(): BelongsTo

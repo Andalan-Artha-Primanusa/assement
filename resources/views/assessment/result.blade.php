@@ -14,14 +14,19 @@
                 </div>
             @endif
 
-            <div class="grid gap-4 sm:grid-cols-4">
+            @php
+                $package = $assessment->questionPackage;
+                $grade = $package ? $package->getGrade((float) $assessment->score) : null;
+            @endphp
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Peserta</p>
                     <p class="mt-2 text-xl font-semibold text-gray-900">{{ $assessment->user->name }}</p>
                 </div>
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Paket soal</p>
-                    <p class="mt-2 text-xl font-semibold text-gray-900">{{ $assessment->questionPackage?->name ?? 'Semua paket' }}</p>
+                    <p class="mt-2 text-xl font-semibold text-gray-900">{{ $package?->name ?? 'Semua paket' }}</p>
                 </div>
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Jawaban benar</p>
@@ -32,6 +37,16 @@
                     <p class="mt-2 text-3xl font-semibold text-indigo-700">{{ number_format($assessment->score, 2) }}</p>
                 </div>
             </div>
+
+            @if ($grade)
+                <div class="mt-6 bg-white p-6 shadow-sm sm:rounded-lg text-center">
+                    <p class="text-sm text-gray-500">Hasil Keputusan</p>
+                    <p class="mt-2 text-4xl font-bold
+                        {{ $grade === 'Lolos' ? 'text-emerald-600' : ($grade === 'Dipertimbangkan' ? 'text-amber-600' : 'text-rose-600') }}">
+                        {{ $grade }}
+                    </p>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

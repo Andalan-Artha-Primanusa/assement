@@ -110,11 +110,12 @@
                     </div>
                 @endforeach
 
-                <div class="flex justify-end">
-                    <button class="w-full sm:w-auto rounded-md bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 min-h-[44px]" id="submit-assessment">
+                <div class="sticky bottom-0 z-40 -mx-4 mt-6 border-t border-gray-200 bg-white px-4 py-4 shadow-lg sm:static sm:mt-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                    <button class="w-full rounded-md bg-indigo-600 px-5 py-4 text-base font-bold text-white shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto sm:py-3 sm:text-sm" id="submit-assessment">
                         Kirim Jawaban
                     </button>
                 </div>
+            </form>
             </form>
         </div>
     </div>

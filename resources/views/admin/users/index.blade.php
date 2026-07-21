@@ -29,37 +29,35 @@
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-6 py-3">Nama</th>
                                 <th class="px-6 py-3">Email</th>
-                                <th class="px-6 py-3">Role</th>
+                                <th class="px-6 py-3 text-center">Role</th>
                                 <th class="px-6 py-3">Paket</th>
                                 <th class="px-6 py-3">Akses Sampai</th>
-                                <th class="px-6 py-3">Durasi</th>
-                                <th class="px-6 py-3">Assessment</th>
+                                <th class="px-6 py-3 text-center">Durasi</th>
+                                <th class="px-6 py-3 text-center">Assessment</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($users as $user)
-                                <tr>
+                                <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 font-medium text-gray-900">{{ $user->name }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->email }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $user->is_admin ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700' }}">
                                             {{ $user->is_admin ? 'Admin' : 'Peserta' }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->questionPackage?->name ?? 'Semua paket' }}</td>
-                                    <td class="px-6 py-4 text-gray-700">
-                                        {{ $user->assessment_access_expires_at?->format('d M Y H:i') ?? '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-700">{{ round(($user->assessment_duration_minutes ?? config('assessment.default_duration_minutes')) / 60, 2) }} jam</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $user->assessments_count }}</td>
+                                    <td class="px-6 py-4 text-gray-700">{{ $user->assessment_access_expires_at?->format('d M Y H:i') ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-center text-gray-700">{{ round(($user->assessment_duration_minutes ?? config('assessment.default_duration_minutes')) / 60, 2) }} jam</td>
+                                    <td class="px-6 py-4 text-center text-gray-700">{{ $user->assessments_count }}</td>
                                     <td class="px-6 py-4">
-                                        <div class="flex items-center justify-end gap-3">
-                                            <a href="{{ route('admin.users.edit', $user) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Edit</a>
-                                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Hapus user ini?')">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <a href="{{ route('admin.users.edit', $user) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
+                                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Hapus user ini?')" class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button class="font-medium text-rose-600 hover:text-rose-800">Hapus</button>
+                                                <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
                                             </form>
                                         </div>
                                     </td>
