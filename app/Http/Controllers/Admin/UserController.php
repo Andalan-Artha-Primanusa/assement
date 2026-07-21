@@ -111,7 +111,7 @@ class UserController extends Controller
                 $packageId = $packagesByName[$packageName] ?? null;
             }
 
-            $password = strtoupper(Str::random(4)).'-'.strtolower(Str::random(4)).'-'.random_int(1000, 9999);
+            $password = strtoupper(Str::random(4));
             $accessDays = (int) config('assessment.default_access_days', 7);
             $durationMinutes = (int) config('assessment.default_duration_minutes', 120);
 
@@ -181,7 +181,7 @@ class UserController extends Controller
             'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
         ]);
 
-        $password = Str::upper(Str::random(4)).'-'.Str::lower(Str::random(4)).'-'.random_int(1000, 9999);
+        $password = Str::upper(Str::random(4));
         $name = filled($data['name'] ?? null)
             ? $data['name']
             : 'Peserta '.Str::upper(Str::random(6));

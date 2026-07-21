@@ -81,8 +81,6 @@ class QuestionTestingSeeder extends Seeder
             return $this->mechanicAnswerKey()[$number] ?? 'a';
         }
 
-        // The Auto Electrician and Tyreman PDFs do not include an answer key.
-        // Keep a valid default so admins can update the key from the CMS.
         return 'a';
     }
 
