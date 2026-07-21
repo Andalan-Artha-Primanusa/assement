@@ -43,9 +43,10 @@ Route::middleware(['auth', 'admin'])
         Route::post('assessments/{assessment}/unblock', [AssessmentController::class, 'unblock'])->name('assessments.unblock');
         Route::post('assessments/{assessment}/extend', [AssessmentController::class, 'extend'])->name('assessments.extend');
         Route::resource('packages', QuestionPackageController::class)->except('show');
-        Route::resource('questions', QuestionController::class);
+        Route::get('packages/{package}/questions', [QuestionPackageController::class, 'questions'])->name('packages.questions');
         Route::get('questions/import', [QuestionImportController::class, 'create'])->name('questions.import');
         Route::post('questions/import', [QuestionImportController::class, 'store'])->name('questions.import.store');
+        Route::resource('questions', QuestionController::class);
         Route::get('invite', [UserController::class, 'inviteForm'])->name('invite');
         Route::post('invite', [UserController::class, 'invite'])->name('users.invite');
         Route::post('invite/bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');

@@ -1,8 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('CMS Paket Soal') }}</h2>
-            <a href="{{ route('admin.packages.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah Paket</a>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Paket Soal') }}</h2>
+            <div class="flex gap-2">
+                <a href="{{ route('admin.questions.index') }}" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">Semua Soal</a>
+                <a href="{{ route('admin.packages.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah Paket</a>
+            </div>
         </div>
     </x-slot>
 
@@ -39,6 +42,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center justify-end gap-3">
+                                            <a href="{{ route('admin.packages.questions', $package) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Soal</a>
                                             <a href="{{ route('admin.packages.edit', $package) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Edit</a>
                                             <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" onsubmit="return confirm('Hapus paket {{ $package->name }}?')">
                                                 @csrf

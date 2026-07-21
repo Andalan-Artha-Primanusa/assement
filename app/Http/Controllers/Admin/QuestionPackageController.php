@@ -66,6 +66,27 @@ class QuestionPackageController extends Controller
         return redirect()->route('admin.packages.index')->with('status', 'Paket berhasil diperbarui.');
     }
 
+    public function questions(Request $request, QuestionPackage $package): View
+    {
+        $questions = $package->questions()
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $query->where('text', 'like', '%'.$request->string('search')->toString().'%');
+            })
+            ->when($request->filled('category'), function ($query) use ($request): void {
+                $query->where('category', $request->string('category')->toString());
+            })
+            ->when($request->filled('status'), function ($query) use ($request): void {
+                $query->where('is_active', $request->string('status')->toString() === 'active');
+            })
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $categories = $package->questions()->select('category')->distinct()->orderBy('category')->pluck('category');
+
+        return view('admin.packages.questions', compact('package', 'questions', 'categories'));
+    }
+
     public function destroy(Request $request, QuestionPackage $package): RedirectResponse
     {
         if ($package->questions()->exists()) {
