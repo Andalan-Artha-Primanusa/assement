@@ -18,7 +18,7 @@ class EnsureNoActiveAssessmentElsewhere
     {
         $user = $request->user();
 
-        if (! $user || $user->is_admin || $request->routeIs('assessment.*')) {
+        if (! $user || $user->isAdmin() || $request->routeIs('assessment.*')) {
             return $next($request);
         }
 

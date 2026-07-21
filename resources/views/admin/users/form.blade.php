@@ -86,10 +86,18 @@
         </div>
     </div>
 
-    <label class="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2">
-        <input type="checkbox" name="is_admin" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_admin', $user->is_admin))>
-        <span class="text-sm text-gray-700">Admin CMS</span>
-    </label>
+    <div>
+        <x-input-label for="role" value="Role" />
+        <select id="role" name="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <option value="user" @selected(old('role', $user->role) == 'user')>Peserta</option>
+            <option value="admin_mekanik" @selected(old('role', $user->role) == 'admin_mekanik')>Admin Mekanik</option>
+            <option value="admin_operation" @selected(old('role', $user->role) == 'admin_operation')>Admin Operator</option>
+            @if (Auth::user()->isSuperAdmin())
+                <option value="super_admin" @selected(old('role', $user->role) == 'super_admin')>Super Admin</option>
+            @endif
+        </select>
+        <x-input-error :messages="$errors->get('role')" class="mt-2" />
+    </div>
 
     <div class="flex items-center justify-end gap-3">
         <a href="{{ route('admin.users.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Batal</a>

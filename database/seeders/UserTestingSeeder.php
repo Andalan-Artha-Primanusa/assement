@@ -55,7 +55,7 @@ class UserTestingSeeder extends Seeder
                 [
                     'name' => $user['name'],
                     'password' => 'password',
-                    'is_admin' => false,
+                    'role' => 'user',
                     'email_verified_at' => now(),
                     'question_package_id' => $package?->id,
                     'assessment_access_expires_at' => now()->addDays(30),

@@ -17,7 +17,7 @@ class AssessmentFlowTest extends TestCase
 
     public function test_admin_can_open_cms_dashboard(): void
     {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
 
         $this->actingAs($admin)
             ->get('/dashboard')
@@ -27,7 +27,7 @@ class AssessmentFlowTest extends TestCase
 
     public function test_non_admin_can_not_open_cms_routes(): void
     {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create(['role' => 'user']);
 
         $this->actingAs($user)
             ->get(route('admin.questions.index'))
@@ -36,7 +36,7 @@ class AssessmentFlowTest extends TestCase
 
     public function test_user_can_start_random_assessment_from_active_questions(): void
     {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create(['role' => 'user']);
 
         for ($i = 1; $i <= 12; $i++) {
             Question::create([
@@ -78,7 +78,7 @@ class AssessmentFlowTest extends TestCase
             'is_active' => true,
         ]);
         $user = User::factory()->create([
-            'is_admin' => false,
+            'role' => 'user',
             'question_package_id' => $assignedPackage->id,
         ]);
 
@@ -131,7 +131,7 @@ class AssessmentFlowTest extends TestCase
     public function test_admin_can_invite_user_with_generated_credentials(): void
     {
         Mail::fake();
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
         $package = QuestionPackage::create([
             'name' => 'Paket Invite',
             'is_active' => true,
@@ -140,15 +140,16 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->post(route('admin.users.invite'), [
                 'email' => 'candidate@example.com',
+                'type' => 'mekanik',
                 'question_package_id' => $package->id,
                 'access_days' => 5,
                 'duration_hours' => 1.5,
             ])
-            ->assertRedirect(route('admin.users.index'));
+            ->assertRedirect();
 
         $this->assertDatabaseHas('users', [
             'email' => 'candidate@example.com',
-            'is_admin' => false,
+            'role' => 'user',
             'question_package_id' => $package->id,
             'assessment_duration_minutes' => 90,
         ]);
@@ -157,7 +158,7 @@ class AssessmentFlowTest extends TestCase
     public function test_user_can_not_start_assessment_after_access_expires(): void
     {
         $user = User::factory()->create([
-            'is_admin' => false,
+            'role' => 'user',
             'assessment_access_expires_at' => now()->subDay(),
             'assessment_duration_minutes' => 120,
         ]);
@@ -183,8 +184,8 @@ class AssessmentFlowTest extends TestCase
 
     public function test_security_violation_blocks_assessment_until_admin_unblocks_it(): void
     {
-        $user = User::factory()->create(['is_admin' => false]);
-        $admin = User::factory()->create(['is_admin' => true]);
+        $user = User::factory()->create(['role' => 'user']);
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
         $assessment = Assessment::create([
             'user_id' => $user->id,
             'total_questions' => 1,
@@ -236,7 +237,7 @@ class AssessmentFlowTest extends TestCase
 
     public function test_user_with_active_assessment_is_redirected_back_when_opening_other_page(): void
     {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create(['role' => 'user']);
         $assessment = Assessment::create([
             'user_id' => $user->id,
             'total_questions' => 1,

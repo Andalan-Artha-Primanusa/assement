@@ -14,6 +14,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_USER = 'user';
+    public const ROLE_ADMIN_MEKANIK = 'admin_mekanik';
+    public const ROLE_ADMIN_OPERATION = 'admin_operation';
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -23,7 +28,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin',
+        'role',
         'assessment_access_expires_at',
         'assessment_duration_minutes',
         'max_attempts',
@@ -50,7 +55,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
             'assessment_access_expires_at' => 'datetime',
             'assessment_duration_minutes' => 'integer',
             'max_attempts' => 'integer',
@@ -73,9 +77,67 @@ class User extends Authenticatable
         return $this->hasMany(QuestionPackage::class, 'created_by');
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, [
+            self::ROLE_SUPER_ADMIN,
+            self::ROLE_ADMIN_MEKANIK,
+            self::ROLE_ADMIN_OPERATION,
+        ]);
+    }
+
+    public function isAdminMekanik(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_MEKANIK;
+    }
+
+    public function isAdminOperation(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_OPERATION;
+    }
+
+    public function canManageType(string $type): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->role === self::ROLE_ADMIN_MEKANIK && $type === 'mekanik') {
+            return true;
+        }
+
+        if ($this->role === self::ROLE_ADMIN_OPERATION && $type === 'operator') {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function visiblePackageTypes(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return ['mekanik', 'operator'];
+        }
+
+        if ($this->role === self::ROLE_ADMIN_MEKANIK) {
+            return ['mekanik'];
+        }
+
+        if ($this->role === self::ROLE_ADMIN_OPERATION) {
+            return ['operator'];
+        }
+
+        return [];
+    }
+
     public function canAccessAssessment(): bool
     {
-        return $this->is_admin
+        return $this->isAdmin()
             || $this->assessment_access_expires_at === null
             || $this->assessment_access_expires_at->isFuture();
     }

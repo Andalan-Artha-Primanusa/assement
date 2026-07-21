@@ -11,7 +11,7 @@ class AssessmentExportController extends Controller
 {
     public function pdf(Assessment $assessment): Response
     {
-        abort_unless(auth()->user()->is_admin, 403);
+        abort_unless(auth()->user()->isAdmin(), 403);
 
         $assessment->load('user', 'questionPackage', 'answers.question');
 

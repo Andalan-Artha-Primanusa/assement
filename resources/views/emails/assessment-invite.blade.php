@@ -79,15 +79,19 @@
                                         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 16px;">
                                             <tr>
                                                 <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af; width: 40%;">Paket Soal</td>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->questionPackage?->name ?? 'Semua paket aktif' }}</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->questionPackage?->name ?? 'Semua paket aktif' }}{{ $user->questionPackage?->level ? ' ('.$user->questionPackage->level.')' : '' }}</td>
                                             </tr>
                                             <tr>
                                                 <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Akses Sampai</td>
                                                 <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->assessment_access_expires_at?->format('d M Y') }}</td>
                                             </tr>
                                             <tr>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Sisa Waktu Akses</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; font-weight: 700; color: #dc2626;">{{ $accessDays ?? ($user->assessment_access_expires_at ? $user->assessment_access_expires_at->diffForHumans() : '-') }}</td>
+                                            </tr>
+                                            <tr>
                                                 <td style="padding: 10px 0; font-size: 14px; color: #1e40af;">Durasi Pengerjaan</td>
-                                                <td style="padding: 10px 0; font-size: 14px; color: #111827; font-weight: 600;">{{ round($user->assessment_duration_minutes / 60, 2) }} jam</td>
+                                                <td style="padding: 10px 0; font-size: 14px; color: #111827; font-weight: 600;">{{ $durationHours ?? round($user->assessment_duration_minutes / 60, 2) }} jam</td>
                                             </tr>
                                         </table>
                                     </td>

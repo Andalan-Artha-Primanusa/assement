@@ -10,6 +10,8 @@ class QuestionPackage extends Model
 {
     protected $fillable = [
         'name',
+        'type',
+        'level',
         'description',
         'is_active',
         'created_by',

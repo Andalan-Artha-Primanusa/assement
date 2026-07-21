@@ -14,10 +14,11 @@
                         <thead class="bg-gray-50">
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-6 py-3">Nama Paket</th>
-                                <th class="px-6 py-3">Deskripsi</th>
+                                <th class="px-6 py-3 text-center">Tipe</th>
+                                <th class="px-6 py-3 text-center">Level</th>
+                                <th class="px-6 py-3 text-center">Threshold</th>
                                 <th class="px-6 py-3 text-center">Jumlah Soal</th>
                                 <th class="px-6 py-3 text-center">User</th>
-                                <th class="px-6 py-3">Pembuat</th>
                                 <th class="px-6 py-3 text-center">Status</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
                             </tr>
@@ -26,12 +27,27 @@
                             @forelse ($packages as $package)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 font-medium text-gray-900">{{ $package->name }}</td>
-                                    <td class="max-w-xs px-6 py-4 text-gray-700">
-                                        <p class="line-clamp-2">{{ $package->description ?? '-' }}</p>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $package->type === 'mekanik' ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700' }}">
+                                            {{ ucfirst($package->type) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if ($package->level)
+                                            <span class="rounded-full bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700">{{ $package->level }}</span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-xs text-gray-600">
+                                        @if ($package->min_score_pertimbangan || $package->min_score_lolos)
+                                            >= {{ $package->min_score_pertimbangan ?? '-' }} / {{ $package->min_score_lolos ?? '-' }}
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $package->questions_count }}</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $package->users_count }}</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $package->creator?->name ?? '-' }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $package->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
                                             {{ $package->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -51,7 +67,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">Belum ada paket soal.</td>
+                                    <td colspan="8" class="px-6 py-10 text-center text-gray-500">Belum ada paket soal.</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -15,9 +15,9 @@ class AdminSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
-                'name' => 'Admin Screening',
+                'name' => 'Super Admin',
                 'password' => 'password',
-                'is_admin' => true,
+                'role' => 'super_admin',
                 'email_verified_at' => now(),
             ]
         );

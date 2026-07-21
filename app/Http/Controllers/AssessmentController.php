@@ -20,7 +20,15 @@ class AssessmentController extends Controller
 {
     public function adminIndex(Request $request): View
     {
-        $assessments = Assessment::with('user')
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $assessments = Assessment::with('user', 'questionPackage')
+            ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
+                $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
+                    $q->whereIn('type', $visibleTypes);
+                });
+            })
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
                 $query->whereHas('user', function ($q) use ($search): void {
@@ -43,7 +51,9 @@ class AssessmentController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $packages = \App\Models\QuestionPackage::orderBy('name')->get();
+        $packages = \App\Models\QuestionPackage::whereIn('type', $visibleTypes)
+            ->orderBy('name')
+            ->get();
 
         return view('admin.assessments.index', compact('assessments', 'packages'));
     }
@@ -248,7 +258,7 @@ class AssessmentController extends Controller
     {
         $this->authorizeAssessment($request, $assessment);
 
-        if (! $request->user()->is_admin && ! $assessment->isSubmitted()) {
+        if (! $request->user()->isAdmin() && ! $assessment->isSubmitted()) {
             $data = $request->validate([
                 'reason' => ['nullable', 'string', 'max:255'],
                 'answers' => ['array'],
@@ -279,7 +289,7 @@ class AssessmentController extends Controller
 
     public function unblock(Request $request, Assessment $assessment): RedirectResponse
     {
-        abort_unless($request->user()->is_admin, 403);
+        abort_unless($request->user()->isAdmin(), 403);
 
         $assessment->update([
             'unlocked_at' => now(),
@@ -292,7 +302,7 @@ class AssessmentController extends Controller
 
     public function extend(Request $request, Assessment $assessment): RedirectResponse
     {
-        abort_unless($request->user()->is_admin, 403);
+        abort_unless($request->user()->isAdmin(), 403);
 
         $data = $request->validate([
             'extra_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
@@ -316,7 +326,7 @@ class AssessmentController extends Controller
     {
         try {
             $assessment->loadMissing('user');
-            $admins = User::where('is_admin', true)->get();
+            $admins = User::whereIn('role', [User::ROLE_ADMIN_MEKANIK, User::ROLE_ADMIN_OPERATION])->get();
 
             foreach ($admins as $admin) {
                 Mail::send('emails.assessment-completed', [
@@ -336,7 +346,7 @@ class AssessmentController extends Controller
     private function authorizeAssessment(Request $request, Assessment $assessment): void
     {
         abort_unless(
-            $request->user()->is_admin || $assessment->user_id === $request->user()->id,
+            $request->user()->isAdmin() || $assessment->user_id === $request->user()->id,
             403
         );
     }

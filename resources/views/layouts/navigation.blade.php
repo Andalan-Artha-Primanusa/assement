@@ -51,12 +51,12 @@
         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
             {{ __('Dashboard') }}
         </x-nav-link>
-        @if (Auth::user()->is_admin)
+        @if (Auth::user()->isAdmin())
             <x-nav-link :href="route('admin.assessments.index')" :active="request()->routeIs('admin.assessments.*')">
                 {{ __('Assessment') }}
             </x-nav-link>
             <x-nav-link :href="route('admin.packages.index')" :active="request()->routeIs('admin.packages.*')">
-                {{ __('Paket') }}
+                {{ __('Paket Soal') }}
             </x-nav-link>
 
             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">
@@ -65,9 +65,11 @@
             <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
                 {{ __('Invite') }}
             </x-nav-link>
-            <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
-                {{ __('Log Aktivitas') }}
-            </x-nav-link>
+            @if (Auth::user()->isSuperAdmin())
+                <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
+                    {{ __('Log Aktivitas') }}
+                </x-nav-link>
+            @endif
         @endif
     </div>
 
@@ -77,6 +79,21 @@
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 truncate">{{ Auth::user()->name }}</p>
                 <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
+                @php
+                    $roleLabels = [
+                        'super_admin' => 'Super Admin',
+                        'admin_mekanik' => 'Admin Mekanik',
+                        'admin_operation' => 'Admin Operator',
+                        'user' => 'Peserta',
+                    ];
+                    $roleColors = [
+                        'super_admin' => 'text-red-600',
+                        'admin_mekanik' => 'text-indigo-600',
+                        'admin_operation' => 'text-purple-600',
+                        'user' => 'text-emerald-600',
+                    ];
+                @endphp
+                <p class="text-xs {{ $roleColors[Auth::user()->role] ?? 'text-gray-500' }} truncate font-medium">{{ $roleLabels[Auth::user()->role] ?? Auth::user()->role }}</p>
             </div>
 
             {{-- Three-dot Menu --}}

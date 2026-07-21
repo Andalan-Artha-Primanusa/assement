@@ -14,25 +14,39 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        if ($request->user()->is_admin) {
-            return $this->adminDashboard();
+        if ($request->user()->isAdmin()) {
+            return $this->adminDashboard($request);
         }
 
         return $this->userDashboard($request);
     }
 
-    private function adminDashboard(): View
+    private function adminDashboard(Request $request): View
     {
-        $submitted = Assessment::query()->whereNotNull('submitted_at');
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $baseQuery = Assessment::query()
+            ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
+                $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
+                    $q->whereIn('type', $visibleTypes);
+                });
+            });
+
+        $submitted = (clone $baseQuery)->whereNotNull('submitted_at');
         $averageScore = (float) (clone $submitted)->avg('score');
 
+        $packageIds = QuestionPackage::whereIn('type', $visibleTypes)->pluck('id');
+
         $stats = [
-            'questions' => Question::count(),
-            'active_questions' => Question::where('is_active', true)->count(),
-            'packages' => QuestionPackage::count(),
-            'users' => User::where('is_admin', false)->count(),
+            'questions' => Question::whereIn('question_package_id', $packageIds)->count(),
+            'active_questions' => Question::whereIn('question_package_id', $packageIds)->where('is_active', true)->count(),
+            'packages' => QuestionPackage::whereIn('type', $visibleTypes)->count(),
+            'users' => User::where('role', 'user')
+                ->whereIn('question_package_id', $packageIds)
+                ->count(),
             'assessments' => (clone $submitted)->count(),
-            'blocked_assessments' => Assessment::whereNotNull('blocked_at')
+            'blocked_assessments' => (clone $baseQuery)->whereNotNull('blocked_at')
                 ->whereNull('submitted_at')
                 ->where(function ($query): void {
                     $query->whereNull('unlocked_at')
@@ -43,27 +57,27 @@ class DashboardController extends Controller
         ];
 
         $scoreBuckets = [
-            '0-59' => Assessment::whereNotNull('submitted_at')->whereBetween('score', [0, 59.99])->count(),
-            '60-69' => Assessment::whereNotNull('submitted_at')->whereBetween('score', [60, 69.99])->count(),
-            '70-79' => Assessment::whereNotNull('submitted_at')->whereBetween('score', [70, 79.99])->count(),
-            '80-89' => Assessment::whereNotNull('submitted_at')->whereBetween('score', [80, 89.99])->count(),
-            '90-100' => Assessment::whereNotNull('submitted_at')->whereBetween('score', [90, 100])->count(),
+            '0-59' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [0, 59.99])->count(),
+            '60-69' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [60, 69.99])->count(),
+            '70-79' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [70, 79.99])->count(),
+            '80-89' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [80, 89.99])->count(),
+            '90-100' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [90, 100])->count(),
         ];
 
-        $pending = Assessment::whereNull('submitted_at')
+        $pending = (clone $baseQuery)->whereNull('submitted_at')
             ->whereNull('blocked_at')
             ->where(function ($q) {
                 $q->whereNull('ends_at')->orWhere('ends_at', '>', now());
             })
             ->count();
-        $blocked = Assessment::whereNotNull('blocked_at')
+        $blocked = (clone $baseQuery)->whereNotNull('blocked_at')
             ->whereNull('submitted_at')
             ->where(function ($q) {
                 $q->whereNull('unlocked_at')->orWhereColumn('unlocked_at', '<', 'blocked_at');
             })
             ->count();
 
-        $dailyAttempts = Assessment::query()
+        $dailyAttempts = (clone $baseQuery)
             ->selectRaw('DATE(submitted_at) as label, COUNT(*) as total')
             ->whereNotNull('submitted_at')
             ->where('submitted_at', '>=', now()->subDays(29)->startOfDay())
@@ -80,8 +94,8 @@ class DashboardController extends Controller
             $dailyTotals[] = (int) ($dailyAttempts[$date]->total ?? 0);
         }
 
-        $packageData = QuestionPackage::all()->map(function ($p) {
-            $avg = Assessment::where('question_package_id', $p->id)
+        $packageData = QuestionPackage::whereIn('type', $visibleTypes)->get()->map(function ($p) use ($baseQuery) {
+            $avg = (clone $baseQuery)->where('question_package_id', $p->id)
                 ->whereNotNull('submitted_at')
                 ->avg('score');
             return [
@@ -91,6 +105,7 @@ class DashboardController extends Controller
         });
 
         $categoryData = Question::query()
+            ->whereIn('question_package_id', $packageIds)
             ->select('category', DB::raw('COUNT(*) as total'))
             ->groupBy('category')
             ->orderByDesc('total')
@@ -100,6 +115,7 @@ class DashboardController extends Controller
             ->join('questions', 'assessment_answers.question_id', '=', 'questions.id')
             ->join('assessments', 'assessment_answers.assessment_id', '=', 'assessments.id')
             ->whereNotNull('assessments.submitted_at')
+            ->whereIn('questions.question_package_id', $packageIds)
             ->select(
                 'questions.category',
                 DB::raw('COUNT(*) as total'),
@@ -113,13 +129,13 @@ class DashboardController extends Controller
             return $item->total > 0 ? round(($item->correct / $item->total) * 100, 1) : 0;
         })->toArray();
 
-        $latestAssessments = Assessment::with('user')
+        $latestAssessments = (clone $baseQuery)->with('user')
             ->whereNotNull('submitted_at')
             ->latest('submitted_at')
             ->limit(8)
             ->get();
 
-        $blockedAssessments = Assessment::with('user')
+        $blockedAssessments = (clone $baseQuery)->with('user')
             ->whereNotNull('blocked_at')
             ->whereNull('submitted_at')
             ->where(function ($query): void {

@@ -11,10 +11,14 @@ use Illuminate\View\View;
 
 class QuestionPackageController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
         $packages = QuestionPackage::withCount(['questions', 'users'])
             ->with('creator')
+            ->whereIn('type', $visibleTypes)
             ->latest()
             ->paginate(12);
 
@@ -23,19 +27,34 @@ class QuestionPackageController extends Controller
 
     public function create(): View
     {
-        $package = new QuestionPackage(['is_active' => true]);
+        $adminUser = request()->user();
+        $defaultType = $adminUser->isAdminMekanik() ? 'mekanik' : 'operator';
+
+        $package = new QuestionPackage(['is_active' => true, 'type' => $defaultType]);
 
         return view('admin.packages.create', compact('package'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $package = QuestionPackage::create([
-            'name' => $request->validate(['name' => ['required', 'string', 'max:255']])['name'],
-            'description' => $request->input('description'),
-            'is_active' => $request->boolean('is_active'),
-            'created_by' => $request->user()->id,
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
+            'level' => ['nullable', 'string', 'in:M1,M2,M3'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['nullable', 'boolean'],
+            'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'min_score_lolos' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
+
+        $data['is_active'] = $request->boolean('is_active');
+        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?? null);
+        $data['created_by'] = $adminUser->id;
+
+        $package = QuestionPackage::create($data);
 
         ActivityLog::log('package_create', 'Membuat paket '.$package->name, QuestionPackage::class, $package->id);
 
@@ -44,9 +63,15 @@ class QuestionPackageController extends Controller
 
     public function edit(QuestionPackage $package): View
     {
+        $adminUser = request()->user();
+
+        if (! $adminUser->canManageType($package->type)) {
+            abort(403, 'Anda tidak memiliki akses ke paket ini.');
+        }
+
         $package->load([
             'questions' => fn ($query) => $query->latest()->limit(8),
-            'users' => fn ($query) => $query->where('is_admin', false)->latest()->limit(8),
+            'users' => fn ($query) => $query->where('role', 'user')->latest()->limit(8),
         ]);
         $package->loadCount(['questions', 'users']);
 
@@ -55,8 +80,18 @@ class QuestionPackageController extends Controller
 
     public function update(Request $request, QuestionPackage $package): RedirectResponse
     {
+        $adminUser = $request->user();
+
+        if (! $adminUser->canManageType($package->type)) {
+            abort(403, 'Anda tidak memiliki akses ke paket ini.');
+        }
+
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
+            'level' => ['nullable', 'string', 'in:M1,M2,M3'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -64,6 +99,7 @@ class QuestionPackageController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?? null);
 
         $package->update($data);
 
@@ -74,6 +110,12 @@ class QuestionPackageController extends Controller
 
     public function questions(Request $request, QuestionPackage $package): View
     {
+        $adminUser = $request->user();
+
+        if (! $adminUser->canManageType($package->type)) {
+            abort(403, 'Anda tidak memiliki akses ke paket ini.');
+        }
+
         $questions = $package->questions()
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $query->where('text', 'like', '%'.$request->string('search')->toString().'%');
@@ -95,6 +137,12 @@ class QuestionPackageController extends Controller
 
     public function destroy(Request $request, QuestionPackage $package): RedirectResponse
     {
+        $adminUser = $request->user();
+
+        if (! $adminUser->canManageType($package->type)) {
+            abort(403, 'Anda tidak memiliki akses ke paket ini.');
+        }
+
         if ($package->questions()->exists()) {
             return back()->with('status', 'Paket masih memiliki soal. Pindahkan atau hapus soal terlebih dahulu.');
         }

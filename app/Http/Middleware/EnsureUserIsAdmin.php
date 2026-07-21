@@ -15,7 +15,7 @@ class EnsureUserIsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()?->is_admin) {
+        if (! $request->user()?->isAdmin()) {
             abort(403, 'Halaman ini hanya untuk admin.');
         }
 

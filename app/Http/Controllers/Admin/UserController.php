@@ -21,12 +21,22 @@ class UserController extends Controller
      */
     public function index(Request $request): View
     {
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
         $users = User::query()
             ->with('questionPackage')
             ->withCount('assessments')
+            ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
+                $query->where(function ($q) use ($visibleTypes): void {
+                    $q->where('role', 'user')
+                        ->whereIn('question_package_id', function ($subQuery) use ($visibleTypes): void {
+                            $subQuery->select('id')->from('question_packages')->whereIn('type', $visibleTypes);
+                        });
+                });
+            })
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
-
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', '%'.$search.'%')
                         ->orWhere('email', 'like', '%'.$search.'%');
@@ -35,11 +45,17 @@ class UserController extends Controller
             ->when($request->filled('package'), function ($query) use ($request): void {
                 $query->where('question_package_id', $request->integer('package'));
             })
+            ->when($request->filled('role'), function ($query) use ($request): void {
+                $query->where('role', $request->string('role'));
+            })
             ->latest()
             ->paginate(12)
             ->withQueryString();
 
-        $packages = QuestionPackage::where('is_active', true)->orderBy('name')->get();
+        $packages = QuestionPackage::where('is_active', true)
+            ->whereIn('type', $visibleTypes)
+            ->orderBy('name')
+            ->get();
 
         return view('admin.users.index', compact('users', 'packages'));
     }
@@ -57,14 +73,13 @@ class UserController extends Controller
         $emailIndex = array_search(strtolower('email'), array_map('strtolower', $header ?: []));
         $nameIndex = array_search(strtolower('nama'), array_map('strtolower', $header ?: []));
         $packageIndex = array_search(strtolower('paket'), array_map('strtolower', $header ?: []));
+        $typeIndex = array_search(strtolower('tipe'), array_map('strtolower', $header ?: []));
 
-        $packages = QuestionPackage::pluck('id', 'name')->map(function ($id, $name) {
-            return $id;
-        });
+        $packagesByName = QuestionPackage::pluck('id', 'name');
 
+        $adminUser = $request->user();
         $created = 0;
         $errors = [];
-        $packagesByName = QuestionPackage::pluck('id', 'name');
 
         while (($row = fgetcsv($handle)) !== false) {
             if ($emailIndex === false || ! isset($row[$emailIndex]) || ! filter_var(trim($row[$emailIndex]), FILTER_VALIDATE_EMAIL)) {
@@ -80,7 +95,15 @@ class UserController extends Controller
 
             $name = $nameIndex !== false && isset($row[$nameIndex])
                 ? trim($row[$nameIndex])
-                : 'Peserta '.strtoupper(\Illuminate\Support\Str::random(6));
+                : 'Peserta '.strtoupper(Str::random(6));
+
+            $type = $adminUser->isAdminMekanik() ? 'mekanik' : 'operator';
+            if ($adminUser->isSuperAdmin() && $typeIndex !== false && isset($row[$typeIndex])) {
+                $rawType = strtolower(trim($row[$typeIndex]));
+                if (in_array($rawType, ['operator', 'mekanik'])) {
+                    $type = $rawType;
+                }
+            }
 
             $packageId = null;
             if ($packageIndex !== false && isset($row[$packageIndex])) {
@@ -88,7 +111,7 @@ class UserController extends Controller
                 $packageId = $packagesByName[$packageName] ?? null;
             }
 
-            $password = strtoupper(\Illuminate\Support\Str::random(4)).'-'.strtolower(\Illuminate\Support\Str::random(4)).'-'.random_int(1000, 9999);
+            $password = strtoupper(Str::random(4)).'-'.strtolower(Str::random(4)).'-'.random_int(1000, 9999);
             $accessDays = (int) config('assessment.default_access_days', 7);
             $durationMinutes = (int) config('assessment.default_duration_minutes', 120);
 
@@ -96,7 +119,7 @@ class UserController extends Controller
                 'name' => $name,
                 'email' => $email,
                 'password' => $password,
-                'is_admin' => false,
+                'role' => 'user',
                 'question_package_id' => $packageId,
                 'assessment_access_expires_at' => now()->addDays($accessDays),
                 'assessment_duration_minutes' => $durationMinutes,
@@ -108,9 +131,11 @@ class UserController extends Controller
                     'user' => $user,
                     'password' => $password,
                     'loginUrl' => route('login'),
+                    'accessDays' => $accessDays,
+                    'durationHours' => round($durationMinutes / 60, 2),
                 ], function ($message) use ($email, $name): void {
                     $message->to($email, $name)
-                        ->subject('Undangan Screening Mechanic');
+                        ->subject('Undangan Assessment - Andalan HR');
                 });
             } catch (\Throwable $e) {
                 $errors[] = "Gagal kirim email ke {$email}.";
@@ -131,16 +156,26 @@ class UserController extends Controller
 
     public function inviteForm(): View
     {
-        $packages = QuestionPackage::where('is_active', true)->orderBy('name')->get();
+        $adminUser = request()->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
 
-        return view('admin.users.invite', compact('packages'));
+        $packages = QuestionPackage::where('is_active', true)
+            ->whereIn('type', $visibleTypes)
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.users.invite', compact('packages', 'visibleTypes'));
     }
 
     public function invite(Request $request): RedirectResponse
     {
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
         $data = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
+            'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
             'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
             'access_days' => ['required', 'integer', 'min:1', 'max:365'],
             'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
@@ -151,14 +186,17 @@ class UserController extends Controller
             ? $data['name']
             : 'Peserta '.Str::upper(Str::random(6));
 
+        $accessDays = (int) $data['access_days'];
+        $durationMinutes = (int) round(((float) $data['duration_hours']) * 60);
+
         $user = User::create([
             'name' => $name,
             'email' => $data['email'],
             'password' => $password,
-            'is_admin' => false,
+            'role' => 'user',
             'question_package_id' => $data['question_package_id'] ?? null,
-            'assessment_access_expires_at' => now()->addDays((int) $data['access_days']),
-            'assessment_duration_minutes' => (int) round(((float) $data['duration_hours']) * 60),
+            'assessment_access_expires_at' => now()->addDays($accessDays),
+            'assessment_duration_minutes' => $durationMinutes,
         ]);
 
         $user->load('questionPackage');
@@ -167,9 +205,11 @@ class UserController extends Controller
             'user' => $user,
             'password' => $password,
             'loginUrl' => route('login'),
+            'accessDays' => $accessDays,
+            'durationHours' => round($durationMinutes / 60, 2),
         ], function ($message) use ($user): void {
             $message->to($user->email, $user->name)
-                ->subject('Undangan Screening Mechanic');
+                ->subject('Undangan Assessment - Andalan HR');
         });
 
         ActivityLog::log('user_invite', 'Mengundang user '.$data['email'], User::class, $user->id);
@@ -184,11 +224,17 @@ class UserController extends Controller
      */
     public function create(): View
     {
-        $user = new User(['is_admin' => false]);
+        $adminUser = request()->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $user = new User(['role' => User::ROLE_USER]);
         $user->assessment_access_expires_at = now()->addDays((int) config('assessment.default_access_days', 7));
         $user->assessment_duration_minutes = (int) config('assessment.default_duration_minutes', 120);
         $user->max_attempts = (int) config('assessment.max_attempts', 1);
-        $packages = QuestionPackage::where('is_active', true)->orderBy('name')->get();
+        $packages = QuestionPackage::where('is_active', true)
+            ->whereIn('type', $visibleTypes)
+            ->orderBy('name')
+            ->get();
 
         return view('admin.users.create', compact('user', 'packages'));
     }
@@ -198,9 +244,11 @@ class UserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $user = User::create($this->validated($request));
+        $data = $this->validated($request);
 
-        ActivityLog::log('user_create', 'Membuat user '.$user->email, User::class, $user->id);
+        User::create($data);
+
+        ActivityLog::log('user_create', 'Membuat user '.$data['email'], User::class);
 
         return redirect()->route('admin.users.index')->with('status', 'User berhasil ditambahkan.');
     }
@@ -218,7 +266,12 @@ class UserController extends Controller
      */
     public function edit(User $user): View
     {
-        $packages = QuestionPackage::orderBy('name')->get();
+        $adminUser = request()->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $packages = QuestionPackage::whereIn('type', $visibleTypes)
+            ->orderBy('name')
+            ->get();
 
         return view('admin.users.edit', compact('user', 'packages'));
     }
@@ -259,9 +312,14 @@ class UserController extends Controller
 
     private function validated(Request $request, ?User $user = null): array
     {
+        $adminUser = $request->user();
         $passwordRules = $user
             ? ['nullable', 'confirmed', Rules\Password::defaults()]
             : ['required', 'confirmed', Rules\Password::defaults()];
+
+        $roles = $adminUser->isSuperAdmin()
+            ? ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,super_admin']
+            : ['nullable', 'string', 'in:user,admin_mekanik,admin_operation'];
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -274,14 +332,14 @@ class UserController extends Controller
                 Rule::unique(User::class)->ignore($user),
             ],
             'password' => $passwordRules,
-            'is_admin' => ['nullable', 'boolean'],
+            'role' => $roles,
             'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
             'assessment_access_expires_at' => ['nullable', 'date'],
             'assessment_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
             'max_attempts' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $data['is_admin'] = $request->boolean('is_admin');
+        $data['role'] = $data['role'] ?? User::ROLE_USER;
         $data['question_package_id'] = $data['question_package_id'] ?? null;
         $data['assessment_duration_minutes'] = (int) round(((float) $data['assessment_duration_hours']) * 60);
         $data['assessment_access_expires_at'] = filled($data['assessment_access_expires_at'] ?? null)

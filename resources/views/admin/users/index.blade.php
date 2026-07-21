@@ -43,8 +43,22 @@
                                     <td class="px-6 py-4 font-medium text-gray-900">{{ $user->name }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->email }}</td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $user->is_admin ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700' }}">
-                                            {{ $user->is_admin ? 'Admin' : 'Peserta' }}
+                                        @php
+                                            $roleColors = [
+                                                'super_admin' => 'bg-red-50 text-red-700',
+                                                'admin_mekanik' => 'bg-indigo-50 text-indigo-700',
+                                                'admin_operation' => 'bg-purple-50 text-purple-700',
+                                                'user' => 'bg-emerald-50 text-emerald-700',
+                                            ];
+                                            $roleLabels = [
+                                                'super_admin' => 'Super Admin',
+                                                'admin_mekanik' => 'Admin Mekanik',
+                                                'admin_operation' => 'Admin Operator',
+                                                'user' => 'Peserta',
+                                            ];
+                                        @endphp
+                                        <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $roleColors[$user->role] ?? 'bg-gray-50 text-gray-700' }}">
+                                            {{ $roleLabels[$user->role] ?? $user->role }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->questionPackage?->name ?? 'Semua paket' }}</td>
