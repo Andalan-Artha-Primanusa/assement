@@ -46,8 +46,9 @@ Route::middleware(['auth', 'admin'])
         Route::resource('questions', QuestionController::class);
         Route::get('questions/import', [QuestionImportController::class, 'create'])->name('questions.import');
         Route::post('questions/import', [QuestionImportController::class, 'store'])->name('questions.import.store');
-        Route::post('users/invite', [UserController::class, 'invite'])->name('users.invite');
-        Route::post('users/invite-bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');
+        Route::get('invite', [UserController::class, 'inviteForm'])->name('invite');
+        Route::post('invite', [UserController::class, 'invite'])->name('users.invite');
+        Route::post('invite/bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');
         Route::resource('users', UserController::class);
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });

@@ -126,7 +126,14 @@ class UserController extends Controller
             $message .= ' '.implode(', ', array_slice($errors, 0, 5));
         }
 
-        return redirect()->route('admin.users.index')->with('status', $message);
+        return redirect()->route('admin.invite')->with('status', $message);
+    }
+
+    public function inviteForm(): View
+    {
+        $packages = QuestionPackage::where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.users.invite', compact('packages'));
     }
 
     public function invite(Request $request): RedirectResponse
@@ -168,7 +175,7 @@ class UserController extends Controller
         ActivityLog::log('user_invite', 'Mengundang user '.$data['email'], User::class, $user->id);
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('admin.invite')
             ->with('status', "Undangan peserta dibuat dan dikirim. Nama: {$name}");
     }
 

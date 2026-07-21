@@ -61,8 +61,11 @@
             <x-nav-link :href="route('admin.questions.index')" :active="request()->routeIs('admin.questions.*')">
                 {{ __('Soal') }}
             </x-nav-link>
-            <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+            <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">
                 {{ __('User') }}
+            </x-nav-link>
+            <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
+                {{ __('Invite') }}
             </x-nav-link>
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __('Log Aktivitas') }}
