@@ -46,6 +46,7 @@ Route::middleware(['auth', 'admin'])
         Route::resource('packages', QuestionPackageController::class)->except('show');
         Route::get('packages/{package}/questions', [QuestionPackageController::class, 'questions'])->name('packages.questions');
         Route::get('questions/import', [QuestionImportController::class, 'create'])->name('questions.import');
+        Route::get('questions/import/template', [QuestionImportController::class, 'template'])->name('questions.import.template');
         Route::post('questions/import', [QuestionImportController::class, 'store'])->name('questions.import.store');
         Route::resource('questions', QuestionController::class);
         Route::get('invite', [UserController::class, 'inviteForm'])->name('invite');

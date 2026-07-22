@@ -10,9 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\StreamedResponse;
 use Illuminate\View\View;
+use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
-use OpenSpout\Writer\Common\Entity\Row;
-use OpenSpout\Writer\Common\Entity\Cell;
 use OpenSpout\Writer\XLSX\Options as XLSXOptions;
 
 class QuestionImportController extends Controller
@@ -27,6 +26,57 @@ class QuestionImportController extends Controller
     public function template(): StreamedResponse
     {
         $filename = 'template-soal.xlsx';
+        $tempPath = storage_path('app/temp_'.$filename);
+
+        $options = new XLSXOptions();
+        $options->SHOULD_USE_INLINE_STRINGS = true;
+
+        $writer = new \OpenSpout\Writer\XLSX\Writer($options);
+        $writer->openToFile($tempPath);
+
+        $writer->addRow(Row::fromValues([
+            'type', 'text', 'option_a', 'option_b', 'option_c', 'option_d',
+            'correct_option', 'category', 'difficulty',
+        ]));
+
+        $examples = [
+            Row::fromValues([
+                'multiple_choice',
+                'Apa fungsi oli mesin?',
+                'Melumasi komponen',
+                'Mendinginkan mesin',
+                'Membersihkan sirkuit oli',
+                'Semua benar',
+                'd', 'Engine', 'basic',
+            ]),
+            Row::fromValues([
+                'essay',
+                'Jelaskan proses perawatan harian pada heavy equipment!',
+                '', '', '', '',
+                '', 'Maintenance', 'intermediate',
+            ]),
+            Row::fromValues([
+                'upload',
+                'Upload foto hasil inspeksi undercarriage unit!',
+                '', '', '', '',
+                '', 'Inspection', 'advanced',
+            ]),
+            Row::fromValues([
+                'multiple_choice',
+                'Komponen yang berfungsi menghasilkan tenaga pada engine adalah?',
+                'Piston',
+                'Crankshaft',
+                'Camshaft',
+                'Flywheel',
+                'a', 'Engine', 'basic',
+            ]),
+        ];
+
+        foreach ($examples as $row) {
+            $writer->addRow($row);
+        }
+
+        $writer->close();
 
         $headers = [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -36,57 +86,9 @@ class QuestionImportController extends Controller
             'Expires' => '0',
         ];
 
-        $callback = function (): void {
-            $options = new XLSXOptions();
-            $options->setShouldCreateNewSheets(true);
-
-            $writer = new \OpenSpout\Writer\XLSX\Writer($options);
-            $writer->openToPhpTemp();
-
-            $headerRow = Row::withValues([
-                'type', 'text', 'option_a', 'option_b', 'option_c', 'option_d',
-                'correct_option', 'category', 'difficulty',
-            ]);
-            $writer->addRow($headerRow);
-
-            $examples = [
-                Row::withValues([
-                    'multiple_choice',
-                    'Apa fungsi oli mesin?',
-                    'Melumasi komponen',
-                    'Mendinginkan mesin',
-                    'Membersihkan sirkuit oli',
-                    'Semua benar',
-                    'd', 'Engine', 'basic',
-                ]),
-                Row::withValues([
-                    'essay',
-                    'Jelaskan proses perawatan harian pada heavy equipment!',
-                    '', '', '', '',
-                    '', 'Maintenance', 'intermediate',
-                ]),
-                Row::withValues([
-                    'upload',
-                    'Upload foto hasil inspeksi undercarriage unit!',
-                    '', '', '', '',
-                    '', 'Inspection', 'advanced',
-                ]),
-                Row::withValues([
-                    'multiple_choice',
-                    'Komponen yang berfungsi menghasilkan tenaga pada engine adalah?',
-                    'Piston',
-                    'Crankshaft',
-                    'Camshaft',
-                    'Flywheel',
-                    'a', 'Engine', 'basic',
-                ]),
-            ];
-
-            foreach ($examples as $row) {
-                $writer->addRow($row);
-            }
-
-            $writer->closeAndOpenOut('php://output');
+        $callback = function () use ($tempPath): void {
+            readfile($tempPath);
+            @unlink($tempPath);
         };
 
         return response()->stream($callback, 200, $headers);
