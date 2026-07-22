@@ -41,5 +41,15 @@ class AdminSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        User::updateOrCreate(
+            ['email' => 'admin.she@andalan.co.id'],
+            [
+                'name' => 'Admin SHE',
+                'password' => 'password',
+                'role' => 'admin_she',
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }

@@ -43,6 +43,7 @@
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-6 py-3">Soal</th>
                                 <th class="px-6 py-3">Paket</th>
+                                <th class="px-6 py-3 text-center">Tipe</th>
                                 <th class="px-6 py-3">Kategori</th>
                                 <th class="px-6 py-3 text-center">Level</th>
                                 <th class="px-6 py-3 text-center">Kunci</th>
@@ -57,9 +58,26 @@
                                         <p class="line-clamp-2">{{ $question->text }}</p>
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->questionPackage?->name ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-center">
+                                        @php
+                                            $typeColors = [
+                                                'multiple_choice' => 'bg-gray-100 text-gray-700',
+                                                'essay' => 'bg-blue-50 text-blue-700',
+                                                'upload' => 'bg-purple-50 text-purple-700',
+                                            ];
+                                            $typeLabels = [
+                                                'multiple_choice' => 'MC',
+                                                'essay' => 'Essay',
+                                                'upload' => 'Upload',
+                                            ];
+                                        @endphp
+                                        <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $typeColors[$question->type] ?? 'bg-gray-100 text-gray-700' }}">
+                                            {{ $typeLabels[$question->type] ?? $question->type }}
+                                        </span>
+                                    </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->category }}</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ ucfirst($question->difficulty) }}</td>
-                                    <td class="px-6 py-4 text-center font-semibold uppercase text-gray-900">{{ $question->correct_option }}</td>
+                                    <td class="px-6 py-4 text-center font-semibold uppercase text-gray-900">{{ $question->correct_option ?? '-' }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $question->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
                                             {{ $question->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -78,7 +96,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">Belum ada soal.</td>
+                                    <td colspan="8" class="px-6 py-10 text-center text-gray-500">Belum ada soal.</td>
                                 </tr>
                             @endforelse
                         </tbody>

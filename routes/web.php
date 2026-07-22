@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AssessmentExportController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuestionImportController;
 use App\Http\Controllers\Admin\QuestionPackageController;
+use App\Http\Controllers\Admin\SheReviewController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\DashboardController;
@@ -52,6 +53,10 @@ Route::middleware(['auth', 'admin'])
         Route::post('invite/bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');
         Route::resource('users', UserController::class);
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+        Route::get('she-review', [SheReviewController::class, 'index'])->name('she-review.index');
+        Route::get('she-review/{assessment}', [SheReviewController::class, 'show'])->name('she-review.show');
+        Route::post('she-review/{assessment}/grade', [SheReviewController::class, 'grade'])->name('she-review.grade');
     });
 
 require __DIR__.'/auth.php';

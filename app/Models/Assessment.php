@@ -8,9 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Assessment extends Model
 {
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_PENDING_REVIEW = 'pending_review';
+    public const STATUS_GRADED = 'graded';
+
     protected $fillable = [
         'user_id',
         'question_package_id',
+        'status',
         'total_questions',
         'correct_answers',
         'score',
@@ -61,6 +66,16 @@ class Assessment extends Model
         return $this->submitted_at !== null;
     }
 
+    public function isPendingReview(): bool
+    {
+        return $this->isSubmitted() && $this->status === self::STATUS_PENDING_REVIEW;
+    }
+
+    public function isGraded(): bool
+    {
+        return $this->status === self::STATUS_GRADED;
+    }
+
     public function isBlocked(): bool
     {
         return ! $this->isSubmitted() && $this->blocked_at !== null && (
@@ -73,5 +88,22 @@ class Assessment extends Model
         return ! $this->isSubmitted()
             && $this->ends_at !== null
             && $this->ends_at->isPast();
+    }
+
+    public function hasEssayOrUploadQuestions(): bool
+    {
+        return $this->answers()->whereHas('question', function ($query): void {
+            $query->whereIn('type', ['essay', 'upload']);
+        })->exists();
+    }
+
+    public function needsReviewCount(): int
+    {
+        return $this->answers()
+            ->whereNull('reviewed_at')
+            ->whereHas('question', function ($query): void {
+                $query->whereIn('type', ['essay', 'upload']);
+            })
+            ->count();
     }
 }

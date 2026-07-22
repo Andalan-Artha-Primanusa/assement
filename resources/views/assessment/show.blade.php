@@ -77,7 +77,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('assessment.submit', $assessment) }}" class="pointer-events-none space-y-5 opacity-40" id="assessment-form">
+            <form method="POST" action="{{ route('assessment.submit', $assessment) }}" class="pointer-events-none space-y-5 opacity-40" id="assessment-form" enctype="multipart/form-data">
                 @csrf
 
                 @foreach ($assessment->answers as $answer)
@@ -90,17 +90,32 @@
                             <div class="w-full min-w-0">
                                 <p class="whitespace-pre-line text-sm sm:text-base font-medium text-gray-900">{{ $question->text }}</p>
 
-                                <div class="mt-5 grid gap-3">
-                                    @foreach (['a', 'b', 'c', 'd'] as $option)
-                                        <label class="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 p-3 sm:p-4 hover:border-indigo-300 hover:bg-indigo-50 min-h-[44px]">
-                                            <input type="radio" name="answers[{{ $answer->id }}]" value="{{ $option }}" class="mt-0.5 sm:mt-1 shrink-0 border-gray-300 text-indigo-600 focus:ring-indigo-500" required @checked($answer->selected_option === $option)>
-                                            <span class="text-sm sm:text-base">
-                                                <span class="font-semibold uppercase text-gray-900">{{ $option }}.</span>
-                                                <span class="text-gray-700">{{ $question->optionText($option) }}</span>
-                                            </span>
-                                        </label>
-                                    @endforeach
-                                </div>
+                                @if ($question->isMultipleChoice())
+                                    <div class="mt-5 grid gap-3">
+                                        @foreach (['a', 'b', 'c', 'd'] as $option)
+                                            <label class="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 p-3 sm:p-4 hover:border-indigo-300 hover:bg-indigo-50 min-h-[44px]">
+                                                <input type="radio" name="answers[{{ $answer->id }}]" value="{{ $option }}" class="mt-0.5 sm:mt-1 shrink-0 border-gray-300 text-indigo-600 focus:ring-indigo-500" required @checked($answer->selected_option === $option)>
+                                                <span class="text-sm sm:text-base">
+                                                    <span class="font-semibold uppercase text-gray-900">{{ $option }}.</span>
+                                                    <span class="text-gray-700">{{ $question->optionText($option) }}</span>
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @elseif ($question->isEssay())
+                                    <div class="mt-4">
+                                        <textarea name="answers[{{ $answer->id }}]" rows="6"
+                                                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                  placeholder="Tulis jawaban Anda di sini...">{{ old('answers.'.$answer->id, $answer->answer_text) }}</textarea>
+                                    </div>
+                                @elseif ($question->isUpload())
+                                    <div class="mt-4">
+                                        <input type="file" name="answers[{{ $answer->id }}]"
+                                               class="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                               accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx">
+                                        <p class="mt-1 text-xs text-gray-500">Format: PDF, Gambar, atau Dokumen (max 10MB)</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -111,7 +126,6 @@
                         Kirim Jawaban
                     </button>
                 </div>
-            </form>
             </form>
         </div>
     </div>
@@ -191,6 +205,11 @@
             const appendSelectedAnswers = (payload) => {
                 document.querySelectorAll('input[type="radio"]:checked').forEach((input) => {
                     payload.append(input.name, input.value);
+                });
+                document.querySelectorAll('textarea').forEach((textarea) => {
+                    if (textarea.value && textarea.name.startsWith('answers[')) {
+                        payload.append(textarea.name, textarea.value);
+                    }
                 });
             };
 

@@ -48,12 +48,14 @@
                                                 'super_admin' => 'bg-red-50 text-red-700',
                                                 'admin_mekanik' => 'bg-indigo-50 text-indigo-700',
                                                 'admin_operation' => 'bg-purple-50 text-purple-700',
+                                                'admin_she' => 'bg-cyan-50 text-cyan-700',
                                                 'user' => 'bg-emerald-50 text-emerald-700',
                                             ];
                                             $roleLabels = [
                                                 'super_admin' => 'Super Admin',
                                                 'admin_mekanik' => 'Admin Mekanik',
                                                 'admin_operation' => 'Admin Operator',
+                                                'admin_she' => 'Admin SHE',
                                                 'user' => 'Peserta',
                                             ];
                                         @endphp

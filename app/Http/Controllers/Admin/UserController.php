@@ -318,8 +318,8 @@ class UserController extends Controller
             : ['required', 'confirmed', Rules\Password::defaults()];
 
         $roles = $adminUser->isSuperAdmin()
-            ? ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,super_admin']
-            : ['nullable', 'string', 'in:user,admin_mekanik,admin_operation'];
+            ? ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she,super_admin']
+            : ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she'];
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],

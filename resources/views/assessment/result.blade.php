@@ -14,6 +14,12 @@
                 </div>
             @endif
 
+            @if ($assessment->isPendingReview())
+                <div class="mb-6 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    Assessment sedang menunggu review oleh admin untuk soal Essay/Upload. Nilai akhir akan ditampilkan setelah review selesai.
+                </div>
+            @endif
+
             @php
                 $package = $assessment->questionPackage;
                 $grade = $package ? $package->getGrade((float) $assessment->score) : null;

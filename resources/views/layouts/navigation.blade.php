@@ -59,6 +59,12 @@
                 {{ __('Paket Soal') }}
             </x-nav-link>
 
+            @if (Auth::user()->isAdminShe() || Auth::user()->isSuperAdmin())
+                <x-nav-link :href="route('admin.she-review.index')" :active="request()->routeIs('admin.she-review.*')">
+                    {{ __('Review SHE') }}
+                </x-nav-link>
+            @endif
+
             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">
                 {{ __('User') }}
             </x-nav-link>
@@ -84,12 +90,14 @@
                         'super_admin' => 'Super Admin',
                         'admin_mekanik' => 'Admin Mekanik',
                         'admin_operation' => 'Admin Operator',
+                        'admin_she' => 'Admin SHE',
                         'user' => 'Peserta',
                     ];
                     $roleColors = [
                         'super_admin' => 'text-red-600',
                         'admin_mekanik' => 'text-indigo-600',
                         'admin_operation' => 'text-purple-600',
+                        'admin_she' => 'text-cyan-600',
                         'user' => 'text-emerald-600',
                     ];
                 @endphp

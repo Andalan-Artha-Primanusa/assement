@@ -17,6 +17,7 @@ class User extends Authenticatable
     public const ROLE_USER = 'user';
     public const ROLE_ADMIN_MEKANIK = 'admin_mekanik';
     public const ROLE_ADMIN_OPERATION = 'admin_operation';
+    public const ROLE_ADMIN_SHE = 'admin_she';
     public const ROLE_SUPER_ADMIN = 'super_admin';
 
     /**
@@ -88,6 +89,7 @@ class User extends Authenticatable
             self::ROLE_SUPER_ADMIN,
             self::ROLE_ADMIN_MEKANIK,
             self::ROLE_ADMIN_OPERATION,
+            self::ROLE_ADMIN_SHE,
         ]);
     }
 
@@ -99,6 +101,11 @@ class User extends Authenticatable
     public function isAdminOperation(): bool
     {
         return $this->role === self::ROLE_ADMIN_OPERATION;
+    }
+
+    public function isAdminShe(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_SHE;
     }
 
     public function canManageType(string $type): bool
@@ -115,13 +122,17 @@ class User extends Authenticatable
             return true;
         }
 
+        if ($this->role === self::ROLE_ADMIN_SHE && $type === 'she') {
+            return true;
+        }
+
         return false;
     }
 
     public function visiblePackageTypes(): array
     {
         if ($this->isSuperAdmin()) {
-            return ['mekanik', 'operator'];
+            return ['mekanik', 'operator', 'she'];
         }
 
         if ($this->role === self::ROLE_ADMIN_MEKANIK) {
@@ -130,6 +141,10 @@ class User extends Authenticatable
 
         if ($this->role === self::ROLE_ADMIN_OPERATION) {
             return ['operator'];
+        }
+
+        if ($this->role === self::ROLE_ADMIN_SHE) {
+            return ['she'];
         }
 
         return [];

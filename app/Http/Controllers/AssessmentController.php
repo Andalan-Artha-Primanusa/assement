@@ -41,6 +41,8 @@ class AssessmentController extends Controller
                     'submitted' => $query->whereNotNull('submitted_at'),
                     'pending' => $query->whereNull('submitted_at')->whereNull('blocked_at'),
                     'blocked' => $query->whereNotNull('blocked_at')->whereNull('submitted_at'),
+                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW),
+                    'graded' => $query->where('status', Assessment::STATUS_GRADED),
                     default => null,
                 };
             })
@@ -224,18 +226,32 @@ class AssessmentController extends Controller
                 ->with('status', 'Assessment terkunci. Minta admin untuk membuka akses.');
         }
 
-        $validated = $request->validate([
+        $validationRules = [
             'answers' => ['array'],
-            'answers.*' => ['nullable', 'in:a,b,c,d'],
-        ]);
+        ];
+
+        $assessment->load('answers.question');
+        foreach ($assessment->answers as $answer) {
+            if ($answer->question->isEssay()) {
+                $validationRules['answers.'.$answer->id] = ['nullable', 'string', 'max:5000'];
+            } elseif ($answer->question->isUpload()) {
+                $validationRules['answers.'.$answer->id] = ['nullable', 'file', 'max:10240'];
+            } else {
+                $validationRules['answers.'.$answer->id] = ['nullable', 'in:a,b,c,d'];
+            }
+        }
+
+        $validated = $request->validate($validationRules);
 
         if ($assessment->isExpired()) {
+            $this->processUploadedFiles($request, $assessment, $validated['answers'] ?? []);
             app(AssessmentSecurity::class)->finishAssessment($assessment, $validated['answers'] ?? [], true);
 
             return redirect()->route('assessment.result', $assessment)
                 ->with('status', 'Waktu pengerjaan sudah habis. Assessment otomatis dikirim.');
         }
 
+        $this->processUploadedFiles($request, $assessment, $validated['answers'] ?? []);
         app(AssessmentSecurity::class)->finishAssessment($assessment, $validated['answers'] ?? []);
 
         $this->notifyAdmins($assessment);
@@ -262,7 +278,6 @@ class AssessmentController extends Controller
             $data = $request->validate([
                 'reason' => ['nullable', 'string', 'max:255'],
                 'answers' => ['array'],
-                'answers.*' => ['nullable', 'in:a,b,c,d'],
             ]);
 
             if (! $assessment->isBlocked()) {
@@ -322,11 +337,24 @@ class AssessmentController extends Controller
         return back()->with('status', 'Waktu assessment berhasil diperpanjang '.$data['extra_minutes'].' menit.');
     }
 
+    private function processUploadedFiles(Request $request, Assessment $assessment, array $answers): void
+    {
+        $assessment->load('answers.question');
+
+        foreach ($assessment->answers as $answer) {
+            if ($answer->question && $answer->question->isUpload() && $request->hasFile('answers.'.$answer->id)) {
+                $file = $request->file('answers.'.$answer->id);
+                $path = $file->store('assessment-uploads', 'public');
+                $answer->update(['file_path' => $path]);
+            }
+        }
+    }
+
     private function notifyAdmins(Assessment $assessment): void
     {
         try {
             $assessment->loadMissing('user');
-            $admins = User::whereIn('role', [User::ROLE_ADMIN_MEKANIK, User::ROLE_ADMIN_OPERATION])->get();
+            $admins = User::whereIn('role', [User::ROLE_ADMIN_MEKANIK, User::ROLE_ADMIN_OPERATION, User::ROLE_ADMIN_SHE])->get();
 
             foreach ($admins as $admin) {
                 Mail::send('emails.assessment-completed', [

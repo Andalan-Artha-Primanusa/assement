@@ -47,6 +47,7 @@ class QuestionController extends Controller
     public function create(): View
     {
         $question = new Question([
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
             'category' => 'Mechanic',
             'difficulty' => 'basic',
             'correct_option' => 'a',
@@ -124,19 +125,28 @@ class QuestionController extends Controller
     {
         $data = $request->validate([
             'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
+            'type' => ['required', 'in:multiple_choice,essay,upload'],
             'category' => ['required', 'string', 'max:100'],
             'difficulty' => ['required', 'in:basic,intermediate,advanced'],
             'text' => ['required', 'string'],
-            'option_a' => ['required', 'string'],
-            'option_b' => ['required', 'string'],
-            'option_c' => ['required', 'string'],
-            'option_d' => ['required', 'string'],
-            'correct_option' => ['required', 'in:a,b,c,d'],
+            'option_a' => ['nullable', 'string'],
+            'option_b' => ['nullable', 'string'],
+            'option_c' => ['nullable', 'string'],
+            'option_d' => ['nullable', 'string'],
+            'correct_option' => ['nullable', 'in:a,b,c,d'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
         $data['question_package_id'] = $data['question_package_id'] ?? null;
         $data['is_active'] = $request->boolean('is_active');
+
+        if ($data['type'] === Question::TYPE_MULTIPLE_CHOICE) {
+            $data['option_a'] = $data['option_a'] ?? '';
+            $data['option_b'] = $data['option_b'] ?? '';
+            $data['option_c'] = $data['option_c'] ?? '';
+            $data['option_d'] = $data['option_d'] ?? '';
+            $data['correct_option'] = $data['correct_option'] ?? 'a';
+        }
 
         return $data;
     }

@@ -102,24 +102,6 @@ class QuestionTestingSeeder extends Seeder
 
     private function categoryFor(string $type, int $number): string
     {
-        if ($type === 'auto_electrician') {
-            return match (true) {
-                $number <= 12 => 'Electrical Basic',
-                $number <= 25 => 'Battery',
-                $number <= 38 => 'Electrical Component',
-                $number <= 45 => 'Starting & Charging',
-                default => 'Electrical Code & Electronics',
-            };
-        }
-
-        if ($type === 'tyreman') {
-            return match (true) {
-                $number <= 10 => 'Tyre Basic',
-                $number <= 19 => 'Tyre Tools & Safety',
-                default => 'Tyre Damage',
-            };
-        }
-
         return match (true) {
             $number <= 3 => 'Safety',
             $number <= 15 => 'Maintenance & Tools',
@@ -133,14 +115,6 @@ class QuestionTestingSeeder extends Seeder
 
     private function difficultyFor(string $type, int $number): string
     {
-        if ($type === 'tyreman') {
-            return match (true) {
-                $number <= 10 => 'basic',
-                $number <= 20 => 'intermediate',
-                default => 'advanced',
-            };
-        }
-
         return match (true) {
             $number <= 15 => 'basic',
             $number <= 35 => 'intermediate',

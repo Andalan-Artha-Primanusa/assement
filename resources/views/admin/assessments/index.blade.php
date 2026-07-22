@@ -16,6 +16,8 @@
                 <select name="status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua status</option>
                     <option value="submitted" @selected(request('status') === 'submitted')>Selesai</option>
+                    <option value="pending_review" @selected(request('status') === 'pending_review')>Menunggu Review</option>
+                    <option value="graded" @selected(request('status') === 'graded')>Selesai Direview</option>
                     <option value="pending" @selected(request('status') === 'pending')>Sedang jalan</option>
                     <option value="blocked" @selected(request('status') === 'blocked')>Terblokir</option>
                 </select>
@@ -60,7 +62,11 @@
                                     <td class="px-4 sm:px-6 py-4 text-center text-gray-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-center font-semibold text-gray-900">{{ $assessment->score ? number_format($assessment->score, 2) : '-' }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-center whitespace-nowrap">
-                                        @if ($assessment->isSubmitted())
+                                        @if ($assessment->isGraded())
+                                            <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai Direview</span>
+                                        @elseif ($assessment->isPendingReview())
+                                            <span class="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">Menunggu Review</span>
+                                        @elseif ($assessment->isSubmitted())
                                             <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai</span>
                                         @elseif ($assessment->isBlocked())
                                             <span class="rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700">Terblokir</span>

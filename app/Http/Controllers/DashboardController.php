@@ -53,6 +53,7 @@ class DashboardController extends Controller
                         ->orWhereColumn('unlocked_at', '<', 'blocked_at');
                 })
                 ->count(),
+            'pending_review' => (clone $baseQuery)->where('status', Assessment::STATUS_PENDING_REVIEW)->count(),
             'average_score' => round($averageScore, 1),
         ];
 

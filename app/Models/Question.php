@@ -11,8 +11,13 @@ class Question extends Model
 {
     use HasFactory;
 
+    public const TYPE_MULTIPLE_CHOICE = 'multiple_choice';
+    public const TYPE_ESSAY = 'essay';
+    public const TYPE_UPLOAD = 'upload';
+
     protected $fillable = [
         'question_package_id',
+        'type',
         'category',
         'difficulty',
         'text',
@@ -39,6 +44,21 @@ class Question extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(AssessmentAnswer::class);
+    }
+
+    public function isMultipleChoice(): bool
+    {
+        return $this->type === self::TYPE_MULTIPLE_CHOICE;
+    }
+
+    public function isEssay(): bool
+    {
+        return $this->type === self::TYPE_ESSAY;
+    }
+
+    public function isUpload(): bool
+    {
+        return $this->type === self::TYPE_UPLOAD;
     }
 
     public function optionText(?string $option): string

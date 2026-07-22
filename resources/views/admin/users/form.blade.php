@@ -92,6 +92,7 @@
             <option value="user" @selected(old('role', $user->role) == 'user')>Peserta</option>
             <option value="admin_mekanik" @selected(old('role', $user->role) == 'admin_mekanik')>Admin Mekanik</option>
             <option value="admin_operation" @selected(old('role', $user->role) == 'admin_operation')>Admin Operator</option>
+            <option value="admin_she" @selected(old('role', $user->role) == 'admin_she')>Admin SHE</option>
             @if (Auth::user()->isSuperAdmin())
                 <option value="super_admin" @selected(old('role', $user->role) == 'super_admin')>Super Admin</option>
             @endif

@@ -46,28 +46,48 @@ class AssessmentSecurity
     public function finishAssessment(Assessment $assessment, array $submittedAnswers = [], bool $autoSubmitted = false): void
     {
         $assessment->load('answers.question');
+
+        $hasEssayOrUpload = $assessment->answers->contains(function ($answer) {
+            return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
+        });
+
         $correctAnswers = 0;
+        $mcCount = 0;
 
         foreach ($assessment->answers as $answer) {
-            $selected = $submittedAnswers[$answer->id] ?? $answer->selected_option;
-            $isCorrect = $selected !== null && $selected === $answer->question->correct_option;
+            if ($answer->question && $answer->question->isMultipleChoice()) {
+                $selected = $submittedAnswers[$answer->id] ?? $answer->selected_option;
+                $isCorrect = $selected !== null && $selected === $answer->question->correct_option;
 
-            $answer->update([
-                'selected_option' => $selected,
-                'is_correct' => $isCorrect,
-            ]);
+                $answer->update([
+                    'selected_option' => $selected,
+                    'is_correct' => $isCorrect,
+                ]);
 
-            if ($isCorrect) {
-                $correctAnswers++;
+                if ($isCorrect) {
+                    $correctAnswers++;
+                }
+                $mcCount++;
+            } else {
+                $answer->update([
+                    'answer_text' => $submittedAnswers[$answer->id] ?? $answer->answer_text,
+                ]);
             }
         }
 
         $totalQuestions = $assessment->answers->count();
 
+        $status = $hasEssayOrUpload && ! $autoSubmitted
+            ? Assessment::STATUS_PENDING_REVIEW
+            : Assessment::STATUS_IN_PROGRESS;
+
+        $score = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
+
         $assessment->update([
             'total_questions' => $totalQuestions,
             'correct_answers' => $correctAnswers,
-            'score' => $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0,
+            'score' => $score,
+            'status' => $status,
             'submitted_at' => now(),
             'auto_submitted_at' => $autoSubmitted ? now() : null,
         ]);
@@ -86,9 +106,15 @@ class AssessmentSecurity
 
         foreach ($assessment->answers as $answer) {
             if (array_key_exists($answer->id, $submittedAnswers)) {
-                $answer->update([
-                    'selected_option' => $submittedAnswers[$answer->id],
-                ]);
+                if ($answer->question && $answer->question->isMultipleChoice()) {
+                    $answer->update([
+                        'selected_option' => $submittedAnswers[$answer->id],
+                    ]);
+                } else {
+                    $answer->update([
+                        'answer_text' => $submittedAnswers[$answer->id],
+                    ]);
+                }
             }
         }
     }
