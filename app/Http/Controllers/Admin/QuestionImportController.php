@@ -8,7 +8,6 @@ use App\Models\Question;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\StreamedResponse;
 use Illuminate\View\View;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
@@ -23,7 +22,7 @@ class QuestionImportController extends Controller
         return view('admin.questions.import', compact('packages'));
     }
 
-    public function template(): StreamedResponse
+    public function template()
     {
         $filename = 'template-soal.xlsx';
         $tempPath = storage_path('app/temp_'.$filename);
