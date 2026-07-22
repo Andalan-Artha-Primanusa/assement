@@ -47,7 +47,7 @@ class QuestionPackageController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'level' => ['nullable', 'string', 'in:M1,M2,M3'],
+            'level' => ['nullable', 'string', 'in:M1,M2,M3,Basic,Advanced'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -55,7 +55,7 @@ class QuestionPackageController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
-        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?? null);
+        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
         $data['created_by'] = $adminUser->id;
 
         $package = QuestionPackage::create($data);
@@ -95,7 +95,7 @@ class QuestionPackageController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'level' => ['nullable', 'string', 'in:M1,M2,M3'],
+            'level' => ['nullable', 'string', 'in:M1,M2,M3,Basic,Advanced'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -103,7 +103,7 @@ class QuestionPackageController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
-        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?? null);
+        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
 
         $package->update($data);
 
