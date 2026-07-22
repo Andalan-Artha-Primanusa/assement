@@ -16,18 +16,25 @@
             <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                 <option value="mekanik" @selected(old('type', $package->type) == 'mekanik')>Mekanik</option>
                 <option value="operator" @selected(old('type', $package->type) == 'operator')>Operator</option>
+                <option value="she" @selected(old('type', $package->type) == 'she')>SHE</option>
             </select>
             <x-input-error :messages="$errors->get('type')" class="mt-2" />
         </div>
         <div>
-            <x-input-label for="level" value="Level (Mekanik)" />
+            <x-input-label for="level" value="Level" />
             <select id="level" name="level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="" @selected(old('level', $package->level) == '')>-</option>
-                <option value="M1" @selected(old('level', $package->level) == 'M1')>M1 - Dasar</option>
-                <option value="M2" @selected(old('level', $package->level) == 'M2')>M2 - Menengah</option>
-                <option value="M3" @selected(old('level', $package->level) == 'M3')>M3 - Lanjutan</option>
+                <optgroup label="Mekanik">
+                    <option value="M1" @selected(old('level', $package->level) == 'M1')>M1 - Dasar</option>
+                    <option value="M2" @selected(old('level', $package->level) == 'M2')>M2 - Menengah</option>
+                    <option value="M3" @selected(old('level', $package->level) == 'M3')>M3 - Lanjutan</option>
+                </optgroup>
+                <optgroup label="SHE">
+                    <option value="Basic" @selected(old('level', $package->level) == 'Basic')>Basic</option>
+                    <option value="Advanced" @selected(old('level', $package->level) == 'Advanced')>Advanced</option>
+                </optgroup>
             </select>
-            <p class="mt-1 text-xs text-gray-500">Khusus tipe Mekanik. Operator tidak perlu level.</p>
+            <p class="mt-1 text-xs text-gray-500">Pilih level sesuai tipe paket.</p>
             <x-input-error :messages="$errors->get('level')" class="mt-2" />
         </div>
     </div>
@@ -66,6 +73,8 @@
             <li><strong>Mekanik M2:</strong> Pertimbangkan >= 55, Lolos >= 60</li>
             <li><strong>Mekanik M3:</strong> Pertimbangkan >= 50, Lolos >= 55</li>
             <li><strong>Operator:</strong> Pertimbangkan >= 65, Lolos >= 70</li>
+            <li><strong>SHE Basic:</strong> Pertimbangkan >= 60, Lolos >= 65</li>
+            <li><strong>SHE Advanced:</strong> Pertimbangkan >= 65, Lolos >= 70</li>
         </ul>
     </div>
 

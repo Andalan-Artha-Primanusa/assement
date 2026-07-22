@@ -28,7 +28,11 @@ class QuestionPackageController extends Controller
     public function create(): View
     {
         $adminUser = request()->user();
-        $defaultType = $adminUser->isAdminMekanik() ? 'mekanik' : 'operator';
+        $defaultType = match (true) {
+            $adminUser->isAdminMekanik() => 'mekanik',
+            $adminUser->isAdminShe() => 'she',
+            default => 'operator',
+        };
 
         $package = new QuestionPackage(['is_active' => true, 'type' => $defaultType]);
 
