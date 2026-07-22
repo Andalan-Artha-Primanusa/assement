@@ -30,8 +30,9 @@
                     <option value="M3" @selected(old('level', $package->level) == 'M3')>M3 - Lanjutan</option>
                 </optgroup>
                 <optgroup label="SHE">
-                    <option value="Basic" @selected(old('level', $package->level) == 'Basic')>Basic</option>
-                    <option value="Advanced" @selected(old('level', $package->level) == 'Advanced')>Advanced</option>
+                    <option value="Departement Head" @selected(old('level', $package->level) == 'Departement Head')>Departement Head</option>
+                    <option value="Section Head" @selected(old('level', $package->level) == 'Section Head')>Section Head</option>
+                    <option value="Lead Of" @selected(old('level', $package->level) == 'Lead Of')>Lead Of</option>
                 </optgroup>
             </select>
             <p class="mt-1 text-xs text-gray-500">Pilih level sesuai tipe paket.</p>
@@ -73,8 +74,9 @@
             <li><strong>Mekanik M2:</strong> Pertimbangkan >= 55, Lolos >= 60</li>
             <li><strong>Mekanik M3:</strong> Pertimbangkan >= 50, Lolos >= 55</li>
             <li><strong>Operator:</strong> Pertimbangkan >= 65, Lolos >= 70</li>
-            <li><strong>SHE Basic:</strong> Pertimbangkan >= 60, Lolos >= 65</li>
-            <li><strong>SHE Advanced:</strong> Pertimbangkan >= 65, Lolos >= 70</li>
+            <li><strong>SHE Dept Head:</strong> Pertimbangkan >= 65, Lolos >= 70</li>
+            <li><strong>SHE Section Head:</strong> Pertimbangkan >= 60, Lolos >= 65</li>
+            <li><strong>SHE Lead Of:</strong> Pertimbangkan >= 55, Lolos >= 60</li>
         </ul>
     </div>
 

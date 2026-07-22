@@ -8,25 +8,32 @@ use Illuminate\Database\Seeder;
 
 class ShePackageSeeder extends Seeder
 {
-    public const SHE_BASIC = 'Screening SHE Basic';
-    public const SHE_ADVANCED = 'Screening SHE Advanced';
+    public const SHE_DEPARTEMENT_HEAD = 'Screening SHE Departement Head';
+    public const SHE_SECTION_HEAD = 'Screening SHE Section Head';
+    public const SHE_LEAD_OF = 'Screening SHE Lead Of';
 
     public function run(): void
     {
         $adminShe = User::where('email', 'admin.she@andalan.co.id')->first();
 
         $packages = [
-            self::SHE_BASIC => [
-                'description' => 'Paket screening SHE level Basic (Safety, Health, Environment).',
-                'level' => 'Basic',
+            self::SHE_DEPARTEMENT_HEAD => [
+                'description' => 'Paket screening SHE untuk Departement Head.',
+                'level' => 'Departement Head',
+                'min_score_pertimbangan' => 65,
+                'min_score_lolos' => 70,
+            ],
+            self::SHE_SECTION_HEAD => [
+                'description' => 'Paket screening SHE untuk Section Head.',
+                'level' => 'Section Head',
                 'min_score_pertimbangan' => 60,
                 'min_score_lolos' => 65,
             ],
-            self::SHE_ADVANCED => [
-                'description' => 'Paket screening SHE level Advanced (Safety, Health, Environment).',
-                'level' => 'Advanced',
-                'min_score_pertimbangan' => 65,
-                'min_score_lolos' => 70,
+            self::SHE_LEAD_OF => [
+                'description' => 'Paket screening SHE untuk Lead Of.',
+                'level' => 'Lead Of',
+                'min_score_pertimbangan' => 55,
+                'min_score_lolos' => 60,
             ],
         ];
 
