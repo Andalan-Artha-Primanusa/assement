@@ -3,9 +3,19 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-900">
-                    {{ __('Dashboard Admin') }}
+                    @if ($selectedType ?? null)
+                        Dashboard {{ match($selectedType) { 'mekanik' => 'Mekanik', 'operator' => 'Operator', 'she' => 'SHE', default => 'Admin' } }}
+                    @else
+                        {{ __('Dashboard Admin') }}
+                    @endif
                 </h2>
-                <p class="mt-1 text-sm text-gray-500">Ringkasan screening, performa peserta, dan keamanan assessment.</p>
+                <p class="mt-1 text-sm text-gray-500">
+                    @if ($selectedType ?? null)
+                        Ringkasan screening {{ match($selectedType) { 'mekanik' => 'mekanik', 'operator' => 'operator', 'she' => 'SHE', default => '' } }} saja.
+                    @else
+                        Ringkasan screening, performa peserta, dan keamanan assessment.
+                    @endif
+                </p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('admin.packages.create') }}" class="inline-flex min-h-[44px] items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Tambah Paket</a>

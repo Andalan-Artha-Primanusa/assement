@@ -56,10 +56,93 @@
 
     {{-- Navigation Links --}}
     <div class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-            {{ __('Dashboard') }}
-        </x-nav-link>
-        @if (Auth::user()->isAdmin())
+        @if (Auth::user()->isSuperAdmin())
+            {{-- SUPER ADMIN: Expandable sub-menus --}}
+            @php
+                $currentType = request('type');
+            @endphp
+
+            {{-- Dashboard --}}
+            <div x-data="{ open: {{ in_array(request()->routeIs('dashboard') && !$request()->routeIs('admin.*'), [true]) || request()->query('type') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent rounded-lg transition duration-150 ease-in-out">
+                    <span class="flex-1 text-left">Dashboard</span>
+                    <svg class="h-4 w-4 text-gray-400 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div x-show="open" x-collapse>
+                    <a href="{{ route('dashboard') }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ !request('type') && request()->routeIs('dashboard') && !$request()->routeIs('admin.*') ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Dashboard (Semua)</a>
+                    <a href="{{ route('dashboard', ['type' => 'mekanik']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request('type') === 'mekanik' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Dashboard Mekanik</a>
+                    <a href="{{ route('dashboard', ['type' => 'operator']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request('type') === 'operator' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Dashboard Operator</a>
+                    <a href="{{ route('dashboard', ['type' => 'she']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request('type') === 'she' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Dashboard SHE</a>
+                </div>
+            </div>
+
+            {{-- Assessment --}}
+            <div x-data="{ open: {{ request()->routeIs('admin.assessments.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent rounded-lg transition duration-150 ease-in-out">
+                    <span class="flex-1 text-left">Assessment</span>
+                    <svg class="h-4 w-4 text-gray-400 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div x-show="open" x-collapse>
+                    <a href="{{ route('admin.assessments.index') }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.assessments.*') && !request('type') ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Assessment (Semua)</a>
+                    <a href="{{ route('admin.assessments.index', ['type' => 'mekanik']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.assessments.*') && request('type') === 'mekanik' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Assessment Mekanik</a>
+                    <a href="{{ route('admin.assessments.index', ['type' => 'operator']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.assessments.*') && request('type') === 'operator' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Assessment Operator</a>
+                    <a href="{{ route('admin.assessments.index', ['type' => 'she']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.assessments.*') && request('type') === 'she' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Assessment SHE</a>
+                </div>
+            </div>
+
+            {{-- Paket Soal --}}
+            <div x-data="{ open: {{ request()->routeIs('admin.packages.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent rounded-lg transition duration-150 ease-in-out">
+                    <span class="flex-1 text-left">Paket Soal</span>
+                    <svg class="h-4 w-4 text-gray-400 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div x-show="open" x-collapse>
+                    <a href="{{ route('admin.packages.index') }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.packages.*') && !request('type') ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Paket Soal (Semua)</a>
+                    <a href="{{ route('admin.packages.index', ['type' => 'mekanik']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.packages.*') && request('type') === 'mekanik' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Paket Soal Mekanik</a>
+                    <a href="{{ route('admin.packages.index', ['type' => 'operator']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.packages.*') && request('type') === 'operator' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Paket Soal Operator</a>
+                    <a href="{{ route('admin.packages.index', ['type' => 'she']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.packages.*') && request('type') === 'she' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Paket Soal SHE</a>
+                </div>
+            </div>
+
+            {{-- Review --}}
+            <div x-data="{ open: {{ request()->routeIs('admin.she-review.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent rounded-lg transition duration-150 ease-in-out">
+                    <span class="flex-1 text-left">Review</span>
+                    <svg class="h-4 w-4 text-gray-400 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div x-show="open" x-collapse>
+                    <a href="{{ route('admin.she-review.index', ['type' => 'she']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.she-review.*') && request('type') === 'she' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Review SHE</a>
+                    <a href="{{ route('admin.she-review.index', ['type' => 'mekanik']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.she-review.*') && request('type') === 'mekanik' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Review Mekanik</a>
+                    <a href="{{ route('admin.she-review.index', ['type' => 'operator']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.she-review.*') && request('type') === 'operator' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Review Operator</a>
+                </div>
+            </div>
+
+            {{-- User --}}
+            <div x-data="{ open: {{ request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent rounded-lg transition duration-150 ease-in-out">
+                    <span class="flex-1 text-left">User</span>
+                    <svg class="h-4 w-4 text-gray-400 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+                <div x-show="open" x-collapse>
+                    <a href="{{ route('admin.users.index') }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite') && !request('type') ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">User (Semua)</a>
+                    <a href="{{ route('admin.users.index', ['type' => 'mekanik']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.users.*') && request('type') === 'mekanik' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Peserta Mekanik</a>
+                    <a href="{{ route('admin.users.index', ['type' => 'operator']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.users.*') && request('type') === 'operator' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Peserta Operator</a>
+                    <a href="{{ route('admin.users.index', ['type' => 'she']) }}" class="flex items-center w-full pl-8 pr-4 py-2 text-sm rounded-lg transition duration-150 ease-in-out {{ request()->routeIs('admin.users.*') && request('type') === 'she' ? 'font-medium text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent' }}">Peserta SHE</a>
+                </div>
+            </div>
+
+            {{-- Invite --}}
+            <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
+                {{ __('Invite Peserta') }}
+            </x-nav-link>
+
+            {{-- Log Aktivitas --}}
+            <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
+                {{ __('Log Aktivitas') }}
+            </x-nav-link>
+
+        @elseif (Auth::user()->isAdmin())
+            {{-- ADMIN ROLES: Flat links with role-specific labels --}}
             @php
                 $menuLabels = match(true) {
                     Auth::user()->isAdminShe() => [
@@ -95,7 +178,7 @@
                 {{ __($menuLabels['packages']) }}
             </x-nav-link>
 
-            @if (Auth::user()->isAdminShe() || Auth::user()->isSuperAdmin())
+            @if (Auth::user()->isAdminShe())
                 <x-nav-link :href="route('admin.she-review.index')" :active="request()->routeIs('admin.she-review.*')">
                     {{ __('Review SHE') }}
                 </x-nav-link>
@@ -107,11 +190,6 @@
             <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
                 {{ __($menuLabels['invite']) }}
             </x-nav-link>
-            @if (Auth::user()->isSuperAdmin())
-                <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
-                    {{ __('Log Aktivitas') }}
-                </x-nav-link>
-            @endif
         @endif
     </div>
 

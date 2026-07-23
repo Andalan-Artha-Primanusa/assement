@@ -16,13 +16,18 @@ class QuestionPackageController extends Controller
         $adminUser = $request->user();
         $visibleTypes = $adminUser->visiblePackageTypes();
 
+        $selectedType = $request->string('type')->toString();
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+            $visibleTypes = [$selectedType];
+        }
+
         $packages = QuestionPackage::withCount(['questions', 'users'])
             ->with('creator')
             ->whereIn('type', $visibleTypes)
             ->latest()
             ->paginate(12);
 
-        return view('admin.packages.index', compact('packages'));
+        return view('admin.packages.index', compact('packages', 'selectedType'));
     }
 
     public function create(): View

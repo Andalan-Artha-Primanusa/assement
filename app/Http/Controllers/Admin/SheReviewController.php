@@ -16,14 +16,22 @@ class SheReviewController extends Controller
     public function index(Request $request): View
     {
         $adminUser = $request->user();
-        $visibleTypes = $adminUser->visiblePackageTypes();
+        $selectedType = $request->string('type')->toString();
+
+        if (! in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+            $selectedType = 'she';
+        }
 
         $assessments = Assessment::with('user', 'questionPackage')
-            ->where('status', Assessment::STATUS_PENDING_REVIEW)
-            ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
-                $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
-                    $q->whereIn('type', $visibleTypes);
-                });
+            ->when($selectedType === 'she', function ($query): void {
+                $query->where('status', Assessment::STATUS_PENDING_REVIEW);
+            })
+            ->when($selectedType !== 'she', function ($query): void {
+                $query->whereNotNull('submitted_at')
+                    ->where('status', Assessment::STATUS_GRADED);
+            })
+            ->whereHas('questionPackage', function ($q) use ($selectedType): void {
+                $q->where('type', $selectedType);
             })
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
@@ -36,7 +44,7 @@ class SheReviewController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.she-review.index', compact('assessments'));
+        return view('admin.she-review.index', compact('assessments', 'selectedType'));
     }
 
     public function show(Assessment $assessment): View
@@ -52,7 +60,9 @@ class SheReviewController extends Controller
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
         });
 
-        return view('admin.she-review.show', compact('assessment', 'answers'));
+        $selectedType = $assessment->questionPackage?->type ?? 'she';
+
+        return view('admin.she-review.show', compact('assessment', 'answers', 'selectedType'));
     }
 
     public function grade(Request $request, Assessment $assessment): RedirectResponse
@@ -119,7 +129,9 @@ class SheReviewController extends Controller
 
         ActivityLog::log('she_review', 'Review SHE assessment #'.$assessment->id, Assessment::class, $assessment->id);
 
-        return redirect()->route('admin.she-review.index')
-            ->with('status', 'Nilai SHE assessment berhasil disimpan.');
+        $selectedType = $assessment->questionPackage?->type ?? 'she';
+
+        return redirect()->route('admin.she-review.index', ['type' => $selectedType])
+            ->with('status', 'Nilai assessment berhasil disimpan.');
     }
 }

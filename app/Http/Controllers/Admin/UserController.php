@@ -24,6 +24,11 @@ class UserController extends Controller
         $adminUser = $request->user();
         $visibleTypes = $adminUser->visiblePackageTypes();
 
+        $selectedType = $request->string('type')->toString();
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+            $visibleTypes = [$selectedType];
+        }
+
         $users = User::query()
             ->with('questionPackage')
             ->withCount('assessments')
@@ -32,6 +37,14 @@ class UserController extends Controller
                     $q->where('role', 'user')
                         ->whereIn('question_package_id', function ($subQuery) use ($visibleTypes): void {
                             $subQuery->select('id')->from('question_packages')->whereIn('type', $visibleTypes);
+                        });
+                });
+            })
+            ->when($adminUser->isSuperAdmin() && $selectedType, function ($query) use ($selectedType): void {
+                $query->where(function ($q) use ($selectedType): void {
+                    $q->where('role', 'user')
+                        ->whereIn('question_package_id', function ($subQuery) use ($selectedType): void {
+                            $subQuery->select('id')->from('question_packages')->where('type', $selectedType);
                         });
                 });
             })
@@ -57,7 +70,7 @@ class UserController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.users.index', compact('users', 'packages'));
+        return view('admin.users.index', compact('users', 'packages', 'selectedType'));
     }
 
     public function inviteBulk(Request $request): RedirectResponse
