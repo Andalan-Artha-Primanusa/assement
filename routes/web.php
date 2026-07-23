@@ -49,7 +49,6 @@ Route::middleware(['auth', 'admin'])
         Route::get('assessments/{assessment}/questions', [AssessmentController::class, 'adminQuestions'])->name('assessments.questions');
         Route::get('assessments/{assessment}/pdf', [AssessmentExportController::class, 'pdf'])->name('assessments.pdf');
         Route::post('assessments/{assessment}/unblock', [AssessmentController::class, 'unblock'])->name('assessments.unblock');
-        Route::post('assessments/{assessment}/extend', [AssessmentController::class, 'extend'])->name('assessments.extend');
         Route::post('assessments/{assessment}/set-duration', [AssessmentController::class, 'setDuration'])->name('assessments.set-duration');
         Route::resource('packages', QuestionPackageController::class)->except('show');
         Route::get('packages/{package}/questions', [QuestionPackageController::class, 'questions'])->name('packages.questions');

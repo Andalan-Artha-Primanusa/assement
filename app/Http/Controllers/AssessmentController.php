@@ -506,28 +506,6 @@ class AssessmentController extends Controller
         return back()->with('status', 'Akses assessment berhasil dibuka kembali.');
     }
 
-    public function extend(Request $request, Assessment $assessment): RedirectResponse
-    {
-        abort_unless($request->user()->isAdmin(), 403);
-
-        $data = $request->validate([
-            'extra_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
-        ]);
-
-        $newEndsAt = $assessment->ends_at
-            ? $assessment->ends_at->addMinutes((int) $data['extra_minutes'])
-            : now()->addMinutes((int) $data['extra_minutes']);
-
-        $assessment->update([
-            'ends_at' => $newEndsAt,
-            'duration_minutes' => ($assessment->duration_minutes ?? 0) + (int) $data['extra_minutes'],
-        ]);
-
-        ActivityLog::log('assessment_extend', 'Memperpanjang assessment #'.$assessment->id.' +'.$data['extra_minutes'].' menit', Assessment::class, $assessment->id);
-
-        return back()->with('status', 'Waktu assessment berhasil diperpanjang '.$data['extra_minutes'].' menit.');
-    }
-
     public function adminQuestions(Request $request, Assessment $assessment): View
     {
         abort_unless($request->user()->isAdmin(), 403);
