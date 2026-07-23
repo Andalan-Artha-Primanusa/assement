@@ -57,6 +57,12 @@
                                 <span class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
                                     Durasi: {{ round(Auth::user()->assessmentDurationMinutes() / 60, 2) }} jam
                                 </span>
+                                @if ($assignedPackage?->has_segments && ! empty(Auth::user()->segment_config))
+                                    <span class="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+                                        Bersegment: {{ count(Auth::user()->segment_config) }} segmen
+                                        ({{ implode(', ', array_map(fn ($s) => ($s['type'] === 'multiple_choice' ? 'PG' : ucfirst($s['type'])).': '.$s['duration'].'m', Auth::user()->segment_config)) }})
+                                    </span>
+                                @endif
                             </div>
                         </div>
 

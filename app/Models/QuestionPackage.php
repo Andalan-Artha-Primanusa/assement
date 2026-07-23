@@ -15,6 +15,7 @@ class QuestionPackage extends Model
         'description',
         'is_active',
         'is_certificate',
+        'has_segments',
         'created_by',
         'min_score_pertimbangan',
         'min_score_lolos',
@@ -25,6 +26,7 @@ class QuestionPackage extends Model
         return [
             'is_active' => 'boolean',
             'is_certificate' => 'boolean',
+            'has_segments' => 'boolean',
             'min_score_pertimbangan' => 'decimal:2',
             'min_score_lolos' => 'decimal:2',
         ];

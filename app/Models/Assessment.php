@@ -61,6 +61,11 @@ class Assessment extends Model
         return $this->hasMany(AssessmentAnswer::class)->orderBy('position');
     }
 
+    public function segments(): HasMany
+    {
+        return $this->hasMany(AssessmentSegment::class)->orderBy('order_index');
+    }
+
     public function isSubmitted(): bool
     {
         return $this->submitted_at !== null;

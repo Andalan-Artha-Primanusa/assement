@@ -56,12 +56,14 @@ class QuestionPackageController extends Controller
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_certificate' => ['nullable', 'boolean'],
+            'has_segments' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'min_score_lolos' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
+        $data['has_segments'] = $request->boolean('has_segments');
         $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
         $data['created_by'] = $adminUser->id;
 
@@ -106,12 +108,14 @@ class QuestionPackageController extends Controller
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_certificate' => ['nullable', 'boolean'],
+            'has_segments' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'min_score_lolos' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
+        $data['has_segments'] = $request->boolean('has_segments');
         $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
 
         $package->update($data);

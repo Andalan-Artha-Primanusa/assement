@@ -66,6 +66,26 @@
                 </div>
             @endif
 
+            @if ($assessment->segments()->count() > 0)
+                <div class="mt-6 bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm font-semibold text-gray-700 mb-3">Progress Segment</p>
+                    <div class="flex gap-3">
+                        @foreach ($assessment->segments as $seg)
+                            <div class="flex-1 rounded-lg border p-3 text-center
+                                {{ $seg->isCompleted() ? 'border-emerald-200 bg-emerald-50' : ($seg->isInProgress() ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50') }}">
+                                <p class="text-xs font-semibold {{ $seg->isCompleted() ? 'text-emerald-600' : ($seg->isInProgress() ? 'text-indigo-600' : 'text-gray-400') }}">
+                                    {{ $seg->type === 'multiple_choice' ? 'PG' : ucfirst($seg->type) }}
+                                </p>
+                                <p class="mt-1 text-xs text-gray-500">{{ $seg->duration_minutes }} menit</p>
+                                @if ($seg->completed_at)
+                                    <p class="mt-0.5 text-xs text-gray-400">{{ $seg->completed_at->format('H:i') }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             @if ($showCertificate)
                 <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-center">

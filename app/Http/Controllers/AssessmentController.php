@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assessment;
 use App\Models\ActivityLog;
 use App\Models\AssessmentAnswer;
+use App\Models\AssessmentSegment;
 use App\Models\Question;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
@@ -166,8 +167,15 @@ class AssessmentController extends Controller
             return back()->with('status', $message);
         }
 
+        $user = $request->user();
+        $hasSegments = $package && $package->has_segments && ! empty($user->segment_config);
+
+        if ($hasSegments) {
+            return $this->startSegmentedAssessment($request, $package, $questionQuery, $activeQuestionCount);
+        }
+
         $limit = $activeQuestionCount;
-        $durationMinutes = $request->user()->assessmentDurationMinutes();
+        $durationMinutes = $user->assessmentDurationMinutes();
 
         $assessment = DB::transaction(function () use ($request, $limit, $durationMinutes, $package, $questionQuery) {
             $assessment = Assessment::create([
@@ -199,6 +207,53 @@ class AssessmentController extends Controller
         return redirect()->route('assessment.show', $assessment);
     }
 
+    private function startSegmentedAssessment(Request $request, $package, $questionQuery, int $activeQuestionCount): RedirectResponse
+    {
+        $user = $request->user();
+        $segmentConfig = $user->segment_config;
+        $totalDuration = collect($segmentConfig)->sum('duration');
+
+        $assessment = DB::transaction(function () use ($request, $package, $questionQuery, $activeQuestionCount, $segmentConfig, $totalDuration) {
+            $assessment = Assessment::create([
+                'user_id' => $request->user()->id,
+                'question_package_id' => $package->id,
+                'total_questions' => $activeQuestionCount,
+                'started_at' => now(),
+                'duration_minutes' => $totalDuration,
+                'ends_at' => now()->addMinutes($totalDuration),
+            ]);
+
+            (clone $questionQuery)
+                ->inRandomOrder()
+                ->limit($activeQuestionCount)
+                ->get()
+                ->each(function (Question $question, int $index) use ($assessment): void {
+                    AssessmentAnswer::create([
+                        'assessment_id' => $assessment->id,
+                        'question_id' => $question->id,
+                        'position' => $index + 1,
+                    ]);
+                });
+
+            foreach ($segmentConfig as $index => $seg) {
+                AssessmentSegment::create([
+                    'assessment_id' => $assessment->id,
+                    'type' => $seg['type'],
+                    'duration_minutes' => (int) $seg['duration'],
+                    'order_index' => $index,
+                    'status' => $index === 0 ? AssessmentSegment::STATUS_IN_PROGRESS : AssessmentSegment::STATUS_PENDING,
+                    'started_at' => $index === 0 ? now() : null,
+                ]);
+            }
+
+            return $assessment;
+        });
+
+        ActivityLog::log('assessment_start', 'Memulai assessment bersegment', Assessment::class, $assessment->id);
+
+        return redirect()->route('assessment.show', $assessment);
+    }
+
     public function show(Request $request, Assessment $assessment): View|RedirectResponse
     {
         $this->authorizeAssessment($request, $assessment);
@@ -218,11 +273,72 @@ class AssessmentController extends Controller
             return view('assessment.blocked', compact('assessment'));
         }
 
-        $assessment->load('answers.question');
+        $assessment->load('answers.question', 'segments');
+
+        $hasSegments = $assessment->segments()->count() > 0;
+        $currentSegment = null;
+        $segmentAnswers = null;
+
+        if ($hasSegments) {
+            $currentSegment = $assessment->segments()
+                ->where('status', AssessmentSegment::STATUS_IN_PROGRESS)
+                ->first();
+
+            if (! $currentSegment) {
+                $lastCompleted = $assessment->segments()->orderByDesc('order_index')->first();
+                if ($lastCompleted && $lastCompleted->isCompleted()) {
+                    return redirect()->route('assessment.result', $assessment);
+                }
+                return redirect()->route('assessment.show', $assessment);
+            }
+
+            if ($currentSegment->remainingSeconds() <= 0) {
+                return $this->completeSegment($request, $assessment, $currentSegment);
+            }
+
+            $segmentAnswers = $assessment->answers->filter(
+                fn ($a) => $a->question->type === $currentSegment->type
+            );
+
+            return view('assessment.show-segmented', compact('assessment', 'hasSegments', 'currentSegment', 'segmentAnswers'));
+        }
 
         $hasUploadQuestions = $assessment->answers->contains(fn ($answer) => $answer->question->isUpload());
 
         return view('assessment.show', compact('assessment', 'hasUploadQuestions'));
+    }
+
+    private function completeSegment(Request $request, Assessment $assessment, AssessmentSegment $segment): RedirectResponse
+    {
+        $segment->update([
+            'status' => AssessmentSegment::STATUS_COMPLETED,
+            'completed_at' => now(),
+        ]);
+
+        $nextSegment = $assessment->segments()
+            ->where('status', AssessmentSegment::STATUS_PENDING)
+            ->orderBy('order_index')
+            ->first();
+
+        if ($nextSegment) {
+            $nextSegment->update([
+                'status' => AssessmentSegment::STATUS_IN_PROGRESS,
+                'started_at' => now(),
+            ]);
+
+            ActivityLog::log('assessment_segment_next', 'Lanjut ke segment '.$nextSegment->type, Assessment::class, $assessment->id);
+
+            return redirect()->route('assessment.show', $assessment);
+        }
+
+        app(AssessmentSecurity::class)->finishAssessment($assessment, [], true);
+
+        $this->notifyAdmins($assessment);
+
+        ActivityLog::log('assessment_submit', 'Semua segment selesai, assessment otomatis dikirim', Assessment::class, $assessment->id);
+
+        return redirect()->route('assessment.result', $assessment)
+            ->with('status', 'Semua segment selesai. Assessment otomatis dikirim.');
     }
 
     public function submit(Request $request, Assessment $assessment): RedirectResponse
@@ -236,6 +352,20 @@ class AssessmentController extends Controller
         if ($assessment->isBlocked()) {
             return redirect()->route('assessment.show', $assessment)
                 ->with('status', 'Assessment terkunci. Minta admin untuk membuka akses.');
+        }
+
+        $hasSegments = $assessment->segments()->count() > 0;
+
+        if ($hasSegments) {
+            $currentSegment = $assessment->segments()
+                ->where('status', AssessmentSegment::STATUS_IN_PROGRESS)
+                ->first();
+
+            if ($currentSegment) {
+                $this->saveSegmentAnswers($request, $assessment, $currentSegment);
+
+                return $this->completeSegment($request, $assessment, $currentSegment);
+            }
         }
 
         $validationRules = [
@@ -273,11 +403,39 @@ class AssessmentController extends Controller
         return redirect()->route('assessment.result', $assessment);
     }
 
+    private function saveSegmentAnswers(Request $request, Assessment $assessment, AssessmentSegment $segment): void
+    {
+        $segmentAnswers = $assessment->answers->filter(
+            fn ($a) => $a->question->type === $segment->type
+        );
+
+        foreach ($segmentAnswers as $answer) {
+            if ($answer->question->isEssay()) {
+                $text = $request->input('answers.'.$answer->id);
+                if ($text !== null) {
+                    $answer->update(['answer_text' => $text]);
+                }
+            } elseif ($answer->question->isUpload()) {
+                if ($request->hasFile('answers.'.$answer->id)) {
+                    $this->processUploadedFiles($request, $assessment, [$answer->id => $request->file('answers.'.$answer->id)]);
+                }
+            } else {
+                $value = $request->input('answers.'.$answer->id);
+                if ($value !== null && in_array($value, ['a', 'b', 'c', 'd'])) {
+                    $answer->update([
+                        'selected_option' => $value,
+                        'is_correct' => $value === $answer->question->correct_option,
+                    ]);
+                }
+            }
+        }
+    }
+
     public function result(Request $request, Assessment $assessment): View
     {
         $this->authorizeAssessment($request, $assessment);
 
-        $assessment->load('user', 'questionPackage');
+        $assessment->load('user', 'questionPackage', 'segments');
 
         return view('assessment.result', compact('assessment'));
     }
@@ -372,7 +530,7 @@ class AssessmentController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403);
 
-        $assessment->load(['answers.question', 'user', 'questionPackage']);
+        $assessment->load(['answers.question', 'user', 'questionPackage', 'segments']);
 
         return view('admin.assessments.questions', compact('assessment'));
     }

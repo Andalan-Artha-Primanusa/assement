@@ -83,6 +83,10 @@
                 <input type="checkbox" name="is_certificate" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_certificate', $package->is_certificate))>
                 <span class="text-sm text-gray-700">Sertifikat</span>
             </label>
+            <label class="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2">
+                <input type="checkbox" name="has_segments" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('has_segments', $package->has_segments))>
+                <span class="text-sm text-gray-700">Pakai Segment</span>
+            </label>
         </div>
     </div>
 

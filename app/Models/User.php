@@ -34,6 +34,7 @@ class User extends Authenticatable
         'assessment_duration_minutes',
         'max_attempts',
         'question_package_id',
+        'segment_config',
     ];
 
     /**
@@ -60,6 +61,7 @@ class User extends Authenticatable
             'assessment_duration_minutes' => 'integer',
             'max_attempts' => 'integer',
             'question_package_id' => 'integer',
+            'segment_config' => 'array',
         ];
     }
 

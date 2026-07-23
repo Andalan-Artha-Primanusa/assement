@@ -30,7 +30,7 @@
                             <select id="invite_type" name="type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">Pilih tipe</option>
                                 @foreach (($visibleTypes ?? ['operator', 'mekanik', 'she']) as $type)
-                                    <option value="{{ $type }}" @selected(old('type') === $type)>{{ ucfirst($type === 'she' ? 'SHE' : $type) }}</option>
+                                    <option value="{{ $type }}" @selected(old('type') === $type)>{{ $type === 'she' ? 'SHE' : ucfirst($type) }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('type')" class="mt-1" />
@@ -40,7 +40,7 @@
                             <select id="invite_question_package_id" name="question_package_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Semua paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ ucfirst($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
+                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" data-has-segments="{{ $package->has_segments ? '1' : '0' }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('question_package_id')" class="mt-1" />
@@ -57,6 +57,38 @@
                                 <x-input-error :messages="$errors->get('duration_hours')" class="mt-1" />
                             </div>
                         </div>
+
+                        {{-- Segment Config --}}
+                        <div id="segment-config-section" class="hidden rounded-md border border-amber-200 bg-amber-50 p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-amber-800">Konfigurasi Segment</p>
+                                    <p class="text-xs text-amber-600 mt-0.5">Atur waktu pengerjaan per tipe soal. Urutan: PG → Essay → Upload.</p>
+                                </div>
+                                <button type="button" id="add-segment-btn" class="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">+ Tambah</button>
+                            </div>
+                            <div id="segment-rows" class="mt-3 space-y-2">
+                                @php
+                                    $oldSegments = old('segment_config', [
+                                        ['type' => 'multiple_choice', 'duration' => 30],
+                                    ]);
+                                @endphp
+                                @foreach ($oldSegments as $idx => $seg)
+                                    <div class="segment-row flex items-center gap-2">
+                                        <select name="segment_config[{{ $idx }}][type]" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 flex-1">
+                                            <option value="multiple_choice" @selected(($seg['type'] ?? '') === 'multiple_choice')">PG (Multiple Choice)</option>
+                                            <option value="essay" @selected(($seg['type'] ?? '') === 'essay')">Essay</option>
+                                            <option value="upload" @selected(($seg['type'] ?? '') === 'upload')">Upload File</option>
+                                        </select>
+                                        <input type="number" name="segment_config[{{ $idx }}][duration]" value="{{ $seg['duration'] ?? 30 }}" min="1" max="480" placeholder="Menit" class="w-24 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                        <span class="text-xs text-gray-500">mnt</span>
+                                        <button type="button" class="remove-segment-btn text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="mt-2 text-xs text-amber-600">Total waktu: <span id="segment-total">0</span> menit</p>
+                        </div>
+
                         <button class="w-full rounded-md bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 min-h-[44px]">
                             Generate & Kirim Undangan
                         </button>
@@ -88,20 +120,74 @@
         document.addEventListener('DOMContentLoaded', function () {
             const typeSelect = document.getElementById('invite_type');
             const packageSelect = document.getElementById('invite_question_package_id');
+            const segmentSection = document.getElementById('segment-config-section');
+            const segmentRows = document.getElementById('segment-rows');
+            const addBtn = document.getElementById('add-segment-btn');
+            const totalSpan = document.getElementById('segment-total');
 
-            typeSelect.addEventListener('change', function () {
-                const selectedType = this.value;
+            typeSelect.addEventListener('change', filterPackages);
+            packageSelect.addEventListener('change', toggleSegmentSection);
+
+            filterPackages();
+            toggleSegmentSection();
+            updateTotal();
+
+            function filterPackages() {
+                const selectedType = typeSelect.value;
                 const options = packageSelect.querySelectorAll('option[data-type]');
-
                 packageSelect.querySelector('option[value=""]').selected = true;
-
                 options.forEach(function (option) {
-                    if (!selectedType || option.dataset.type === selectedType) {
-                        option.style.display = '';
-                    } else {
-                        option.style.display = 'none';
-                    }
+                    option.style.display = (!selectedType || option.dataset.type === selectedType) ? '' : 'none';
                 });
+                toggleSegmentSection();
+            }
+
+            function toggleSegmentSection() {
+                const selectedOption = packageSelect.querySelector('option:checked');
+                const hasSegments = selectedOption && selectedOption.dataset.hasSegments === '1';
+                segmentSection.classList.toggle('hidden', !hasSegments);
+            }
+
+            function updateTotal() {
+                let total = 0;
+                segmentRows.querySelectorAll('input[type="number"]').forEach(function (input) {
+                    total += parseInt(input.value) || 0;
+                });
+                totalSpan.textContent = total;
+            }
+
+            let rowIndex = segmentRows.querySelectorAll('.segment-row').length;
+            addBtn.addEventListener('click', function () {
+                const row = document.createElement('div');
+                row.className = 'segment-row flex items-center gap-2';
+                row.innerHTML = `
+                    <select name="segment_config[${rowIndex}][type]" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 flex-1">
+                        <option value="multiple_choice">PG (Multiple Choice)</option>
+                        <option value="essay">Essay</option>
+                        <option value="upload">Upload File</option>
+                    </select>
+                    <input type="number" name="segment_config[${rowIndex}][duration]" value="30" min="1" max="480" placeholder="Menit" class="w-24 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    <span class="text-xs text-gray-500">mnt</span>
+                    <button type="button" class="remove-segment-btn text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+                `;
+                segmentRows.appendChild(row);
+                rowIndex++;
+                row.querySelector('input[type="number"]').addEventListener('input', updateTotal);
+                row.querySelector('.remove-segment-btn').addEventListener('click', function () {
+                    row.remove();
+                    updateTotal();
+                });
+                updateTotal();
+            });
+
+            segmentRows.querySelectorAll('.remove-segment-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    btn.closest('.segment-row').remove();
+                    updateTotal();
+                });
+            });
+            segmentRows.querySelectorAll('input[type="number"]').forEach(function (input) {
+                input.addEventListener('input', updateTotal);
             });
         });
     </script>
