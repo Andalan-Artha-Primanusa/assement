@@ -172,7 +172,8 @@ class DashboardController extends Controller
 
     private function userDashboard(Request $request): View
     {
-        $assignedPackage = $request->user()->questionPackage;
+        $user = $request->user();
+        $assignedPackage = $user->questionPackage;
         $activeQuestionQuery = Question::query()->where('is_active', true);
 
         if ($assignedPackage && $assignedPackage->is_active) {
@@ -182,17 +183,17 @@ class DashboardController extends Controller
         }
 
         $activeQuestionCount = (clone $activeQuestionQuery)->count();
-        $openAssessment = $request->user()
-            ->assessments()
+        $openAssessment = $user->assessments()
             ->whereNull('submitted_at')
             ->latest()
             ->first();
-        $assessments = $request->user()
-            ->assessments()
+        $assessments = $user->assessments()
             ->whereNotNull('submitted_at')
             ->latest('submitted_at')
             ->paginate(10);
 
-        return view('dashboard', compact('activeQuestionCount', 'openAssessment', 'assessments', 'assignedPackage'));
+        $accessExpired = ! $user->canAccessAssessment();
+
+        return view('dashboard', compact('activeQuestionCount', 'openAssessment', 'assessments', 'assignedPackage', 'accessExpired'));
     }
 }

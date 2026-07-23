@@ -24,10 +24,25 @@
             <x-input-label for="level" value="Level" />
             <select id="level" name="level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="" @selected(old('level', $package->level) == '')>-</option>
-                <optgroup label="Mekanik">
-                    <option value="M1" @selected(old('level', $package->level) == 'M1')>M1 - Dasar</option>
-                    <option value="M2" @selected(old('level', $package->level) == 'M2')>M2 - Menengah</option>
-                    <option value="M3" @selected(old('level', $package->level) == 'M3')>M3 - Lanjutan</option>
+                <optgroup label="Mechanic">
+                    <option value="M1" @selected(old('level', $package->level) == 'M1')>M1 - Senior Mechanic / Inspector</option>
+                    <option value="M2" @selected(old('level', $package->level) == 'M2')>M2 - Middle Mechanic</option>
+                    <option value="M3" @selected(old('level', $package->level) == 'M3')>M3 - Junior Mechanic</option>
+                </optgroup>
+                <optgroup label="Tyreman">
+                    <option value="T1" @selected(old('level', $package->level) == 'T1')>T1 - Senior Tyreman</option>
+                    <option value="T2" @selected(old('level', $package->level) == 'T2')>T2 - Middle Tyreman</option>
+                    <option value="T3" @selected(old('level', $package->level) == 'T3')>T3 - Junior Tyreman</option>
+                </optgroup>
+                <optgroup label="Auto Electrician">
+                    <option value="AE1" @selected(old('level', $package->level) == 'AE1')>AE1 - Senior Auto Electrician</option>
+                    <option value="AE2" @selected(old('level', $package->level) == 'AE2')>AE2 - Middle Auto Electrician</option>
+                    <option value="AE3" @selected(old('level', $package->level) == 'AE3')>AE3 - Junior Auto Electrician</option>
+                </optgroup>
+                <optgroup label="Welder">
+                    <option value="W1" @selected(old('level', $package->level) == 'W1')>W1 - Senior Welder</option>
+                    <option value="W2" @selected(old('level', $package->level) == 'W2')>W2 - Middle Welder</option>
+                    <option value="W3" @selected(old('level', $package->level) == 'W3')>W3 - Junior Welder</option>
                 </optgroup>
                 <optgroup label="SHE">
                     <option value="Departement Head" @selected(old('level', $package->level) == 'Departement Head')>Departement Head</option>

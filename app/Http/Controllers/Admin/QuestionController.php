@@ -8,6 +8,7 @@ use App\Models\Question;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class QuestionController extends Controller
@@ -44,9 +45,10 @@ class QuestionController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $question = new Question([
+            'question_package_id' => $request->integer('question_package_id'),
             'type' => Question::TYPE_MULTIPLE_CHOICE,
             'category' => 'Mechanic',
             'difficulty' => 'basic',
@@ -64,9 +66,14 @@ class QuestionController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $question = Question::create($this->validated($request));
+        $data = $this->validated($request);
+        $question = Question::create($data);
 
         ActivityLog::log('question_create', 'Membuat soal #'.$question->id, Question::class, $question->id);
+
+        if ($data['question_package_id']) {
+            return redirect()->route('admin.packages.questions', $data['question_package_id'])->with('status', 'Soal berhasil ditambahkan.');
+        }
 
         return redirect()->route('admin.questions.index')->with('status', 'Soal berhasil ditambahkan.');
     }
@@ -94,9 +101,14 @@ class QuestionController extends Controller
      */
     public function update(Request $request, Question $question): RedirectResponse
     {
-        $question->update($this->validated($request));
+        $data = $this->validated($request, $question);
+        $question->update($data);
 
         ActivityLog::log('question_update', 'Mengupdate soal #'.$question->id, Question::class, $question->id);
+
+        if ($data['question_package_id']) {
+            return redirect()->route('admin.packages.questions', $data['question_package_id'])->with('status', 'Soal berhasil diperbarui.');
+        }
 
         return redirect()->route('admin.questions.index')->with('status', 'Soal berhasil diperbarui.');
     }
@@ -121,7 +133,7 @@ class QuestionController extends Controller
         return back()->with('status', 'Soal berhasil dihapus.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Question $question = null): array
     {
         $data = $request->validate([
             'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
@@ -129,16 +141,34 @@ class QuestionController extends Controller
             'category' => ['required', 'string', 'max:100'],
             'difficulty' => ['required', 'in:basic,intermediate,advanced'],
             'text' => ['required', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:2048'],
             'option_a' => ['nullable', 'string'],
             'option_b' => ['nullable', 'string'],
             'option_c' => ['nullable', 'string'],
             'option_d' => ['nullable', 'string'],
             'correct_option' => ['nullable', 'in:a,b,c,d'],
             'is_active' => ['nullable', 'boolean'],
+            'remove_image' => ['nullable', 'boolean'],
         ]);
 
         $data['question_package_id'] = $data['question_package_id'] ?? null;
         $data['is_active'] = $request->boolean('is_active');
+
+        if ($request->hasFile('image')) {
+            if ($question && $question->image) {
+                Storage::disk('public')->delete($question->image);
+            }
+            $data['image'] = $request->file('image')->store('question-images', 'public');
+        } elseif ($request->boolean('remove_image')) {
+            if ($question && $question->image) {
+                Storage::disk('public')->delete($question->image);
+            }
+            $data['image'] = null;
+        } else {
+            $data['image'] = $question->image ?? null;
+        }
+
+        unset($data['remove_image']);
 
         if ($data['type'] === Question::TYPE_MULTIPLE_CHOICE) {
             $data['option_a'] = $data['option_a'] ?? '';

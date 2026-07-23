@@ -1,4 +1,4 @@
-<form method="POST" action="{{ $action }}" class="space-y-6">
+<form method="POST" action="{{ $action }}" class="space-y-6" enctype="multipart/form-data">
     @csrf
     @if ($method !== 'POST')
         @method($method)
@@ -51,6 +51,26 @@
         <x-input-label for="text" value="Pertanyaan" />
         <textarea id="text" name="text" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>{{ old('text', $question->text) }}</textarea>
         <x-input-error :messages="$errors->get('text')" class="mt-2" />
+    </div>
+
+    <div>
+        <x-input-label for="image" value="Gambar Soal (opsional)" />
+        <div class="mt-1 flex items-center gap-4">
+            <input id="image" type="file" name="image" accept="image/jpeg,image/png,image/gif,image/webp"
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, GIF, WebP (max 2MB). Gambar akan ditampilkan di bawah pertanyaan saat assessment.</p>
+        @if ($question->image)
+            <div class="mt-2">
+                <p class="text-xs text-gray-500 mb-1">Gambar saat ini:</p>
+                <img src="{{ Storage::disk('public')->url($question->image) }}" alt="Gambar soal" class="h-24 rounded-md border border-gray-200 object-contain">
+                <label class="mt-1 inline-flex items-center gap-1.5 text-xs text-red-600">
+                    <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+                    Hapus gambar
+                </label>
+            </div>
+        @endif
+        <x-input-error :messages="$errors->get('image')" class="mt-2" />
     </div>
 
     <div id="mc-fields" class="{{ $question->type !== 'multiple_choice' ? 'hidden' : '' }}">

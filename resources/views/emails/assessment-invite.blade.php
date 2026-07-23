@@ -22,7 +22,7 @@
                                         </div>
                                         <br>
                                         <span style="font-size: 24px; font-weight: 700; color: #ffffff; display: block; margin-top: 8px;">Undangan Assessment</span>
-                                        <span style="font-size: 14px; color: rgba(255,255,255,0.8); display: block; margin-top: 6px;">Screening Mechanic</span>
+                                        <span style="font-size: 14px; color: rgba(255,255,255,0.8); display: block; margin-top: 6px;">Screening Assessment</span>
                                     </td>
                                 </tr>
                             </table>
@@ -34,7 +34,7 @@
                         <td style="padding: 36px 40px 0 40px;">
                             <p style="margin: 0; font-size: 16px; color: #374151;">Halo <strong>{{ $user->name }}</strong>,</p>
                             <p style="margin: 12px 0 0 0; font-size: 15px; color: #6b7280; line-height: 1.7;">
-                                Anda diundang untuk mengikuti <strong>Assessment Screening Mechanic</strong> dari Andalan HR.
+                                Anda diundang untuk mengikuti <strong>Assessment Screening</strong> dari Andalan HR.
                                 Berikut adalah akun Anda untuk mengakses platform assessment:
                             </p>
                         </td>
@@ -82,16 +82,16 @@
                                                 <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->questionPackage?->name ?? 'Semua paket aktif' }}{{ $user->questionPackage?->level ? ' ('.$user->questionPackage->level.')' : '' }}</td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Akses Sampai</td>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->assessment_access_expires_at?->format('d M Y') }}</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Masa Aktif Akun</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $accessDays ?? '-' }} hari (sampai {{ $user->assessment_access_expires_at?->format('d M Y') }})</td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Sisa Waktu Akses</td>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; font-weight: 700; color: #dc2626;">{{ $accessDays ?? ($user->assessment_access_expires_at ? $user->assessment_access_expires_at->diffForHumans() : '-') }}</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Durasi Pengerjaan</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $durationHours ?? round($user->assessment_duration_minutes / 60, 2) }} jam</td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 10px 0; font-size: 14px; color: #1e40af;">Durasi Pengerjaan</td>
-                                                <td style="padding: 10px 0; font-size: 14px; color: #111827; font-weight: 600;">{{ $durationHours ?? round($user->assessment_duration_minutes / 60, 2) }} jam</td>
+                                                <td style="padding: 10px 0; font-size: 14px; color: #dc2626; font-weight: 700;">⚠ Batas Akhir Akses</td>
+                                                <td style="padding: 10px 0; font-size: 14px; color: #dc2626; font-weight: 700;">{{ $user->assessment_access_expires_at?->format('d M Y \j\am H:i') ?? '-' }}</td>
                                             </tr>
                                         </table>
                                     </td>

@@ -7,6 +7,27 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            @if ($accessExpired)
+                <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-5">
+                    <div class="flex items-start gap-3">
+                        <div class="shrink-0 mt-0.5">
+                            <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-red-800">Akses Assessment Telah Berakhir</h3>
+                            <p class="mt-1 text-sm text-red-700">
+                                Akun Anda tidak dapat digunakan untuk mengikuti assessment karena masa akses telah habis.
+                                Silakan hubungi admin untuk memperpanjang akses.
+                            </p>
+                            @if (Auth::user()->assessment_access_expires_at)
+                                <p class="mt-2 text-xs font-semibold text-red-600">Berkhir: {{ Auth::user()->assessment_access_expires_at->format('d M Y H:i') }}</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid gap-6 lg:grid-cols-3">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg lg:col-span-2">
                     <div class="p-6">
@@ -15,15 +36,24 @@
                         <div class="min-w-0 flex-1">
                             <p class="text-4xl font-semibold text-gray-900">{{ $activeQuestionCount }}</p>
                             <p class="mt-2 text-sm text-gray-600">
-                                Sistem akan memilih maksimal {{ config('assessment.question_limit') }} soal secara acak saat assessment dimulai.
+                                Semua soal aktif akan ditampilkan saat assessment dimulai.
                             </p>
                             <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                                 <span class="rounded-full bg-sky-50 px-3 py-1 text-sky-700">
                                     Paket: {{ $assignedPackage?->name ?? 'Semua paket aktif' }}
                                 </span>
-                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                                    Akses sampai: {{ Auth::user()->assessment_access_expires_at?->format('d M Y H:i') ?? 'tanpa batas' }}
-                                </span>
+                                @if (Auth::user()->assessment_access_expires_at)
+                                    @php
+                                        $daysLeft = max(0, (int) Auth::user()->assessment_access_expires_at->diffInDays(now(), false));
+                                    @endphp
+                                    <span class="rounded-full {{ $daysLeft > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} px-3 py-1">
+                                        Akses: {{ $daysLeft > 0 ? 'Sisa '.$daysLeft.' hari' : 'Telah berakhir' }} ({{ Auth::user()->assessment_access_expires_at->format('d M Y') }})
+                                    </span>
+                                @else
+                                    <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                                        Akses: Tanpa batas
+                                    </span>
+                                @endif
                                 <span class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
                                     Durasi: {{ round(Auth::user()->assessmentDurationMinutes() / 60, 2) }} jam
                                 </span>
@@ -31,7 +61,11 @@
                         </div>
 
                         <div class="shrink-0">
-                            @if ($openAssessment)
+                            @if ($accessExpired)
+                                <span class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed">
+                                    Akses Berakhir
+                                </span>
+                            @elseif ($openAssessment)
                                 <a href="{{ route('assessment.show', $openAssessment) }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                                     Lanjutkan
                                 </a>

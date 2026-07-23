@@ -17,7 +17,7 @@
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <div class="flex items-center justify-between gap-4">
                         <h3 class="text-lg font-semibold text-gray-900">Soal dalam Paket</h3>
-                        <a href="{{ route('admin.questions.index', ['package' => $package->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                        <a href="{{ route('admin.packages.questions', $package) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
                             Lihat semua
                         </a>
                     </div>

@@ -76,6 +76,7 @@
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                                         <div class="flex items-center justify-end gap-1">
+                                            <a href="{{ route('admin.assessments.questions', $assessment) }}" class="rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">Lihat Soal</a>
                                             @if ($assessment->isSubmitted())
                                                 <a href="{{ route('assessment.result', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
                                                 <a href="{{ route('admin.assessments.pdf', $assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">PDF</a>
@@ -85,6 +86,26 @@
                                                     <button class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Buka</button>
                                                 </form>
                                             @else
+                                                <div x-data="{ showDurasi: false }">
+                                                    <button type="button" @click="showDurasi = !showDurasi" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Atur Durasi</button>
+                                                    <div x-show="showDurasi" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showDurasi = false">
+                                                        <div class="rounded-lg bg-white p-6 shadow-xl w-80">
+                                                            <h3 class="text-sm font-semibold text-gray-900">Atur Durasi Assessment</h3>
+                                                            <p class="mt-1 text-xs text-gray-500">Peserta: {{ $assessment->user->name }}</p>
+                                                            <form method="POST" action="{{ route('admin.assessments.set-duration', $assessment) }}" class="mt-4 space-y-3">
+                                                                @csrf
+                                                                <div>
+                                                                    <label class="text-xs font-medium text-gray-700">Durasi (menit)</label>
+                                                                    <input type="number" name="duration_minutes" value="{{ $assessment->duration_minutes ?? 120 }}" min="1" max="1440" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                                                </div>
+                                                                <div class="flex gap-2">
+                                                                    <button type="submit" class="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">Simpan</button>
+                                                                    <button type="button" @click="showDurasi = false" class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">Batal</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 <form method="POST" action="{{ route('admin.assessments.extend', $assessment) }}" class="inline-flex items-center gap-1">
                                                     @csrf
                                                     <input type="number" name="extra_minutes" value="15" min="1" max="1440" class="w-14 rounded border-gray-300 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">

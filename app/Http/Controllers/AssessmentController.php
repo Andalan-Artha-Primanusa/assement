@@ -210,7 +210,9 @@ class AssessmentController extends Controller
 
         $assessment->load('answers.question');
 
-        return view('assessment.show', compact('assessment'));
+        $hasUploadQuestions = $assessment->answers->contains(fn ($answer) => $answer->question->isUpload());
+
+        return view('assessment.show', compact('assessment', 'hasUploadQuestions'));
     }
 
     public function submit(Request $request, Assessment $assessment): RedirectResponse
@@ -335,6 +337,37 @@ class AssessmentController extends Controller
         ActivityLog::log('assessment_extend', 'Memperpanjang assessment #'.$assessment->id.' +'.$data['extra_minutes'].' menit', Assessment::class, $assessment->id);
 
         return back()->with('status', 'Waktu assessment berhasil diperpanjang '.$data['extra_minutes'].' menit.');
+    }
+
+    public function adminQuestions(Request $request, Assessment $assessment): View
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        $assessment->load(['answers.question', 'user', 'questionPackage']);
+
+        return view('admin.assessments.questions', compact('assessment'));
+    }
+
+    public function setDuration(Request $request, Assessment $assessment): RedirectResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        $data = $request->validate([
+            'duration_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
+        ]);
+
+        $newEndsAt = $assessment->started_at
+            ? $assessment->started_at->addMinutes((int) $data['duration_minutes'])
+            : now()->addMinutes((int) $data['duration_minutes']);
+
+        $assessment->update([
+            'duration_minutes' => (int) $data['duration_minutes'],
+            'ends_at' => $newEndsAt,
+        ]);
+
+        ActivityLog::log('assessment_set_duration', 'Set durasi assessment #'.$assessment->id.' ke '.$data['duration_minutes'].' menit', Assessment::class, $assessment->id);
+
+        return back()->with('status', 'Durasi assessment berhasil diatur ke '.$data['duration_minutes'].' menit.');
     }
 
     private function processUploadedFiles(Request $request, Assessment $assessment, array $answers): void

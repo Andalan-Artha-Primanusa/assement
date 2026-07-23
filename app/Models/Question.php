@@ -21,6 +21,7 @@ class Question extends Model
         'category',
         'difficulty',
         'text',
+        'image',
         'option_a',
         'option_b',
         'option_c',

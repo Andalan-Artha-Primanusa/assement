@@ -15,11 +15,12 @@ use OpenSpout\Writer\XLSX\Options as XLSXOptions;
 
 class QuestionImportController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
         $packages = QuestionPackage::orderBy('name')->get();
+        $selectedPackageId = $request->integer('question_package_id');
 
-        return view('admin.questions.import', compact('packages'));
+        return view('admin.questions.import', compact('packages', 'selectedPackageId'));
     }
 
     public function template()
@@ -187,6 +188,10 @@ class QuestionImportController extends Controller
             $message .= ' '.implode('; ', array_slice($errors, 0, 5));
         }
 
-        return redirect()->route('admin.questions.index')->with('status', $message);
+        $redirect = $packageId
+            ? redirect()->route('admin.packages.questions', $packageId)
+            : redirect()->route('admin.questions.index');
+
+        return $redirect->with('status', $message);
     }
 }

@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Soal: {{ $package->name }}</h2>
             <div class="flex gap-2">
                 <a href="{{ route('admin.questions.create', ['question_package_id' => $package->id]) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 inline-flex items-center min-h-[44px]">Tambah Soal</a>
-                <a href="{{ route('admin.questions.import') }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 inline-flex items-center min-h-[44px]">Import Excel</a>
+                <a href="{{ route('admin.questions.import', ['question_package_id' => $package->id]) }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 inline-flex items-center min-h-[44px]">Import Excel</a>
                 <a href="{{ route('admin.packages.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Kembali</a>
             </div>
         </div>
@@ -45,7 +45,12 @@
                             @forelse ($questions as $question)
                                 <tr class="hover:bg-gray-50">
                                     <td class="max-w-xl px-6 py-4 text-gray-900">
-                                        <p class="line-clamp-2">{{ $question->text }}</p>
+                                        <div class="flex items-start gap-2">
+                                            @if ($question->image)
+                                                <img src="{{ Storage::disk('public')->url($question->image) }}" alt="" class="h-10 w-10 shrink-0 rounded object-cover">
+                                            @endif
+                                            <p class="line-clamp-2">{{ $question->text }}</p>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->category }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ ucfirst($question->difficulty) }}</td>

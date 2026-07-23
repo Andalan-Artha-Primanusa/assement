@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Import Soal dari Excel') }}</h2>
-            <a href="{{ route('admin.questions.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Kembali</a>
+            <a href="{{ $selectedPackageId ? route('admin.packages.questions', $selectedPackageId) : route('admin.questions.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Kembali</a>
         </div>
     </x-slot>
 
@@ -44,7 +44,7 @@
                             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Tanpa paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}">{{ $package->name }}</option>
+                                    <option value="{{ $package->id }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -60,7 +60,7 @@
 
                     <div class="flex items-center gap-3">
                         <x-primary-button>Import Soal</x-primary-button>
-                        <a href="{{ route('admin.questions.index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-800">Batal</a>
+                        <a href="{{ $selectedPackageId ? route('admin.packages.questions', $selectedPackageId) : route('admin.questions.index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-800">Batal</a>
                     </div>
                 </form>
             </div>

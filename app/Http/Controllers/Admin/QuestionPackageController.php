@@ -47,7 +47,7 @@ class QuestionPackageController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'level' => ['nullable', 'string', 'in:M1,M2,M3,Departement Head,Section Head,Lead Of'],
+            'level' => ['nullable', 'string', 'in:M1,M2,M3,T1,T2,T3,AE1,AE2,AE3,W1,W2,W3,Departement Head,Section Head,Lead Of'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -95,7 +95,7 @@ class QuestionPackageController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'level' => ['nullable', 'string', 'in:M1,M2,M3,Departement Head,Section Head,Lead Of'],
+            'level' => ['nullable', 'string', 'in:M1,M2,M3,T1,T2,T3,AE1,AE2,AE3,W1,W2,W3,Departement Head,Section Head,Lead Of'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],

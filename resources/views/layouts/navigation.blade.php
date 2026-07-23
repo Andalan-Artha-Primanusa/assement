@@ -36,7 +36,15 @@
     {{-- Logo + Desktop Collapse --}}
     <div class="shrink-0 flex items-center h-16 px-6 border-b border-gray-100">
         <a href="{{ route('dashboard') }}" class="flex-1 text-lg font-semibold text-gray-900 min-w-0 truncate">
-            Screening Mechanic
+            @if (Auth::user()->isAdminShe())
+                Screening SHE
+            @elseif (Auth::user()->isAdminMekanik())
+                Screening Mekanik
+            @elseif (Auth::user()->isAdminOperation())
+                Screening Operator
+            @else
+                Screening Assessment
+            @endif
         </a>
         <button @click="sidebarOpen = false" class="ml-2 shrink-0 flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors hidden sm:inline-flex group">
             <span class="text-xs font-medium text-gray-400 group-hover:text-gray-600 hidden lg:inline transition-colors">Tutup</span>
@@ -52,11 +60,39 @@
             {{ __('Dashboard') }}
         </x-nav-link>
         @if (Auth::user()->isAdmin())
+            @php
+                $menuLabels = match(true) {
+                    Auth::user()->isAdminShe() => [
+                        'assessment' => 'Assessment SHE',
+                        'packages' => 'Paket Soal SHE',
+                        'users' => 'Peserta SHE',
+                        'invite' => 'Invite Peserta',
+                    ],
+                    Auth::user()->isAdminMekanik() => [
+                        'assessment' => 'Assessment Mekanik',
+                        'packages' => 'Paket Soal Mekanik',
+                        'users' => 'Peserta Mekanik',
+                        'invite' => 'Invite Peserta',
+                    ],
+                    Auth::user()->isAdminOperation() => [
+                        'assessment' => 'Assessment Operator',
+                        'packages' => 'Paket Soal Operator',
+                        'users' => 'Peserta Operator',
+                        'invite' => 'Invite Peserta',
+                    ],
+                    default => [
+                        'assessment' => 'Assessment',
+                        'packages' => 'Paket Soal',
+                        'users' => 'User',
+                        'invite' => 'Invite',
+                    ],
+                };
+            @endphp
             <x-nav-link :href="route('admin.assessments.index')" :active="request()->routeIs('admin.assessments.*')">
-                {{ __('Assessment') }}
+                {{ __($menuLabels['assessment']) }}
             </x-nav-link>
             <x-nav-link :href="route('admin.packages.index')" :active="request()->routeIs('admin.packages.*')">
-                {{ __('Paket Soal') }}
+                {{ __($menuLabels['packages']) }}
             </x-nav-link>
 
             @if (Auth::user()->isAdminShe() || Auth::user()->isSuperAdmin())
@@ -66,10 +102,10 @@
             @endif
 
             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">
-                {{ __('User') }}
+                {{ __($menuLabels['users']) }}
             </x-nav-link>
             <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
-                {{ __('Invite') }}
+                {{ __($menuLabels['invite']) }}
             </x-nav-link>
             @if (Auth::user()->isSuperAdmin())
                 <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
