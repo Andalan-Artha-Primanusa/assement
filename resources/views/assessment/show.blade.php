@@ -318,7 +318,6 @@
             };
 
             startCameraButton.addEventListener('click', requestCamera);
-            requestCamera();
             updateCountdown();
             setInterval(updateCountdown, 1000);
 

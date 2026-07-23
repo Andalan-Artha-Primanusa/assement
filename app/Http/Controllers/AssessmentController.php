@@ -262,15 +262,15 @@ class AssessmentController extends Controller
             return redirect()->route('assessment.result', $assessment);
         }
 
+        if ($assessment->isBlocked()) {
+            return view('assessment.blocked', compact('assessment'));
+        }
+
         if ($assessment->isExpired()) {
             app(AssessmentSecurity::class)->finishAssessment($assessment, [], true);
 
             return redirect()->route('assessment.result', $assessment)
                 ->with('status', 'Waktu pengerjaan sudah habis. Assessment otomatis dikirim.');
-        }
-
-        if ($assessment->isBlocked()) {
-            return view('assessment.blocked', compact('assessment'));
         }
 
         $assessment->load('answers.question', 'segments');

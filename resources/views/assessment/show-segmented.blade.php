@@ -135,29 +135,36 @@
             }, 1000);
         }
 
-        // Security: block copy/paste/right-click/tab switch
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('copy', e => e.preventDefault());
         document.addEventListener('paste', e => e.preventDefault());
 
         let violations = 0;
+        let armed = false;
+        let locked = false;
+
+        setTimeout(() => { armed = true; }, 1500);
+
         document.addEventListener('visibilitychange', function () {
-            if (document.hidden && !document.getElementById('assessment-form').dataset.submitting) {
+            if (document.hidden && armed && !locked && !document.getElementById('assessment-form').dataset.submitting) {
+                locked = true;
+                const payload = JSON.stringify({ reason: 'Tab beralih', answers: collectAnswers() });
                 fetch('{{ route("assessment.security-violation", $assessment) }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ reason: 'Tab beralih', answers: collectAnswers() }),
+                    body: payload,
                 })
                 .then(r => r.json())
                 .then(data => {
+                    if (data.submitted) { window.location.href = data.redirect; return; }
                     violations++;
                     const remaining = maxViolations - violations;
                     document.getElementById('violations-count').textContent = remaining;
                     document.getElementById('security-message').textContent = 'Anda meninggalkan halaman assessment.';
                     document.getElementById('security-warning').classList.remove('hidden');
-                    if (data.submitted) { window.location.href = data.redirect; }
+                    window.location.reload();
                 })
-                .catch(() => {});
+                .catch(() => { window.location.reload(); });
             }
         });
 
