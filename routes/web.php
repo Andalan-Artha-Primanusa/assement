@@ -23,14 +23,14 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'assessment.guard'])
     ->name('dashboard');
 
+Route::get('/files/{path}', [StorageFileController::class, 'show'])
+    ->where('path', '.*')
+    ->name('files.show');
+
 Route::middleware(['auth', 'assessment.guard'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    Route::get('/files/{path}', [StorageFileController::class, 'show'])
-        ->where('path', '.*')
-        ->name('files.show');
 
     Route::post('/assessment/start', [AssessmentController::class, 'start'])->name('assessment.start');
     Route::post('/assessment/{assessment}/security-violation', [AssessmentController::class, 'securityViolation'])->name('assessment.security-violation');

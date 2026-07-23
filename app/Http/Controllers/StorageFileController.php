@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class StorageFileController extends Controller
 {
-    public function show(string $path): Response
+    public function show(string $path): BinaryFileResponse
     {
         $fullPath = Storage::disk('public')->path($path);
 
@@ -15,12 +15,7 @@ class StorageFileController extends Controller
             abort(404);
         }
 
-        $mime = mime_content_type($fullPath);
-        $size = filesize($fullPath);
-
         return response()->file($fullPath, [
-            'Content-Type' => $mime,
-            'Content-Length' => $size,
             'Cache-Control' => 'public, max-age=86400',
         ]);
     }
