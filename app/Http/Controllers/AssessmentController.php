@@ -499,6 +499,7 @@ class AssessmentController extends Controller
             'unlocked_at' => now(),
             'blocked_at' => null,
             'block_reason' => null,
+            'security_violations' => 0,
         ]);
 
         ActivityLog::log('assessment_unblock', 'Membuka blokir assessment #'.$assessment->id, Assessment::class, $assessment->id);
