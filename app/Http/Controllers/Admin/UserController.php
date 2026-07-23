@@ -370,6 +370,9 @@ class UserController extends Controller
             'assessment_access_expires_at' => ['nullable', 'date'],
             'assessment_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
             'max_attempts' => ['required', 'integer', 'min:1', 'max:100'],
+            'segment_config' => ['nullable', 'array'],
+            'segment_config.*.type' => ['required_with:segment_config', 'string', 'in:multiple_choice,essay,upload'],
+            'segment_config.*.duration' => ['required_with:segment_config', 'integer', 'min:1', 'max:480'],
         ]);
 
         $data['role'] = $data['role'] ?? User::ROLE_USER;
@@ -379,6 +382,18 @@ class UserController extends Controller
             ? $data['assessment_access_expires_at']
             : null;
         unset($data['assessment_duration_hours']);
+
+        $segmentConfig = null;
+        if (! empty($data['segment_config'])) {
+            $segmentConfig = collect($data['segment_config'])
+                ->filter(fn ($s) => ! empty($s['type']) && ! empty($s['duration']))
+                ->values()
+                ->toArray();
+            if (empty($segmentConfig)) {
+                $segmentConfig = null;
+            }
+        }
+        $data['segment_config'] = $segmentConfig;
 
         return $data;
     }

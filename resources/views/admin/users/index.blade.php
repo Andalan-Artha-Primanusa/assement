@@ -31,6 +31,7 @@
                                 <th class="px-6 py-3">Email</th>
                                 <th class="px-6 py-3 text-center">Role</th>
                                 <th class="px-6 py-3">Paket</th>
+                                <th class="px-6 py-3">Segment</th>
                                 <th class="px-6 py-3">Akses Sampai</th>
                                 <th class="px-6 py-3 text-center">Durasi</th>
                                 <th class="px-6 py-3 text-center">Assessment</th>
@@ -64,6 +65,20 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->questionPackage?->name ?? 'Semua paket' }}</td>
+                                    <td class="px-6 py-4 text-xs">
+                                        @if (!empty($user->segment_config) && is_array($user->segment_config))
+                                            <div class="flex flex-wrap gap-1">
+                                                @foreach ($user->segment_config as $seg)
+                                                    @php
+                                                        $segTypeLabels = ['multiple_choice' => 'PG', 'essay' => 'Essay', 'upload' => 'Upload'];
+                                                    @endphp
+                                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 font-semibold">{{ $segTypeLabels[$seg['type']] ?? $seg['type'] }} {{ $seg['duration'] }}m</span>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->assessment_access_expires_at?->format('d M Y H:i') ?? '-' }}</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ round(($user->assessment_duration_minutes ?? config('assessment.default_duration_minutes')) / 60, 2) }} jam</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $user->assessments_count }}</td>
@@ -80,7 +95,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-10 text-center text-gray-500">Belum ada user.</td>
+                                    <td colspan="9" class="px-6 py-10 text-center text-gray-500">Belum ada user.</td>
                                 </tr>
                             @endforelse
                         </tbody>

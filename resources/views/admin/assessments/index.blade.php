@@ -35,6 +35,7 @@
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-4 sm:px-6 py-3">Peserta</th>
                                 <th class="px-4 sm:px-6 py-3">Paket</th>
+                                <th class="px-4 sm:px-6 py-3">Segment</th>
                                 <th class="px-4 sm:px-6 py-3">Mulai</th>
                                 <th class="px-4 sm:px-6 py-3">Berakhir</th>
                                 <th class="px-4 sm:px-6 py-3 text-center">Benar</th>
@@ -48,6 +49,21 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ $assessment->user->name }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap">{{ $assessment->questionPackage?->name ?? '-' }}</td>
+                                    <td class="px-4 sm:px-6 py-4 text-xs whitespace-nowrap">
+                                        @if ($assessment->segments()->count() > 0)
+                                            @php
+                                                $completedSegs = $assessment->segments()->where('status', 'completed')->count();
+                                                $totalSegs = $assessment->segments()->count();
+                                                $currentSeg = $assessment->segments()->where('status', 'in_progress')->first();
+                                            @endphp
+                                            <span class="font-semibold {{ $completedSegs === $totalSegs ? 'text-emerald-600' : 'text-indigo-600' }}">{{ $completedSegs }}/{{ $totalSegs }}</span>
+                                            @if ($currentSeg)
+                                                <span class="text-gray-400">({{ $currentSeg->type === 'multiple_choice' ? 'PG' : ucfirst($currentSeg->type) }})</span>
+                                            @endif
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap">{{ $assessment->started_at?->format('d M Y H:i') }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap text-xs">
                                         @if ($assessment->ends_at)
@@ -117,7 +133,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-4 sm:px-6 py-10 text-center text-gray-500">Belum ada assessment.</td>
+                                    <td colspan="9" class="px-4 sm:px-6 py-10 text-center text-gray-500">Belum ada assessment.</td>
                                 </tr>
                             @endforelse
                         </tbody>
