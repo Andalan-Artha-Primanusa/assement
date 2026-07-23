@@ -137,9 +137,8 @@
 
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('copy', e => e.preventDefault());
-        document.addEventListener('paste', e => e.preventDefault());
 
-        let violations = 0;
+        let violations = {{ $assessment->security_violations ?? 0 }};
         let armed = false;
         let locked = false;
 
@@ -157,14 +156,15 @@
                 .then(r => r.json())
                 .then(data => {
                     if (data.submitted) { window.location.href = data.redirect; return; }
+                    if (data.blocked) { window.location.reload(); return; }
                     violations++;
-                    const remaining = maxViolations - violations;
-                    document.getElementById('violations-count').textContent = remaining;
+                    const remaining = maxViolations - violations + 1;
+                    document.getElementById('violations-count').textContent = Math.max(0, remaining);
                     document.getElementById('security-message').textContent = 'Anda meninggalkan halaman assessment.';
                     document.getElementById('security-warning').classList.remove('hidden');
-                    window.location.reload();
+                    setTimeout(() => { locked = false; }, 3000);
                 })
-                .catch(() => { window.location.reload(); });
+                .catch(() => { locked = false; });
             }
         });
 

@@ -25,16 +25,15 @@ class AssessmentSecurity
 
         $this->syncSelectedAnswers($assessment, $submittedAnswers);
 
-        $blockReason = $reason;
-        if ($assessment->security_violations > (int) config('assessment.max_security_blocks', 2)) {
-            $blockReason .= ' (Pelanggaran melebihi batas '.$assessment->security_violations.'/'.config('assessment.max_security_blocks', 2).')';
-        }
+        $maxBlocks = (int) config('assessment.max_security_blocks', 2);
 
-        $assessment->update([
-            'blocked_at' => now(),
-            'block_reason' => $blockReason,
-            'unlocked_at' => null,
-        ]);
+        if ($assessment->security_violations > $maxBlocks) {
+            $assessment->update([
+                'blocked_at' => now(),
+                'block_reason' => $reason.' (Pelanggaran melebihi batas '.$assessment->security_violations.'/'.$maxBlocks.')',
+                'unlocked_at' => null,
+            ]);
+        }
 
         return $this->status($assessment->fresh());
     }
