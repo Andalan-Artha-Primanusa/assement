@@ -28,9 +28,9 @@ Route::middleware(['auth', 'assessment.guard'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/storage/{path}', [StorageFileController::class, 'show'])
+    Route::get('/files/{path}', [StorageFileController::class, 'show'])
         ->where('path', '.*')
-        ->name('storage.show');
+        ->name('files.show');
 
     Route::post('/assessment/start', [AssessmentController::class, 'start'])->name('assessment.start');
     Route::post('/assessment/{assessment}/security-violation', [AssessmentController::class, 'securityViolation'])->name('assessment.security-violation');

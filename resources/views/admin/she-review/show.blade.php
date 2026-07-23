@@ -63,13 +63,13 @@
                                         <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
                                             <p class="text-sm font-medium text-gray-700 mb-2">File yang diupload:</p>
                                             @if (str_ends_with($answer->file_path, '.pdf'))
-                                                <a href="{{ route('storage.show', $answer->file_path) }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                                                <a href="{{ route('files.show', $answer->file_path) }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
                                                     Lihat PDF
                                                 </a>
                                             @elseif (in_array(pathinfo($answer->file_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                                <img src="{{ route('storage.show', $answer->file_path) }}" alt="Upload" class="max-w-md rounded-lg border border-gray-200">
+                                                <img src="{{ route('files.show', $answer->file_path) }}" alt="Upload" class="max-w-md rounded-lg border border-gray-200">
                                             @else
-                                                <a href="{{ route('storage.show', $answer->file_path) }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                                                <a href="{{ route('files.show', $answer->file_path) }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
                                                     Download File
                                                 </a>
                                             @endif
