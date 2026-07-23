@@ -29,12 +29,9 @@
                             <label for="invite_type" class="block text-sm font-medium text-gray-700">Tipe Peserta</label>
                             <select id="invite_type" name="type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">Pilih tipe</option>
-                                @if (in_array('operator', $visibleTypes ?? ['operator', 'mekanik']))
-                                    <option value="operator" @selected(old('type') == 'operator')>Operator</option>
-                                @endif
-                                @if (in_array('mekanik', $visibleTypes ?? ['operator', 'mekanik']))
-                                    <option value="mekanik" @selected(old('type') == 'mekanik')>Mekanik</option>
-                                @endif
+                                @foreach (($visibleTypes ?? ['operator', 'mekanik', 'she']) as $type)
+                                    <option value="{{ $type }}" @selected(old('type') === $type)>{{ ucfirst($type === 'she' ? 'SHE' : $type) }}</option>
+                                @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('type')" class="mt-1" />
                         </div>
