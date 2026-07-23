@@ -26,6 +26,7 @@
                 $showCertificate = $package && $package->is_certificate && $grade && in_array($grade, ['Lolos', 'Dipertimbangkan']);
             @endphp
 
+            {{-- Info Cards --}}
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Peserta</p>
@@ -41,7 +42,7 @@
                     </p>
                     @if ($package)
                         <p class="mt-1 text-xs text-gray-500">
-                            {{ ucfirst($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}
+                            {{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}
                             | Threshold: >= {{ $package->min_score_pertimbangan ?? '-' }} / {{ $package->min_score_lolos ?? '-' }}
                         </p>
                     @endif
@@ -56,36 +57,61 @@
                 </div>
             </div>
 
+            {{-- Grade Result --}}
             @if ($grade)
-                <div class="mt-6 bg-white p-6 shadow-sm sm:rounded-lg text-center">
-                    <p class="text-sm text-gray-500">Hasil Keputusan</p>
-                    <p class="mt-2 text-4xl font-bold
-                        {{ $grade === 'Lolos' ? 'text-emerald-600' : ($grade === 'Dipertimbangkan' ? 'text-amber-600' : 'text-rose-600') }}">
-                        {{ $grade }}
-                    </p>
-                </div>
-            @endif
-
-            @if ($assessment->segments()->count() > 0)
-                <div class="mt-6 bg-white p-6 shadow-sm sm:rounded-lg">
-                    <p class="text-sm font-semibold text-gray-700 mb-3">Progress Segment</p>
-                    <div class="flex gap-3">
-                        @foreach ($assessment->segments as $seg)
-                            <div class="flex-1 rounded-lg border p-3 text-center
-                                {{ $seg->isCompleted() ? 'border-emerald-200 bg-emerald-50' : ($seg->isInProgress() ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50') }}">
-                                <p class="text-xs font-semibold {{ $seg->isCompleted() ? 'text-emerald-600' : ($seg->isInProgress() ? 'text-indigo-600' : 'text-gray-400') }}">
-                                    {{ $seg->type === 'multiple_choice' ? 'PG' : ucfirst($seg->type) }}
-                                </p>
-                                <p class="mt-1 text-xs text-gray-500">{{ $seg->duration_minutes }} menit</p>
-                                @if ($seg->completed_at)
-                                    <p class="mt-0.5 text-xs text-gray-400">{{ $seg->completed_at->format('H:i') }}</p>
-                                @endif
+                <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    @if ($grade === 'Lolos')
+                        <div class="bg-gradient-to-r from-emerald-500 to-green-500 p-8 text-center text-white">
+                            <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+                                <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
                             </div>
-                        @endforeach
+                            <h3 class="text-2xl font-bold">Lolos</h3>
+                            <p class="mt-2 text-sm text-emerald-100">Selamat! Anda dinyatakan <strong>LOLOS</strong> dalam assessment ini.</p>
+                        </div>
+                    @elseif ($grade === 'Dipertimbangkan')
+                        <div class="bg-gradient-to-r from-amber-500 to-yellow-500 p-8 text-center text-white">
+                            <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+                                <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold">Dipertimbangkan</h3>
+                            <p class="mt-2 text-sm text-amber-100">Hasil Anda akan ditinjau lebih lanjut oleh tim HR.</p>
+                        </div>
+                    @else
+                        <div class="bg-gradient-to-r from-rose-500 to-red-500 p-8 text-center text-white">
+                            <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+                                <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l2-2m-2 2l-2-2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold">Tidak Lolos</h3>
+                            <p class="mt-2 text-sm text-rose-100">Nilai Anda belum mencapai ambang kelulusan. Silakan hubungi admin untuk informasi lebih lanjut.</p>
+                        </div>
+                    @endif
+
+                    <div class="p-6">
+                        <div class="grid gap-4 sm:grid-cols-3 text-center">
+                            <div>
+                                <p class="text-xs text-gray-500">Ambang Dipertimbangkan</p>
+                                <p class="mt-1 text-lg font-bold text-amber-600">{{ $package->min_score_pertimbangan ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Nilai Anda</p>
+                                <p class="mt-1 text-lg font-bold text-indigo-600">{{ number_format($assessment->score, 2) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Ambang Lolos</p>
+                                <p class="mt-1 text-lg font-bold text-emerald-600">{{ $package->min_score_lolos ?? '-' }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @endif
 
+            {{-- Certificate --}}
             @if ($showCertificate)
                 <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-center">
@@ -106,6 +132,37 @@
                     </div>
                 </div>
             @endif
+
+            {{-- Segment Progress --}}
+            @if ($assessment->segments()->count() > 0)
+                <div class="mt-6 bg-white p-6 shadow-sm sm:rounded-lg">
+                    <p class="text-sm font-semibold text-gray-700 mb-3">Progress Segment</p>
+                    <div class="flex gap-3">
+                        @foreach ($assessment->segments as $seg)
+                            <div class="flex-1 rounded-lg border p-3 text-center
+                                {{ $seg->isCompleted() ? 'border-emerald-200 bg-emerald-50' : ($seg->isInProgress() ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50') }}">
+                                <p class="text-xs font-semibold {{ $seg->isCompleted() ? 'text-emerald-600' : ($seg->isInProgress() ? 'text-indigo-600' : 'text-gray-400') }}">
+                                    {{ $seg->type === 'multiple_choice' ? 'PG' : ucfirst($seg->type) }}
+                                </p>
+                                <p class="mt-1 text-xs text-gray-500">{{ $seg->duration_minutes }} menit</p>
+                                @if ($seg->completed_at)
+                                    <p class="mt-0.5 text-xs text-gray-400">{{ $seg->completed_at->format('H:i') }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- Back to Dashboard Button --}}
+            <div class="mt-8 text-center">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-8 py-3 text-sm font-semibold text-white shadow-sm hover:bg-black transition-all">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Kembali ke Dashboard
+                </a>
+            </div>
         </div>
     </div>
 </x-app-layout>

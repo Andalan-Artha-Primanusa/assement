@@ -495,13 +495,29 @@ class AssessmentController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403);
 
+        $blockedDuration = 0;
+        if ($assessment->blocked_at) {
+            $blockedDuration = (int) now()->diffInSeconds($assessment->blocked_at, false);
+            if ($blockedDuration < 0) {
+                $blockedDuration = abs($blockedDuration);
+            }
+        }
+
+        $newEndsAt = null;
+        if ($assessment->ends_at) {
+            $newEndsAt = $assessment->ends_at->addSeconds($blockedDuration);
+        }
+
         $assessment->update([
             'unlocked_at' => now(),
+            'blocked_at' => null,
+            'block_reason' => null,
+            'ends_at' => $newEndsAt,
         ]);
 
-        ActivityLog::log('assessment_unblock', 'Membuka blokir assessment #'.$assessment->id, Assessment::class, $assessment->id);
+        ActivityLog::log('assessment_unblock', 'Membuka blokir assessment #'.$assessment->id.($blockedDuration > 0 ? ' (+ '.$blockedDuration.' detik waktu)' : ''), Assessment::class, $assessment->id);
 
-        return back()->with('status', 'Akses assessment berhasil dibuka kembali.');
+        return back()->with('status', 'Akses assessment berhasil dibuka kembali.'.($blockedDuration > 0 ? ' Waktu diperpanjang '.$blockedDuration.' detik.' : ''));
     }
 
     public function extend(Request $request, Assessment $assessment): RedirectResponse
