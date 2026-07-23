@@ -39,7 +39,7 @@
 
                             @if ($question->image)
                                 <div class="mt-3">
-                                    <img src="{{ Storage::disk('public')->url($question->image) }}" alt="Gambar soal" class="max-h-48 rounded-md border border-gray-200 object-contain">
+                                    <img src="{{ route('storage.show', $question->image) }}" alt="Gambar soal" class="max-h-48 rounded-md border border-gray-200 object-contain">
                                 </div>
                             @endif
 
@@ -77,7 +77,7 @@
                                 <div class="mt-3 rounded-md bg-gray-50 p-3">
                                     <p class="text-xs font-semibold text-gray-500">File Upload:</p>
                                     @if ($answer->file_path)
-                                        <a href="{{ asset('storage/'.$answer->file_path) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                        <a href="{{ route('storage.show', $answer->file_path) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800">
                                             Lihat File &#8599;
                                         </a>
                                     @else

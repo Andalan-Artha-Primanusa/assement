@@ -100,7 +100,7 @@
 
                                 @if ($question->image)
                                     <div class="mt-3">
-                                        <img src="{{ Storage::disk('public')->url($question->image) }}" alt="Gambar soal" class="max-h-64 rounded-md border border-gray-200 object-contain">
+                                        <img src="{{ route('storage.show', $question->image) }}" alt="Gambar soal" class="max-h-64 rounded-md border border-gray-200 object-contain">
                                     </div>
                                 @endif
 
