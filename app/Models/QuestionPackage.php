@@ -14,6 +14,7 @@ class QuestionPackage extends Model
         'level',
         'description',
         'is_active',
+        'is_certificate',
         'created_by',
         'min_score_pertimbangan',
         'min_score_lolos',
@@ -23,6 +24,7 @@ class QuestionPackage extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_certificate' => 'boolean',
             'min_score_pertimbangan' => 'decimal:2',
             'min_score_lolos' => 'decimal:2',
         ];

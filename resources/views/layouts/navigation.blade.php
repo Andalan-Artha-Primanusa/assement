@@ -151,31 +151,43 @@
             @php
                 $menuLabels = match(true) {
                     Auth::user()->isAdminShe() => [
+                        'dashboard' => 'Dashboard SHE',
                         'assessment' => 'Assessment SHE',
+                        'review' => 'Review SHE',
                         'packages' => 'Paket Soal SHE',
                         'users' => 'Peserta SHE',
-                        'invite' => 'Invite Peserta',
+                        'invite' => 'Invite Peserta SHE',
+                        'logs' => 'Log Aktivitas',
                     ],
                     Auth::user()->isAdminMekanik() => [
+                        'dashboard' => 'Dashboard Mekanik',
                         'assessment' => 'Assessment Mekanik',
                         'packages' => 'Paket Soal Mekanik',
                         'users' => 'Peserta Mekanik',
-                        'invite' => 'Invite Peserta',
+                        'invite' => 'Invite Peserta Mekanik',
+                        'logs' => 'Log Aktivitas',
                     ],
                     Auth::user()->isAdminOperation() => [
+                        'dashboard' => 'Dashboard Operator',
                         'assessment' => 'Assessment Operator',
                         'packages' => 'Paket Soal Operator',
                         'users' => 'Peserta Operator',
-                        'invite' => 'Invite Peserta',
+                        'invite' => 'Invite Peserta Operator',
+                        'logs' => 'Log Aktivitas',
                     ],
                     default => [
+                        'dashboard' => 'Dashboard',
                         'assessment' => 'Assessment',
                         'packages' => 'Paket Soal',
                         'users' => 'User',
                         'invite' => 'Invite',
+                        'logs' => 'Log Aktivitas',
                     ],
                 };
             @endphp
+            <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                {{ __($menuLabels['dashboard']) }}
+            </x-nav-link>
             <x-nav-link :href="route('admin.assessments.index')" :active="request()->routeIs('admin.assessments.*')">
                 {{ __($menuLabels['assessment']) }}
             </x-nav-link>
@@ -185,7 +197,7 @@
 
             @if (Auth::user()->isAdminShe())
                 <x-nav-link :href="route('admin.she-review.index')" :active="request()->routeIs('admin.she-review.*')">
-                    {{ __('Review SHE') }}
+                    {{ __($menuLabels['review']) }}
                 </x-nav-link>
             @endif
 
@@ -194,6 +206,10 @@
             </x-nav-link>
             <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
                 {{ __($menuLabels['invite']) }}
+            </x-nav-link>
+
+            <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
+                {{ __($menuLabels['logs']) }}
             </x-nav-link>
         @endif
     </div>

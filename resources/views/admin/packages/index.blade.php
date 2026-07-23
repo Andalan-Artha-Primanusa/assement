@@ -49,9 +49,16 @@
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $package->questions_count }}</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $package->users_count }}</td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $package->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
-                                            {{ $package->is_active ? 'Aktif' : 'Nonaktif' }}
-                                        </span>
+                                        <div class="flex items-center justify-center gap-1">
+                                            <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $package->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                                                {{ $package->is_active ? 'Aktif' : 'Nonaktif' }}
+                                            </span>
+                                            @if ($package->is_certificate)
+                                                <span class="rounded-full bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700" title="Sertifikat aktif">
+                                                    <svg class="inline h-3 w-3 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                                                </span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center justify-end gap-1">

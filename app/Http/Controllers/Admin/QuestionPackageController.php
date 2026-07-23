@@ -55,11 +55,13 @@ class QuestionPackageController extends Controller
             'level' => ['nullable', 'string', 'in:M1,M2,M3,T1,T2,T3,AE1,AE2,AE3,W1,W2,W3,Departement Head,Section Head,Lead Of'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
+            'is_certificate' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'min_score_lolos' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_certificate'] = $request->boolean('is_certificate');
         $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
         $data['created_by'] = $adminUser->id;
 
@@ -103,11 +105,13 @@ class QuestionPackageController extends Controller
             'level' => ['nullable', 'string', 'in:M1,M2,M3,T1,T2,T3,AE1,AE2,AE3,W1,W2,W3,Departement Head,Section Head,Lead Of'],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
+            'is_certificate' => ['nullable', 'boolean'],
             'min_score_pertimbangan' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'min_score_lolos' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_certificate'] = $request->boolean('is_certificate');
         $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
 
         $package->update($data);

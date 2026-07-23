@@ -108,7 +108,11 @@
     </div>
 
     <div class="flex items-center justify-end gap-3">
-        <a href="{{ route('admin.questions.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Batal</a>
+        @if ($question->question_package_id)
+            <a href="{{ route('admin.packages.questions', $question->question_package_id) }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Batal</a>
+        @else
+            <a href="{{ route('admin.questions.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Batal</a>
+        @endif
         <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">{{ $button }}</button>
     </div>
 </form>

@@ -32,6 +32,7 @@ Route::middleware(['auth', 'assessment.guard'])->group(function () {
     Route::get('/assessment/{assessment}', [AssessmentController::class, 'show'])->name('assessment.show');
     Route::post('/assessment/{assessment}', [AssessmentController::class, 'submit'])->name('assessment.submit');
     Route::get('/assessment/{assessment}/result', [AssessmentController::class, 'result'])->name('assessment.result');
+    Route::get('/assessment/{assessment}/certificate', [AssessmentController::class, 'certificate'])->name('assessment.certificate');
 });
 
 Route::middleware(['auth', 'admin'])

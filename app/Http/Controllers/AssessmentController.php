@@ -282,6 +282,25 @@ class AssessmentController extends Controller
         return view('assessment.result', compact('assessment'));
     }
 
+    public function certificate(Request $request, Assessment $assessment): View
+    {
+        $this->authorizeAssessment($request, $assessment);
+
+        abort_unless($assessment->isSubmitted(), 404);
+
+        $assessment->load('user', 'questionPackage');
+        $package = $assessment->questionPackage;
+
+        abort_unless($package && $package->is_certificate, 404);
+
+        $grade = $package->getGrade((float) $assessment->score);
+        abort_unless(in_array($grade, ['Lolos', 'Dipertimbangkan']), 403);
+
+        $certificateNumber = 'AA-PRA/'.$assessment->submitted_at->format('Y/m').'/'.$assessment->id.'-'.$assessment->user_id;
+
+        return view('assessment.certificate', compact('assessment', 'package', 'grade', 'certificateNumber'));
+    }
+
     public function securityViolation(Request $request, Assessment $assessment): JsonResponse
     {
         $this->authorizeAssessment($request, $assessment);

@@ -74,10 +74,14 @@
             <p class="mt-1 text-xs text-gray-500">>= ambang ini = Lolos</p>
             <x-input-error :messages="$errors->get('min_score_lolos')" class="mt-2" />
         </div>
-        <div class="flex items-end">
+        <div class="flex items-end gap-2">
             <label class="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2">
                 <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_active', $package->is_active))>
                 <span class="text-sm text-gray-700">Aktif</span>
+            </label>
+            <label class="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2">
+                <input type="checkbox" name="is_certificate" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_certificate', $package->is_certificate))>
+                <span class="text-sm text-gray-700">Sertifikat</span>
             </label>
         </div>
     </div>
