@@ -176,6 +176,8 @@ class QuestionController extends Controller
             $data['option_c'] = $data['option_c'] ?? '';
             $data['option_d'] = $data['option_d'] ?? '';
             $data['correct_option'] = $data['correct_option'] ?? 'a';
+        } else {
+            unset($data['option_a'], $data['option_b'], $data['option_c'], $data['option_d'], $data['correct_option']);
         }
 
         return $data;
