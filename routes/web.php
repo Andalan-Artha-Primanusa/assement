@@ -60,6 +60,7 @@ Route::middleware(['auth', 'admin'])
         Route::post('invite', [UserController::class, 'invite'])->name('users.invite');
         Route::post('invite/bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');
         Route::resource('users', UserController::class);
+        Route::get('users/{user}/answers', [UserController::class, 'answers'])->name('users.answers');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
         Route::get('she-review', [SheReviewController::class, 'index'])->name('she-review.index');

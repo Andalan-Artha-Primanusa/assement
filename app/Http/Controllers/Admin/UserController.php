@@ -328,6 +328,17 @@ class UserController extends Controller
         return back()->with('status', 'User berhasil dihapus.');
     }
 
+    public function answers(Request $request, User $user): View
+    {
+        $assessments = $user->assessments()
+            ->with(['answers.question', 'questionPackage', 'segments'])
+            ->whereNotNull('submitted_at')
+            ->latest('submitted_at')
+            ->get();
+
+        return view('admin.users.answers', compact('user', 'assessments'));
+    }
+
     private function validated(Request $request, ?User $user = null): array
     {
         $adminUser = $request->user();
