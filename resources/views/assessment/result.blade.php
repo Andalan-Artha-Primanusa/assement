@@ -155,6 +155,127 @@
                 </div>
             @endif
 
+            {{-- Detail Jawaban --}}
+            @if ($assessment->answers->count() > 0)
+                <div class="mt-6 bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                    <div class="bg-gray-50 px-4 sm:px-6 py-3 border-b border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-700">Detail Jawaban</h3>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        @foreach ($assessment->answers as $answer)
+                            @php($question = $answer->question)
+                            @if (!$question) @continue @endif
+                            <div class="px-4 sm:px-6 py-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold
+                                        {{ $answer->is_correct ? 'bg-emerald-100 text-emerald-700' : ($answer->is_correct === false ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-600') }}">
+                                        {{ $answer->position }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                                            @if ($question->isMultipleChoice())
+                                                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">PG</span>
+                                            @elseif ($question->isEssay())
+                                                <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">Essay</span>
+                                            @elseif ($question->isUpload())
+                                                <span class="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">Upload</span>
+                                            @endif
+
+                                            @if ($question->isMultipleChoice())
+                                                @if ($answer->is_correct)
+                                                    <span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                        Benar
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-0.5 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">
+                                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        Salah
+                                                    </span>
+                                                @endif
+                                            @endif
+
+                                            @if ($answer->score !== null)
+                                                <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700">Nilai: {{ number_format($answer->score, 0) }}</span>
+                                            @endif
+                                        </div>
+
+                                        <p class="whitespace-pre-line text-sm font-medium text-gray-900">{{ $question->text }}</p>
+
+                                        @if ($question->image)
+                                            <img src="{{ route('files.show', $question->image) }}" alt="Gambar soal" class="mt-2 max-h-40 rounded-md border border-gray-200 object-contain">
+                                        @endif
+
+                                        {{-- MC --}}
+                                        @if ($question->isMultipleChoice())
+                                            <div class="mt-2 space-y-0.5">
+                                                @foreach (['a', 'b', 'c', 'd'] as $opt)
+                                                    @php($optText = $question->optionText($opt))
+                                                    @if ($optText)
+                                                        @php($isCorrect = $question->correct_option === $opt)
+                                                        @php($isSelected = $answer->selected_option === $opt)
+                                                        <div class="flex items-center gap-2 text-xs rounded px-2 py-1
+                                                            {{ $isCorrect ? 'bg-emerald-50 text-emerald-700 font-semibold' : '' }}
+                                                            {{ $isSelected && !$isCorrect ? 'bg-rose-50 text-rose-700' : '' }}
+                                                            {{ !$isCorrect && !$isSelected ? 'text-gray-500' : '' }}">
+                                                            <span class="shrink-0 font-bold uppercase">{{ $opt }}.</span>
+                                                            <span class="flex-1">{{ $optText }}</span>
+                                                            @if ($isCorrect && $isSelected)
+                                                                <span class="shrink-0 text-emerald-600">✓ Benar</span>
+                                                            @elseif ($isCorrect)
+                                                                <span class="shrink-0 text-emerald-500">✓</span>
+                                                            @elseif ($isSelected)
+                                                                <span class="shrink-0 text-rose-600 font-bold">✗ Dipilih</span>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        @endif
+
+                                        {{-- Essay --}}
+                                        @if ($question->isEssay())
+                                            <div class="mt-2 p-2.5 rounded-md bg-gray-50 border border-gray-200">
+                                                <p class="text-xs font-semibold text-gray-500 mb-0.5">Jawaban:</p>
+                                                @if ($answer->answer_text)
+                                                    <p class="whitespace-pre-line text-sm text-gray-900">{{ $answer->answer_text }}</p>
+                                                @else
+                                                    <p class="text-sm text-gray-400 italic">Tidak ada jawaban</p>
+                                                @endif
+                                            </div>
+                                            @if ($answer->review_notes)
+                                                <p class="mt-1 text-xs text-gray-500">Catatan reviewer: {{ $answer->review_notes }}</p>
+                                            @endif
+                                        @endif
+
+                                        {{-- Upload --}}
+                                        @if ($question->isUpload())
+                                            <div class="mt-2 p-2.5 rounded-md bg-gray-50 border border-gray-200">
+                                                <p class="text-xs font-semibold text-gray-500 mb-0.5">File:</p>
+                                                @if ($answer->file_path)
+                                                    @if (str_ends_with(strtolower($answer->file_path), '.pdf'))
+                                                        <a href="{{ route('files.show', $answer->file_path) }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Lihat PDF</a>
+                                                    @elseif (in_array(strtolower(pathinfo($answer->file_path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+                                                        <img src="{{ route('files.show', $answer->file_path) }}" alt="Upload" class="max-w-xs rounded-md border border-gray-200">
+                                                    @else
+                                                        <a href="{{ route('files.show', $answer->file_path) }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Download File</a>
+                                                    @endif
+                                                @else
+                                                    <p class="text-sm text-gray-400 italic">Tidak ada file</p>
+                                                @endif
+                                            </div>
+                                            @if ($answer->review_notes)
+                                                <p class="mt-1 text-xs text-gray-500">Catatan reviewer: {{ $answer->review_notes }}</p>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             {{-- Back to Dashboard Button --}}
             <div class="mt-8 text-center">
                 <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-8 py-3 text-sm font-semibold text-white shadow-sm hover:bg-black transition-all">
