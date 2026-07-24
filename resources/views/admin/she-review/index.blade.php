@@ -54,14 +54,20 @@
                                     @endif
                                     <td class="px-4 sm:px-6 py-4 text-center whitespace-nowrap">
                                         @if ($assessment->isPendingReview())
-                                            <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Perlu Review</span>
+                                            <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Menunggu Review</span>
                                         @elseif ($assessment->isGraded())
-                                            <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai</span>
+                                            <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai Direview</span>
+                                        @else
+                                            <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">Selesai</span>
                                         @endif
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                                         <a href="{{ route('admin.she-review.show', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">
-                                            {{ $assessment->isPendingReview() ? 'Review' : 'Lihat' }}
+                                            @if ($selectedType === 'she' && $assessment->isPendingReview())
+                                                Review
+                                            @else
+                                                Lihat
+                                            @endif
                                         </a>
                                     </td>
                                 </tr>

@@ -22,13 +22,12 @@ class SheReviewController extends Controller
             $selectedType = 'she';
         }
 
-        $assessments = Assessment::with('user', 'questionPackage')
+        $assessments = Assessment::with('user', 'questionPackage', 'answers')
             ->when($selectedType === 'she', function ($query): void {
                 $query->where('status', Assessment::STATUS_PENDING_REVIEW);
             })
             ->when($selectedType !== 'she', function ($query): void {
-                $query->whereNotNull('submitted_at')
-                    ->where('status', Assessment::STATUS_GRADED);
+                $query->whereNotNull('submitted_at');
             })
             ->whereHas('questionPackage', function ($q) use ($selectedType): void {
                 $q->where('type', $selectedType);
@@ -49,10 +48,7 @@ class SheReviewController extends Controller
 
     public function show(Assessment $assessment): View
     {
-        abort_unless(
-            in_array($assessment->status, [Assessment::STATUS_PENDING_REVIEW, Assessment::STATUS_GRADED]),
-            404
-        );
+        abort_unless($assessment->submitted_at !== null, 404);
 
         $assessment->load('user', 'questionPackage', 'answers.question');
 
