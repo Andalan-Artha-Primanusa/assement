@@ -248,7 +248,7 @@
                     return;
                 }
 
-                lockScreen();
+                locked = true;
 
                 const payload = new FormData();
                 payload.append('_token', csrfToken);
@@ -269,14 +269,25 @@
                     })
                         .then((response) => response.json())
                         .then((data) => {
-                            if (data.redirect) {
-                                window.location.href = data.redirect;
+                            if (data.submitted) {
+                                window.location.href = data.redirect || submitUrl;
                                 return;
                             }
 
-                            window.location.reload();
+                            if (data.blocked) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            lockScreen();
+                            lockMessage.textContent = 'Pelanggaran tercatat. Jangan tinggalkan halaman assessment. Sisa percobaan: ' + Math.max(0, {{ config('assessment.max_security_blocks', 2) }} - (data.violations || 0));
+                            setTimeout(() => {
+                                locked = false;
+                                form.classList.remove('pointer-events-none', 'opacity-30', 'blur-sm');
+                                lockMessage.classList.add('hidden');
+                            }, 5000);
                         })
-                        .catch(() => window.location.reload());
+                        .catch(() => { locked = false; });
                 }
             };
 

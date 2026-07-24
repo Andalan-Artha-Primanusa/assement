@@ -197,9 +197,6 @@ class UserController extends Controller
             'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
             'access_days' => ['required', 'integer', 'min:1', 'max:365'],
             'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
-            'segment_config' => ['nullable', 'array'],
-            'segment_config.*.type' => ['required_with:segment_config', 'string', 'in:multiple_choice,essay,upload'],
-            'segment_config.*.duration' => ['required_with:segment_config', 'integer', 'min:1', 'max:480'],
         ]);
 
         $password = Str::upper(Str::random(4));
@@ -210,17 +207,6 @@ class UserController extends Controller
         $accessDays = (int) $data['access_days'];
         $durationMinutes = (int) round(((float) $data['duration_hours']) * 60);
 
-        $segmentConfig = null;
-        if (! empty($data['segment_config'])) {
-            $segmentConfig = collect($data['segment_config'])
-                ->filter(fn ($s) => ! empty($s['type']) && ! empty($s['duration']))
-                ->values()
-                ->toArray();
-            if (empty($segmentConfig)) {
-                $segmentConfig = null;
-            }
-        }
-
         $user = User::create([
             'name' => $name,
             'email' => $data['email'],
@@ -229,7 +215,6 @@ class UserController extends Controller
             'question_package_id' => $data['question_package_id'] ?? null,
             'assessment_access_expires_at' => now()->addDays($accessDays),
             'assessment_duration_minutes' => $durationMinutes,
-            'segment_config' => $segmentConfig,
         ]);
 
         $user->load('questionPackage');
