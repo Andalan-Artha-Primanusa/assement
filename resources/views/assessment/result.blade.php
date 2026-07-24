@@ -112,6 +112,84 @@
                 </div>
             @endif
 
+            {{-- Hasil Penilaian Essay --}}
+            @if ($assessment->hasEssayOrUploadQuestions())
+                @php
+                    $essayAnswers = $assessment->answers()->whereHas('question', fn($q) => $q->whereIn('type', ['essay', 'upload']))->get();
+                    $gradedEssayAnswers = $essayAnswers->filter(fn($a) => $a->score !== null);
+                    $allGraded = $essayAnswers->count() > 0 && $gradedEssayAnswers->count() === $essayAnswers->count();
+                    $essayScore = $allGraded ? $gradedEssayAnswers->avg('score') : null;
+                    $essayPass = $essayScore !== null && $essayScore >= 50;
+                    $latestReview = $gradedEssayAnswers->sortByDesc('reviewed_at')->first();
+                    $feedbacks = $gradedEssayAnswers->filter(fn($a) => $a->review_notes)->pluck('review_notes')->implode("\n");
+                @endphp
+
+                <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Hasil Penilaian Essay</h3>
+                            @if ($essayScore === null)
+                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                    Menunggu Penilaian
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Sudah Dinilai
+                                </span>
+                            @endif
+                        </div>
+
+                        @if ($essayScore === null)
+                            {{-- Menunggu Penilaian --}}
+                            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                                        <svg class="h-5 w-5 text-amber-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-amber-800">Menunggu Penilaian HR</p>
+                                        <p class="mt-1 text-sm text-amber-700">Essay Anda telah berhasil dikirim dan saat ini sedang menunggu proses penilaian oleh tim HR. Nilai akhir assessment akan diperbarui setelah proses review selesai.</p>
+                                        <p class="mt-2 text-xs text-amber-600">Silakan cek kembali secara berkala.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            {{-- Sudah Dinilai --}}
+                            <div class="space-y-3">
+                                <div class="grid gap-4 sm:grid-cols-2">
+                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                        <p class="text-xs font-medium text-gray-500">Nilai Essay</p>
+                                        <p class="mt-1 text-2xl font-bold {{ $essayPass ? 'text-emerald-600' : 'text-rose-600' }}">{{ number_format($essayScore, 2) }}</p>
+                                    </div>
+                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                        <p class="text-xs font-medium text-gray-500">Status</p>
+                                        <p class="mt-1 text-2xl font-bold {{ $essayPass ? 'text-emerald-600' : 'text-rose-600' }}">{{ $essayPass ? 'Lulus' : 'Tidak Lulus' }}</p>
+                                    </div>
+                                </div>
+
+                                @if ($feedbacks)
+                                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                        <p class="text-xs font-medium text-gray-500 mb-1">Feedback HR</p>
+                                        <p class="whitespace-pre-line text-sm text-gray-800 italic">"{{ $feedbacks }}"</p>
+                                    </div>
+                                @endif
+
+                                @if ($latestReview && $latestReview->reviewed_at)
+                                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <span>Tanggal Penilaian: <strong>{{ $latestReview->reviewed_at->format('d M Y H:i') }} WIB</strong></span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             {{-- Certificate --}}
             @if ($showCertificate && $assessment->isGraded())
                 <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
