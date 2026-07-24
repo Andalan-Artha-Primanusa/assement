@@ -36,13 +36,10 @@
                     <p class="text-sm text-gray-500">Paket soal</p>
                     <p class="mt-2 text-xl font-semibold text-gray-900">
                         {{ $package?->name ?? 'Semua paket' }}
-                        @if ($package?->level)
-                            <span class="ml-1 text-sm font-medium text-purple-600">({{ $package->level }})</span>
-                        @endif
                     </p>
                     @if ($package)
                         <p class="mt-1 text-xs text-gray-500">
-                            {{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}
+                            {{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}
                             | Threshold: >= {{ $package->min_score_pertimbangan ?? '-' }} / {{ $package->min_score_lolos ?? '-' }}
                         </p>
                     @endif
@@ -53,12 +50,16 @@
                 </div>
                 <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                     <p class="text-sm text-gray-500">Nilai</p>
-                    <p class="mt-2 text-3xl font-semibold text-indigo-700">{{ number_format($assessment->score, 2) }}</p>
+                    @if ($assessment->isGraded())
+                        <p class="mt-2 text-3xl font-semibold text-indigo-700">{{ number_format($assessment->score, 2) }}</p>
+                    @else
+                        <p class="mt-2 text-3xl font-semibold text-gray-300">--</p>
+                    @endif
                 </div>
             </div>
 
             {{-- Grade Result --}}
-            @if ($grade)
+            @if ($grade && $assessment->isGraded())
                 <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     @if ($grade === 'Lolos')
                         <div class="bg-gradient-to-r from-emerald-500 to-green-500 p-8 text-center text-white">
@@ -112,7 +113,7 @@
             @endif
 
             {{-- Certificate --}}
-            @if ($showCertificate)
+            @if ($showCertificate && $assessment->isGraded())
                 <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-center">
                         <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-indigo-200">
