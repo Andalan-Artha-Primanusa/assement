@@ -513,6 +513,8 @@ class AssessmentController extends Controller
 
         $assessment->load(['answers.question', 'user', 'questionPackage', 'segments']);
 
+        $assessment->setRelation('answers', $assessment->answers->filter(fn ($a) => $a->question !== null)->values());
+
         return view('admin.assessments.questions', compact('assessment'));
     }
 

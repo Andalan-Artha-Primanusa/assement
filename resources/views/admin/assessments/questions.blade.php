@@ -40,8 +40,7 @@
             @endif
 
             @foreach ($assessment->answers as $answer)
-                @php($question = $answer->question)
-                @if (!$question) @continue @endif
+                @php /** @var \App\Models\Question $question */ $question = $answer->question @endphp
                 <div class="mb-4 bg-white p-4 sm:p-6 shadow-sm sm:rounded-lg">
                     <div class="flex items-start gap-3 sm:gap-4">
                         <div class="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs sm:text-sm font-semibold text-indigo-700">
