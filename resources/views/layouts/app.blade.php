@@ -15,6 +15,8 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        @stack('styles')
     </head>
     <body class="font-sans antialiased">
         <div x-data="{ sidebarOpen: window.innerWidth >= 640 }" class="min-h-screen bg-gray-100">
