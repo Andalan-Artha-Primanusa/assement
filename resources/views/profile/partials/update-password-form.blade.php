@@ -9,7 +9,10 @@
         </p>
     </header>
 
-    <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6" data-confirm
+          data-confirm-title="Update password?"
+          data-confirm-message="Pastikan password baru sudah benar dan konfirmasinya sesuai."
+          data-confirm-text="Ya, update password">
         @csrf
         @method('put')
 

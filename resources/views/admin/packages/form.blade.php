@@ -39,7 +39,10 @@
     ];
 @endphp
 
-<form method="POST" action="{{ $action }}" class="space-y-8" data-package-form>
+<form method="POST" action="{{ $action }}" class="space-y-8" data-package-form data-confirm
+      data-confirm-title="{{ ($method ?? 'POST') === 'POST' ? 'Tambah paket soal?' : 'Simpan perubahan paket?' }}"
+      data-confirm-message="Pastikan tipe, level, threshold, dan status paket sudah benar."
+      data-confirm-text="{{ ($method ?? 'POST') === 'POST' ? 'Ya, tambah paket' : 'Ya, simpan perubahan' }}">
     @csrf
     @if (isset($method) && $method !== 'POST')
         @method($method)

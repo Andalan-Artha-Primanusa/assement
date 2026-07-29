@@ -1,4 +1,7 @@
-<form method="POST" action="{{ $action }}" class="space-y-6" enctype="multipart/form-data">
+<form method="POST" action="{{ $action }}" class="space-y-6" enctype="multipart/form-data" data-confirm
+      data-confirm-title="{{ $method === 'POST' ? 'Tambah soal?' : 'Simpan perubahan soal?' }}"
+      data-confirm-message="Pastikan pertanyaan, pilihan jawaban, kunci, dan paket soal sudah sesuai."
+      data-confirm-text="{{ $method === 'POST' ? 'Ya, tambah soal' : 'Ya, simpan soal' }}">
     @csrf
     @if ($method !== 'POST')
         @method($method)

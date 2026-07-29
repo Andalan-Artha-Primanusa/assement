@@ -1,4 +1,7 @@
-<form method="POST" action="{{ $action }}" class="space-y-6">
+<form method="POST" action="{{ $action }}" class="space-y-6" data-confirm
+      data-confirm-title="{{ $method === 'POST' ? 'Tambah user?' : 'Simpan perubahan user?' }}"
+      data-confirm-message="Pastikan role, paket soal, masa akses, durasi, dan password sudah benar."
+      data-confirm-text="{{ $method === 'POST' ? 'Ya, tambah user' : 'Ya, simpan user' }}">
     @csrf
     @if ($method !== 'POST')
         @method($method)

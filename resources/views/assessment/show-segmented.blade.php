@@ -70,7 +70,7 @@
             @endif
 
             {{-- Questions --}}
-            <form id="assessment-form" method="POST" action="{{ route('assessment.submit', $assessment) }}" enctype="multipart/form-data" class="{{ $secureMode ? 'pointer-events-none opacity-40' : '' }}" data-secure-mode="{{ $secureMode ? '1' : '0' }}">
+            <form id="assessment-form" method="POST" action="{{ route('assessment.submit', $assessment) }}" enctype="multipart/form-data" class="{{ $secureMode ? 'pointer-events-none opacity-40' : '' }}" data-secure-mode="{{ $secureMode ? '1' : '0' }}" data-popup-skip>
                 @csrf
                 <div class="space-y-4">
                     @foreach ($segmentAnswers as $answer)
@@ -162,7 +162,8 @@
                 if (segLeft <= 0 || overallLeft <= 0) {
                     clearInterval(interval);
                     form.dataset.submitting = '1';
-                    form.submit();
+                    form.dataset.confirmed = '1';
+                    form.requestSubmit();
                 }
 
                 if (segLeft <= 60) {
@@ -251,14 +252,49 @@
                 }, 3000);
             }
 
-            form.addEventListener('submit', function (event) {
-                if (secureMode && !cameraReady) {
-                    event.preventDefault();
-                    alert('Kamera wajib aktif sebelum menyelesaikan segmen ini.');
+            form.addEventListener('submit', async function (event) {
+                if (form.dataset.confirmed === '1') {
+                    delete form.dataset.confirmed;
+                    form.dataset.submitting = '1';
                     return;
                 }
 
-                form.dataset.submitting = '1';
+                event.preventDefault();
+
+                if (secureMode && !cameraReady) {
+                    window.appNotify?.({
+                        type: 'warning',
+                        title: 'Kamera belum aktif',
+                        message: 'Kamera wajib aktif sebelum menyelesaikan segmen ini.',
+                    });
+                    return;
+                }
+
+                const buttonLabel = event.submitter?.textContent?.trim() || 'Kirim jawaban';
+                const confirmed = window.appConfirm
+                    ? await window.appConfirm({
+                        title: buttonLabel.includes('Selesai & Kirim') ? 'Kirim assessment sekarang?' : 'Selesaikan segmen ini?',
+                        message: buttonLabel.includes('Selesai & Kirim')
+                            ? 'Pastikan semua jawaban final sudah benar. Setelah dikirim, assessment tidak bisa diedit lagi.'
+                            : 'Jawaban segmen ini akan disimpan dan kamu lanjut ke segmen berikutnya.',
+                        confirmText: buttonLabel.includes('Selesai & Kirim') ? 'Ya, kirim assessment' : 'Ya, lanjut segmen',
+                    })
+                    : false;
+
+                if (!confirmed) {
+                    return;
+                }
+
+                if (window.AppPopup?.refreshCsrfToken) {
+                    const refreshed = await window.AppPopup.refreshCsrfToken();
+
+                    if (!refreshed) {
+                        return;
+                    }
+                }
+
+                form.dataset.confirmed = '1';
+                form.requestSubmit();
             });
 
             function reportViolation(reason) {
@@ -280,6 +316,11 @@
                 })
                     .then(r => r.json())
                     .then(data => {
+                        if (data.csrf_expired && data.redirect) {
+                            window.location.href = data.redirect;
+                            return;
+                        }
+
                         if (data.submitted) {
                             window.location.href = data.redirect;
                             return;

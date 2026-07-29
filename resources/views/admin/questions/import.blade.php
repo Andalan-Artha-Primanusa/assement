@@ -33,7 +33,10 @@
                     <p class="mt-1">Category & difficulty opsional (default: yang dipilih di bawah). Baris header otomatis di-skip.</p>
                 </div>
 
-                <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5">
+                <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5" data-confirm
+                      data-confirm-title="Import soal dari file?"
+                      data-confirm-message="Pastikan format file sudah sesuai template agar soal masuk ke paket yang benar."
+                      data-confirm-text="Ya, import soal">
                     @csrf
 
                     <div>

@@ -146,16 +146,7 @@ class UserController extends Controller
 
             try {
                 $user = User::where('email', $email)->first();
-                Mail::send('emails.assessment-invite', [
-                    'user' => $user,
-                    'password' => $password,
-                    'loginUrl' => route('login'),
-                    'accessDays' => $accessDays,
-                    'durationHours' => round($durationMinutes / 60, 2),
-                ], function ($message) use ($email, $name): void {
-                    $message->to($email, $name)
-                        ->subject('Undangan Assessment - Andalan HR');
-                });
+                $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
             } catch (\Throwable $e) {
                 $errors[] = "Gagal kirim email ke {$email}.";
             }
@@ -233,22 +224,106 @@ class UserController extends Controller
 
         $user->load('questionPackage');
 
-        Mail::send('emails.assessment-invite', [
-            'user' => $user,
-            'password' => $password,
-            'loginUrl' => route('login'),
-            'accessDays' => $accessDays,
-            'durationHours' => round($durationMinutes / 60, 2),
-        ], function ($message) use ($user): void {
-            $message->to($user->email, $user->name)
-                ->subject('Undangan Assessment - Andalan HR');
-        });
+        $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
 
         ActivityLog::log('user_invite', 'Mengundang user '.$data['email'], User::class, $user->id);
 
         return redirect()
             ->route('admin.invite')
             ->with('status', "Undangan peserta dibuat dan dikirim. Nama: {$name}");
+    }
+
+    public function inviteMany(Request $request): RedirectResponse
+    {
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $data = $request->validate([
+            'bulk_emails' => ['required', 'string', 'max:20000'],
+            'bulk_type' => ['required', 'string', Rule::in($visibleTypes)],
+            'bulk_question_package_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('question_packages', 'id')->where(function ($query) use ($visibleTypes): void {
+                    $query->whereIn('type', $visibleTypes);
+                }),
+            ],
+            'bulk_access_days' => ['required', 'integer', 'min:1', 'max:365'],
+            'bulk_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
+        ]);
+
+        $this->ensurePackageMatchesType($data['bulk_question_package_id'] ?? null, $data['bulk_type']);
+
+        [$parsedEmails, $invalidRows] = $this->parseBulkInviteEmails($data['bulk_emails']);
+
+        if (empty($parsedEmails)) {
+            throw ValidationException::withMessages([
+                'bulk_emails' => 'Isi minimal satu email yang valid.',
+            ]);
+        }
+
+        if (count($parsedEmails) > 200) {
+            throw ValidationException::withMessages([
+                'bulk_emails' => 'Maksimal 200 email dalam sekali kirim.',
+            ]);
+        }
+
+        $accessDays = (int) $data['bulk_access_days'];
+        $durationMinutes = (int) round(((float) $data['bulk_duration_hours']) * 60);
+        $packageId = $data['bulk_question_package_id'] ?? null;
+        $created = 0;
+        $sent = 0;
+        $errors = [];
+        $seen = [];
+
+        if ($invalidRows) {
+            $errors[] = count($invalidRows).' baris email tidak valid: '.implode(', ', array_slice($invalidRows, 0, 3));
+        }
+
+        foreach ($parsedEmails as $item) {
+            $email = $item['email'];
+
+            if (isset($seen[$email])) {
+                $errors[] = "Email {$email} duplikat di daftar.";
+                continue;
+            }
+            $seen[$email] = true;
+
+            if (User::where('email', $email)->exists()) {
+                $errors[] = "Email {$email} sudah terdaftar.";
+                continue;
+            }
+
+            $password = Str::upper(Str::random(4));
+            $name = $item['name'] ?: $this->nameFromEmail($email);
+
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => $password,
+                'role' => User::ROLE_USER,
+                'question_package_id' => $packageId,
+                'assessment_access_expires_at' => now()->addDays($accessDays),
+                'assessment_duration_minutes' => $durationMinutes,
+            ]);
+
+            try {
+                $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
+                $sent++;
+            } catch (\Throwable $e) {
+                $errors[] = "Akun {$email} dibuat, tapi email gagal dikirim.";
+            }
+
+            ActivityLog::log('user_invite_bulk', 'Mengundang user '.$email, User::class, $user->id);
+            $created++;
+        }
+
+        $message = "Berhasil membuat {$created} akun peserta dan mengirim {$sent} email undangan.";
+        if ($errors) {
+            $message .= ' Catatan: '.implode(', ', array_slice($errors, 0, 5));
+        }
+
+        return redirect()->route('admin.invite')->with('status', $message);
     }
 
     /**
@@ -426,5 +501,80 @@ class UserController extends Controller
                 'question_package_id' => 'Paket soal harus sesuai dengan tipe peserta.',
             ]);
         }
+    }
+
+    /**
+     * @return array{0: array<int, array{email:string, name:?string}>, 1: array<int, string>}
+     */
+    private function parseBulkInviteEmails(string $input): array
+    {
+        $items = [];
+        $invalidRows = [];
+
+        foreach (preg_split('/\R+/', $input) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $line, $matches);
+            $emails = $matches[0] ?? [];
+
+            if (count($emails) === 0) {
+                $invalidRows[] = Str::limit($line, 80);
+                continue;
+            }
+
+            if (count($emails) > 1) {
+                foreach ($emails as $email) {
+                    $items[] = [
+                        'email' => strtolower($email),
+                        'name' => null,
+                    ];
+                }
+                continue;
+            }
+
+            $email = strtolower($emails[0]);
+            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $invalidRows[] = Str::limit($line, 80);
+                continue;
+            }
+
+            $name = trim(str_replace($emails[0], '', $line), " \t\n\r\0\x0B<>,;:-\"'");
+
+            $items[] = [
+                'email' => $email,
+                'name' => $name !== '' ? $name : null,
+            ];
+        }
+
+        return [$items, $invalidRows];
+    }
+
+    private function nameFromEmail(string $email): string
+    {
+        $localPart = Str::before($email, '@');
+        $name = Str::of($localPart)
+            ->replace(['.', '_', '-'], ' ')
+            ->squish()
+            ->title()
+            ->toString();
+
+        return $name !== '' ? $name : 'Peserta '.Str::upper(Str::random(6));
+    }
+
+    private function sendAssessmentInvite(User $user, string $password, int $accessDays, int $durationMinutes): void
+    {
+        Mail::send('emails.assessment-invite', [
+            'user' => $user,
+            'password' => $password,
+            'loginUrl' => route('login'),
+            'accessDays' => $accessDays,
+            'durationHours' => round($durationMinutes / 60, 2),
+        ], function ($message) use ($user): void {
+            $message->to($user->email, $user->name)
+                ->subject('Undangan Assessment - Andalan HR');
+        });
     }
 }

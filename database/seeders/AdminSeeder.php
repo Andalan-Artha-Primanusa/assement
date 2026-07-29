@@ -13,7 +13,7 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'superadmin@andalan.co.id'],
+            ['email' => 'superadmin@andalan-nusantara.id'],
             [
                 'name' => 'Super Admin',
                 'password' => 'password',
@@ -23,7 +23,7 @@ class AdminSeeder extends Seeder
         );
 
         User::updateOrCreate(
-            ['email' => 'admin.mekanik@andalan.co.id'],
+            ['email' => 'admin.mekanik@andalan-nusantara.id'],
             [
                 'name' => 'Admin Mekanik',
                 'password' => 'password',
@@ -33,7 +33,7 @@ class AdminSeeder extends Seeder
         );
 
         User::updateOrCreate(
-            ['email' => 'admin.operator@andalan.co.id'],
+            ['email' => 'admin.operator@andalan-nusantara.id'],
             [
                 'name' => 'Admin Operator',
                 'password' => 'password',
@@ -43,7 +43,7 @@ class AdminSeeder extends Seeder
         );
 
         User::updateOrCreate(
-            ['email' => 'admin.she@andalan.co.id'],
+            ['email' => 'admin.she@andalan-nusantara.id'],
             [
                 'name' => 'Admin SHE',
                 'password' => 'password',
@@ -53,7 +53,7 @@ class AdminSeeder extends Seeder
         );
 
         User::updateOrCreate(
-            ['email' => 'admin.hr@andalan.co.id'],
+            ['email' => 'admin.hr@andalan-nusantara.id'],
             [
                 'name' => 'Admin HR',
                 'password' => 'password',

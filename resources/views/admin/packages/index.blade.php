@@ -93,7 +93,11 @@
                                         <div class="flex items-center justify-end gap-1.5">
                                             <a href="{{ route('admin.packages.questions', $package) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Soal</a>
                                             <a href="{{ route('admin.packages.edit', $package) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
-                                            <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" onsubmit="return confirm('Hapus paket {{ $package->name }}?')" class="inline">
+                                            <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" class="inline" data-confirm
+                                                  data-confirm-title="Hapus paket {{ $package->name }}?"
+                                                  data-confirm-message="Paket hanya bisa dihapus jika tidak memiliki soal dan tidak sedang dipakai user."
+                                                  data-confirm-text="Ya, hapus paket"
+                                                  data-confirm-variant="danger">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>

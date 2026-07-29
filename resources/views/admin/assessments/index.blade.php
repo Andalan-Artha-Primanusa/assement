@@ -99,7 +99,10 @@
                                                 <a href="{{ route('assessment.result', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
                                                 <a href="{{ route('admin.assessments.pdf', $assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">PDF</a>
                                             @elseif ($assessment->isBlocked())
-                                                <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}" class="inline">
+                                                <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}" class="inline" data-confirm
+                                                      data-confirm-title="Buka akses peserta?"
+                                                      data-confirm-message="Peserta {{ $assessment->user->name }} bisa melanjutkan assessment setelah akses dibuka."
+                                                      data-confirm-text="Ya, buka akses">
                                                     @csrf
                                                     <button class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Buka</button>
                                                 </form>
@@ -110,7 +113,10 @@
                                                         <div class="rounded-lg bg-white p-6 shadow-xl w-80">
                                                             <h3 class="text-sm font-semibold text-gray-900">Atur Durasi Assessment</h3>
                                                             <p class="mt-1 text-xs text-gray-500">Peserta: {{ $assessment->user->name }}</p>
-                                                            <form method="POST" action="{{ route('admin.assessments.set-duration', $assessment) }}" class="mt-4 space-y-3">
+                                                            <form method="POST" action="{{ route('admin.assessments.set-duration', $assessment) }}" class="mt-4 space-y-3" data-confirm
+                                                                  data-confirm-title="Simpan durasi assessment?"
+                                                                  data-confirm-message="Durasi pengerjaan peserta akan diperbarui sesuai nilai yang diisi."
+                                                                  data-confirm-text="Ya, simpan durasi">
                                                                 @csrf
                                                                 <div>
                                                                     <label class="text-xs font-medium text-gray-700">Durasi (menit)</label>

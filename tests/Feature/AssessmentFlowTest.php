@@ -134,6 +134,7 @@ class AssessmentFlowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin_mekanik']);
         $package = QuestionPackage::create([
             'name' => 'Paket Invite',
+            'type' => QuestionPackage::TYPE_MEKANIK,
             'is_active' => true,
         ]);
 
@@ -152,6 +153,41 @@ class AssessmentFlowTest extends TestCase
             'role' => 'user',
             'question_package_id' => $package->id,
             'assessment_duration_minutes' => 90,
+        ]);
+    }
+
+    public function test_admin_can_invite_many_users_from_email_list(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Bulk Invite',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite-many'), [
+                'bulk_emails' => "alpha@example.com\nBeta User <beta@example.com>\ngamma@example.com, delta@example.com",
+                'bulk_type' => QuestionPackage::TYPE_MEKANIK,
+                'bulk_question_package_id' => $package->id,
+                'bulk_access_days' => 7,
+                'bulk_duration_hours' => 2,
+            ])
+            ->assertRedirect(route('admin.invite'));
+
+        foreach (['alpha@example.com', 'beta@example.com', 'gamma@example.com', 'delta@example.com'] as $email) {
+            $this->assertDatabaseHas('users', [
+                'email' => $email,
+                'role' => 'user',
+                'question_package_id' => $package->id,
+                'assessment_duration_minutes' => 120,
+            ]);
+        }
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'beta@example.com',
+            'name' => 'Beta User',
         ]);
     }
 

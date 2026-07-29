@@ -11,6 +11,7 @@ use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StorageFileController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,6 +19,12 @@ Route::get('/', function () {
         ? redirect()->route('dashboard')
         : redirect()->route('login');
 });
+
+Route::get('/csrf-token', function (Request $request) {
+    return response()
+        ->json(['token' => csrf_token()])
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('csrf-token');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'assessment.guard'])
@@ -58,6 +65,7 @@ Route::middleware(['auth', 'admin'])
         Route::resource('questions', QuestionController::class);
         Route::get('invite', [UserController::class, 'inviteForm'])->name('invite');
         Route::post('invite', [UserController::class, 'invite'])->name('users.invite');
+        Route::post('invite/many', [UserController::class, 'inviteMany'])->name('users.invite-many');
         Route::post('invite/bulk', [UserController::class, 'inviteBulk'])->name('users.invite-bulk');
         Route::resource('users', UserController::class);
         Route::get('users/{user}/answers', [UserController::class, 'answers'])->name('users.answers');

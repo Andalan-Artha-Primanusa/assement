@@ -63,7 +63,11 @@
                                     <td class="px-6 py-4">
                                         <div class="flex items-center justify-end gap-1">
                                             <a href="{{ route('admin.questions.edit', $question) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
-                                            <form method="POST" action="{{ route('admin.questions.destroy', $question) }}" onsubmit="return confirm('Hapus soal ini?')" class="inline">
+                                            <form method="POST" action="{{ route('admin.questions.destroy', $question) }}" class="inline" data-confirm
+                                                  data-confirm-title="Hapus soal ini?"
+                                                  data-confirm-message="Soal akan dihapus jika belum pernah dipakai, atau dinonaktifkan jika sudah memiliki riwayat jawaban."
+                                                  data-confirm-text="Ya, hapus soal"
+                                                  data-confirm-variant="danger">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>

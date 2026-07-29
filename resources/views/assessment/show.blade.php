@@ -85,7 +85,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('assessment.submit', $assessment) }}" class="pointer-events-none space-y-5 opacity-40" id="assessment-form" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('assessment.submit', $assessment) }}" class="pointer-events-none space-y-5 opacity-40" id="assessment-form" enctype="multipart/form-data" data-popup-skip>
                 @csrf
 
                 @foreach ($assessment->answers as $answer)
@@ -148,7 +148,7 @@
         (() => {
             const violationUrl = @json(route('assessment.security-violation', $assessment));
             const submitUrl = @json(route('assessment.submit', $assessment));
-            const csrfToken = @json(csrf_token());
+            const initialCsrfToken = @json(csrf_token());
             const endsAt = new Date(@json($assessment->ends_at?->toIso8601String()));
             const secureMode = @json($secureMode);
             const lockMessage = document.getElementById('security-lock-message');
@@ -165,6 +165,8 @@
             let cameraReady = false;
             let cameraStarted = false;
             let cameraPromptOpen = false;
+
+            const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || initialCsrfToken;
 
             setTimeout(() => {
                 armed = true;
@@ -216,7 +218,7 @@
                 submitting = true;
 
                 const payload = new FormData();
-                payload.append('_token', csrfToken);
+                payload.append('_token', csrfToken());
                 appendSelectedAnswers(payload);
 
                 fetch(submitUrl, {
@@ -251,7 +253,7 @@
                 locked = true;
 
                 const payload = new FormData();
-                payload.append('_token', csrfToken);
+                payload.append('_token', csrfToken());
                 payload.append('reason', reason);
                 appendSelectedAnswers(payload);
 
@@ -269,6 +271,11 @@
                     })
                         .then((response) => response.json())
                         .then((data) => {
+                            if (data.csrf_expired && data.redirect) {
+                                window.location.href = data.redirect;
+                                return;
+                            }
+
                             if (data.submitted) {
                                 window.location.href = data.redirect || submitUrl;
                                 return;
@@ -383,19 +390,46 @@
                 });
             }
 
-            form.addEventListener('submit', (event) => {
+            form.addEventListener('submit', async (event) => {
+                if (form.dataset.confirmed === '1') {
+                    delete form.dataset.confirmed;
+                    submitting = true;
+                    return;
+                }
+
+                event.preventDefault();
+
                 if (!cameraReady) {
-                    event.preventDefault();
-                    alert('Kamera wajib aktif sebelum mengirim jawaban.');
+                    window.appNotify?.({
+                        type: 'warning',
+                        title: 'Kamera belum aktif',
+                        message: 'Kamera wajib aktif sebelum mengirim jawaban.',
+                    });
                     return;
                 }
 
-                if (!confirm('Kirim jawaban sekarang?')) {
-                    event.preventDefault();
+                const confirmed = window.appConfirm
+                    ? await window.appConfirm({
+                        title: 'Kirim jawaban sekarang?',
+                        message: 'Pastikan semua jawaban sudah diisi. Setelah dikirim, assessment tidak bisa diedit lagi.',
+                        confirmText: 'Ya, kirim jawaban',
+                    })
+                    : false;
+
+                if (!confirmed) {
                     return;
                 }
 
-                submitting = true;
+                if (window.AppPopup?.refreshCsrfToken) {
+                    const refreshed = await window.AppPopup.refreshCsrfToken();
+
+                    if (!refreshed) {
+                        return;
+                    }
+                }
+
+                form.dataset.confirmed = '1';
+                form.requestSubmit();
             });
         })();
     </script>

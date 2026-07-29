@@ -187,7 +187,10 @@
                                         </td>
                                         <td class="max-w-[220px] truncate px-4 py-3 text-gray-700">{{ $assessment->block_reason }}</td>
                                         <td class="py-3 pl-4 text-right">
-                                            <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}">
+                                            <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}" data-confirm
+                                                  data-confirm-title="Buka akses peserta?"
+                                                  data-confirm-message="Peserta {{ $assessment->user->name }} bisa melanjutkan assessment setelah akses dibuka."
+                                                  data-confirm-text="Ya, buka akses">
                                                 @csrf
                                                 <button class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">
                                                     Buka Akses

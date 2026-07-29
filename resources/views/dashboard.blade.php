@@ -82,7 +82,10 @@
                                     Lanjutkan
                                 </a>
                             @else
-                                <form method="POST" action="{{ route('assessment.start') }}">
+                                <form method="POST" action="{{ route('assessment.start') }}" data-confirm
+                                      data-confirm-title="Mulai assessment sekarang?"
+                                      data-confirm-message="Timer akan berjalan setelah assessment dimulai. Pastikan kamu sudah siap."
+                                      data-confirm-text="Ya, mulai">
                                     @csrf
                                     <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 min-h-[44px]">
                                         Mulai Assessment

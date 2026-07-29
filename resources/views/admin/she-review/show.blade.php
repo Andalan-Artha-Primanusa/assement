@@ -53,7 +53,10 @@
                 <div class="mb-4 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
                     Rumus nilai SHE: PG benar bernilai 100, PG salah bernilai 0, sedangkan Essay dan Portfolio dinilai manual 0-100. Nilai akhir adalah rata-rata semua soal.
                 </div>
-                <form method="POST" action="{{ route('admin.she-review.grade', $assessment) }}" class="space-y-6">
+                <form method="POST" action="{{ route('admin.she-review.grade', $assessment) }}" class="space-y-6" data-confirm
+                      data-confirm-title="Simpan nilai assessment?"
+                      data-confirm-message="Pastikan semua nilai essay/upload dan catatan review sudah benar sebelum disimpan."
+                      data-confirm-text="Ya, simpan nilai">
                     @csrf
 
                     @foreach ($answers as $answer)
