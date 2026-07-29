@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Assessment;
 use App\Models\AssessmentAnswer;
+use App\Models\AssessmentSegment;
 use App\Models\Question;
 use App\Models\QuestionPackage;
 use App\Models\User;
@@ -264,6 +265,165 @@ class AssessmentFlowTest extends TestCase
             'type' => Question::TYPE_ESSAY,
             'text' => 'Essay SHE boleh',
         ]);
+    }
+
+    public function test_admin_user_form_normalizes_she_segments_by_position(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_she']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Segment',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.store'), [
+                'name' => 'Peserta SHE Segment',
+                'email' => 'peserta.she.segment@example.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+                'role' => User::ROLE_USER,
+                'question_package_id' => $package->id,
+                'assessment_access_expires_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+                'assessment_duration_hours' => 1.75,
+                'max_attempts' => 1,
+                'segment_config' => [
+                    ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 30],
+                    ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 45],
+                    ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 30],
+                ],
+            ])
+            ->assertRedirect(route('admin.users.index'));
+
+        $user = User::where('email', 'peserta.she.segment@example.com')->firstOrFail();
+
+        $this->assertSame([
+            ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 30],
+            ['type' => Question::TYPE_ESSAY, 'duration' => 45],
+            ['type' => Question::TYPE_UPLOAD, 'duration' => 30],
+        ], $user->segment_config);
+    }
+
+    public function test_she_assessment_start_normalizes_legacy_duplicate_segments(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Legacy Segment',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'assessment_access_expires_at' => now()->addDays(3),
+            'assessment_duration_minutes' => 120,
+            'max_attempts' => 1,
+            'segment_config' => [
+                ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 30],
+                ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 45],
+                ['type' => Question::TYPE_MULTIPLE_CHOICE, 'duration' => 30],
+            ],
+        ]);
+
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE PG legacy',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_ESSAY,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE Essay legacy',
+            'is_active' => true,
+        ]);
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_UPLOAD,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE Upload legacy',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('assessment.start'));
+
+        $assessment = Assessment::firstOrFail();
+
+        $response->assertRedirect(route('assessment.show', $assessment));
+        $this->assertSame(3, $assessment->answers()->count());
+        $this->assertSame(
+            [Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_ESSAY, Question::TYPE_UPLOAD],
+            $assessment->segments()->pluck('type')->all()
+        );
+        $this->assertSame([30, 45, 30], $assessment->segments()->pluck('duration_minutes')->all());
+    }
+
+    public function test_she_segmented_page_keeps_positive_overall_countdown(): void
+    {
+        $this->travelTo(now()->startOfMinute());
+
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Timer',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'assessment_access_expires_at' => now()->addDays(3),
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 1,
+            'started_at' => now(),
+            'duration_minutes' => 105,
+            'ends_at' => now()->addMinutes(105),
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE PG timer',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $question->id,
+            'position' => 1,
+        ]);
+        AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'duration_minutes' => 30,
+            'order_index' => 0,
+            'status' => AssessmentSegment::STATUS_IN_PROGRESS,
+            'started_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('assessment.show', $assessment))
+            ->assertOk()
+            ->assertSee('const segmentRemaining = 1800;', false)
+            ->assertSee('const overallRemaining = 6300;', false);
     }
 
     public function test_admin_hr_can_create_question_with_custom_points(): void

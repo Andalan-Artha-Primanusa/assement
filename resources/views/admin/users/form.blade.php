@@ -37,7 +37,7 @@
             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">Semua paket</option>
                 @foreach ($packages as $pkg)
-                    <option value="{{ $pkg->id }}" data-has-segments="{{ $pkg->has_segments ? '1' : '0' }}" @selected(old('question_package_id', $user->question_package_id) == $pkg->id)>{{ $pkg->name }} ({{ \App\Models\QuestionPackage::typeLabel($pkg->type) }})</option>
+                    <option value="{{ $pkg->id }}" data-type="{{ $pkg->type }}" data-has-segments="{{ $pkg->has_segments ? '1' : '0' }}" @selected(old('question_package_id', $user->question_package_id) == $pkg->id)>{{ $pkg->name }} ({{ \App\Models\QuestionPackage::typeLabel($pkg->type) }})</option>
                 @endforeach
             </select>
             <x-input-error :messages="$errors->get('question_package_id')" class="mt-2" />
@@ -109,7 +109,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-sm font-semibold text-amber-800">Konfigurasi Segment</p>
-                <p class="text-xs text-amber-600 mt-0.5">Atur waktu pengerjaan per tipe soal. Urutan: PG - Essay - Upload.</p>
+                <p class="text-xs text-amber-600 mt-0.5">Khusus SHE urutannya dikunci: PG - Essay - Upload. Admin cukup ubah durasinya.</p>
             </div>
             <button type="button" id="add-segment-btn" class="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">+ Tambah</button>
         </div>
@@ -147,6 +147,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const segmentRows = document.getElementById('segment-rows');
     const addBtn = document.getElementById('add-segment-btn');
     const totalSpan = document.getElementById('segment-total');
+    const sheSegmentTypes = ['multiple_choice', 'essay', 'upload'];
+    const segmentLabels = {
+        multiple_choice: 'PG (Multiple Choice)',
+        essay: 'Essay',
+        upload: 'Upload File',
+    };
+    const sheDefaultDurations = @json(collect(config('assessment.she_default_segments'))->pluck('duration', 'type'));
+    let rowIndex = segmentRows.querySelectorAll('.segment-row').length;
 
     packageSelect.addEventListener('change', toggleSegmentSection);
     toggleSegmentSection();
@@ -154,8 +162,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleSegmentSection() {
         const selectedOption = packageSelect.querySelector('option:checked');
-        const hasSegments = selectedOption && selectedOption.dataset.hasSegments === '1';
+        const packageType = selectedOption ? selectedOption.dataset.type : '';
+        const isShe = packageType === 'she';
+        const hasSegments = selectedOption && (selectedOption.dataset.hasSegments === '1' || isShe);
+
+        if (hasSegments && isShe) {
+            enforceSheSegments();
+        }
+
         segmentSection.classList.toggle('hidden', !hasSegments);
+        addBtn.classList.toggle('hidden', isShe);
+        addBtn.disabled = !hasSegments || isShe;
+
+        segmentRows.querySelectorAll('select').forEach(function (select) {
+            select.disabled = !hasSegments;
+            select.classList.toggle('pointer-events-none', isShe);
+            select.classList.toggle('bg-gray-100', isShe);
+        });
+        segmentRows.querySelectorAll('input[type="number"]').forEach(function (input) {
+            input.disabled = !hasSegments;
+        });
+        segmentRows.querySelectorAll('.remove-segment-btn').forEach(function (button) {
+            button.disabled = !hasSegments || isShe;
+            button.classList.toggle('hidden', isShe);
+        });
+
+        updateTotal();
     }
 
     function updateTotal() {
@@ -166,19 +198,42 @@ document.addEventListener('DOMContentLoaded', function () {
         totalSpan.textContent = total;
     }
 
-    let rowIndex = segmentRows.querySelectorAll('.segment-row').length;
     addBtn.addEventListener('click', function () {
+        appendSegmentRow({
+            type: 'multiple_choice',
+            duration: 30,
+        });
+    });
+
+    function enforceSheSegments() {
+        const currentDurations = Array.from(segmentRows.querySelectorAll('.segment-row input[type="number"]'))
+            .map(function (input) {
+                return parseInt(input.value) || null;
+            });
+
+        segmentRows.innerHTML = '';
+        rowIndex = 0;
+        sheSegmentTypes.forEach(function (type, index) {
+            appendSegmentRow({
+                type,
+                duration: currentDurations[index] || parseInt(sheDefaultDurations[type]) || 30,
+            }, true);
+        });
+    }
+
+    function appendSegmentRow(segment, locked = false) {
         const row = document.createElement('div');
         row.className = 'segment-row flex items-center gap-2';
+        const type = segment.type || 'multiple_choice';
         row.innerHTML = `
-            <select name="segment_config[${rowIndex}][type]" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 flex-1">
-                <option value="multiple_choice">PG (Multiple Choice)</option>
-                <option value="essay">Essay</option>
-                <option value="upload">Upload File</option>
+            <select name="segment_config[${rowIndex}][type]" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 flex-1 ${locked ? 'pointer-events-none bg-gray-100' : ''}">
+                ${sheSegmentTypes.map(function (optionType) {
+                    return `<option value="${optionType}" ${optionType === type ? 'selected' : ''}>${segmentLabels[optionType]}</option>`;
+                }).join('')}
             </select>
-            <input type="number" name="segment_config[${rowIndex}][duration]" value="30" min="1" max="480" placeholder="Menit" class="w-24 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+            <input type="number" name="segment_config[${rowIndex}][duration]" value="${segment.duration || 30}" min="1" max="480" placeholder="Menit" class="w-24 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
             <span class="text-xs text-gray-500">mnt</span>
-            <button type="button" class="remove-segment-btn text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+            <button type="button" class="remove-segment-btn text-red-400 hover:text-red-600 text-lg leading-none ${locked ? 'hidden' : ''}" ${locked ? 'disabled' : ''}>&times;</button>
         `;
         segmentRows.appendChild(row);
         rowIndex++;
@@ -188,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
             updateTotal();
         });
         updateTotal();
-    });
+    }
 
     segmentRows.querySelectorAll('.remove-segment-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {

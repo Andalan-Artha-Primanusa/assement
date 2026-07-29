@@ -125,7 +125,7 @@
     <script>
         (() => {
             const segmentRemaining = {{ $currentSegment->remainingSeconds() }};
-            const overallRemaining = {{ $assessment->ends_at ? $assessment->ends_at->diffInSeconds(now()) : 999999 }};
+            const overallRemaining = {{ $assessment->ends_at ? max(0, $assessment->ends_at->timestamp - now()->timestamp) : 999999 }};
             const maxViolations = {{ config('assessment.max_security_blocks', 2) }};
             const secureMode = @json($secureMode);
             const form = document.getElementById('assessment-form');

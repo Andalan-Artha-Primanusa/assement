@@ -55,7 +55,7 @@ class AssessmentSegment extends Model
             return $this->duration_minutes * 60;
         }
 
-        $elapsed = (int) $this->started_at->diffInSeconds(now());
+        $elapsed = max(0, now()->timestamp - $this->started_at->timestamp);
         $total = $this->duration_minutes * 60;
 
         return max(0, $total - $elapsed);

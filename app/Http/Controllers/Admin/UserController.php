@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\QuestionPackage;
 use App\Models\User;
+use App\Support\AssessmentSegmentConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -90,7 +91,7 @@ class UserController extends Controller
         $typeIndex = array_search(strtolower('tipe'), array_map('strtolower', $header ?: []));
 
         $adminUser = $request->user();
-        $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())->pluck('id', 'name');
+        $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())->get()->keyBy('name');
         $created = 0;
         $errors = [];
 
@@ -124,10 +125,12 @@ class UserController extends Controller
                 }
             }
 
+            $package = null;
             $packageId = null;
             if ($packageIndex !== false && isset($row[$packageIndex])) {
                 $packageName = trim($row[$packageIndex]);
-                $packageId = $packagesByName[$packageName] ?? null;
+                $package = $packagesByName[$packageName] ?? null;
+                $packageId = $package?->id;
             }
 
             $password = strtoupper(Str::random(4));
@@ -142,6 +145,7 @@ class UserController extends Controller
                 'question_package_id' => $packageId,
                 'assessment_access_expires_at' => now()->addDays($accessDays),
                 'assessment_duration_minutes' => $durationMinutes,
+                'segment_config' => AssessmentSegmentConfig::forPackage($package),
             ]);
 
             try {
@@ -212,6 +216,10 @@ class UserController extends Controller
         $accessDays = (int) $data['access_days'];
         $durationMinutes = (int) round(((float) $data['duration_hours']) * 60);
 
+        $package = isset($data['question_package_id'])
+            ? QuestionPackage::find($data['question_package_id'])
+            : null;
+
         $user = User::create([
             'name' => $name,
             'email' => $data['email'],
@@ -220,6 +228,7 @@ class UserController extends Controller
             'question_package_id' => $data['question_package_id'] ?? null,
             'assessment_access_expires_at' => now()->addDays($accessDays),
             'assessment_duration_minutes' => $durationMinutes,
+            'segment_config' => AssessmentSegmentConfig::forPackage($package),
         ]);
 
         $user->load('questionPackage');
@@ -271,6 +280,7 @@ class UserController extends Controller
         $accessDays = (int) $data['bulk_access_days'];
         $durationMinutes = (int) round(((float) $data['bulk_duration_hours']) * 60);
         $packageId = $data['bulk_question_package_id'] ?? null;
+        $package = $packageId ? QuestionPackage::find($packageId) : null;
         $created = 0;
         $sent = 0;
         $errors = [];
@@ -305,6 +315,7 @@ class UserController extends Controller
                 'question_package_id' => $packageId,
                 'assessment_access_expires_at' => now()->addDays($accessDays),
                 'assessment_duration_minutes' => $durationMinutes,
+                'segment_config' => AssessmentSegmentConfig::forPackage($package),
             ]);
 
             try {
@@ -474,17 +485,10 @@ class UserController extends Controller
             : null;
         unset($data['assessment_duration_hours']);
 
-        $segmentConfig = null;
-        if (! empty($data['segment_config'])) {
-            $segmentConfig = collect($data['segment_config'])
-                ->filter(fn ($s) => ! empty($s['type']) && ! empty($s['duration']))
-                ->values()
-                ->toArray();
-            if (empty($segmentConfig)) {
-                $segmentConfig = null;
-            }
-        }
-        $data['segment_config'] = $segmentConfig;
+        $package = $data['question_package_id']
+            ? QuestionPackage::find($data['question_package_id'])
+            : null;
+        $data['segment_config'] = AssessmentSegmentConfig::forPackage($package, $data['segment_config'] ?? null);
 
         return $data;
     }

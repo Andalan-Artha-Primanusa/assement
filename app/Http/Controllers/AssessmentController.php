@@ -10,6 +10,7 @@ use App\Models\Question;
 use App\Models\QuestionPackage;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
+use App\Support\AssessmentSegmentConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -619,24 +620,7 @@ class AssessmentController extends Controller
             return [];
         }
 
-        $config = $user->segment_config;
-
-        if (empty($config) && ($package->type === QuestionPackage::TYPE_SHE || $package->has_segments)) {
-            $config = config('assessment.she_default_segments', []);
-        }
-
-        return collect($config)
-            ->map(fn (array $segment): array => [
-                'type' => $segment['type'] ?? '',
-                'duration' => (int) ($segment['duration'] ?? 0),
-            ])
-            ->filter(fn (array $segment): bool => in_array($segment['type'], [
-                Question::TYPE_MULTIPLE_CHOICE,
-                Question::TYPE_ESSAY,
-                Question::TYPE_UPLOAD,
-            ], true) && $segment['duration'] > 0)
-            ->values()
-            ->all();
+        return AssessmentSegmentConfig::forPackage($package, $user->segment_config);
     }
 
     private function notifyAdmins(Assessment $assessment): void
