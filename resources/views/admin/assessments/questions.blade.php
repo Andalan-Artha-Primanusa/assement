@@ -92,7 +92,7 @@
                     <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Paket Soal</p>
                     <p class="mt-1 text-base font-bold text-gray-900">{{ $package?->name ?? '-' }}</p>
                     @if ($package)
-                        <p class="text-xs text-gray-400">{{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}</p>
+                        <p class="text-xs text-gray-400">{{ \App\Models\QuestionPackage::typeLabel($package->type) }}</p>
                     @endif
                 </div>
                 <div class="bg-white p-5 shadow-sm rounded-xl">

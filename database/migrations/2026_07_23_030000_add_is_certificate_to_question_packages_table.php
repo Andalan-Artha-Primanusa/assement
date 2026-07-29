@@ -1,17 +1,26 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('ALTER TABLE question_packages ADD COLUMN is_certificate TINYINT(1) NOT NULL DEFAULT 0 AFTER is_active');
+        if (Schema::hasColumn('question_packages', 'is_certificate')) {
+            return;
+        }
+
+        Schema::table('question_packages', function (Blueprint $table): void {
+            $table->boolean('is_certificate')->default(false)->after('is_active');
+        });
     }
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE question_packages DROP COLUMN is_certificate');
+        Schema::table('question_packages', function (Blueprint $table): void {
+            $table->dropColumn('is_certificate');
+        });
     }
 };

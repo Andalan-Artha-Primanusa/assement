@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Assessment;
 use App\Models\AssessmentAnswer;
 use App\Models\Question;
+use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,17 +17,22 @@ class SheReviewController extends Controller
     public function index(Request $request): View
     {
         $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
         $selectedType = $request->string('type')->toString();
 
-        if (! in_array($selectedType, ['mekanik', 'operator', 'she'])) {
-            $selectedType = 'she';
+        if (! in_array($selectedType, QuestionPackage::TYPES, true)) {
+            $selectedType = in_array(QuestionPackage::TYPE_SHE, $visibleTypes, true)
+                ? QuestionPackage::TYPE_SHE
+                : ($visibleTypes[0] ?? QuestionPackage::TYPE_SHE);
         }
 
+        abort_unless($adminUser->canManageType($selectedType), 403);
+
         $assessments = Assessment::with('user', 'questionPackage', 'answers')
-            ->when($selectedType === 'she', function ($query): void {
+            ->when($selectedType === QuestionPackage::TYPE_SHE, function ($query): void {
                 $query->where('status', Assessment::STATUS_PENDING_REVIEW);
             })
-            ->when($selectedType !== 'she', function ($query): void {
+            ->when($selectedType !== QuestionPackage::TYPE_SHE, function ($query): void {
                 $query->whereNotNull('submitted_at');
             })
             ->whereHas('questionPackage', function ($q) use ($selectedType): void {
@@ -51,6 +57,7 @@ class SheReviewController extends Controller
         abort_unless($assessment->submitted_at !== null, 404);
 
         $assessment->load('user', 'questionPackage', 'answers.question');
+        abort_unless(request()->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
 
         $answers = $assessment->answers->filter(function ($answer) {
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
@@ -65,6 +72,9 @@ class SheReviewController extends Controller
     {
         abort_unless($assessment->status === Assessment::STATUS_PENDING_REVIEW, 400);
 
+        $assessment->load('questionPackage');
+        abort_unless($request->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
+
         $validated = $request->validate([
             'scores' => ['required', 'array'],
             'scores.*' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -78,8 +88,8 @@ class SheReviewController extends Controller
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
         });
 
-        $totalScore = 0;
-        $count = 0;
+        $manualScoreTotal = 0;
+        $manualCount = 0;
 
         foreach ($essayUploadAnswers as $answer) {
             if (isset($validated['scores'][$answer->id])) {
@@ -90,33 +100,26 @@ class SheReviewController extends Controller
                     'reviewed_at' => now(),
                 ]);
 
-                $totalScore += $validated['scores'][$answer->id];
-                $count++;
+                $manualScoreTotal += (float) $validated['scores'][$answer->id];
+                $manualCount++;
             }
+        }
+
+        if ($manualCount !== $essayUploadAnswers->count()) {
+            return back()
+                ->withErrors(['scores' => 'Semua jawaban Essay/Upload wajib diberi nilai sebelum assessment diselesaikan.'])
+                ->withInput();
         }
 
         $mcAnswers = $assessment->answers->filter(function ($answer) {
             return $answer->question && $answer->question->isMultipleChoice();
         });
 
-        $mcScore = 0;
-        if ($mcAnswers->count() > 0) {
-            $mcCorrect = $mcAnswers->where('is_correct', true)->count();
-            $mcScore = ($mcCorrect / $mcAnswers->count()) * 100;
-        }
-
-        $essayScore = $count > 0 ? $totalScore / $count : 0;
-
-        $mcWeight = 0.5;
-        $essayWeight = 0.5;
-
-        if ($mcAnswers->count() === 0) {
-            $finalScore = $essayScore;
-        } elseif ($count === 0) {
-            $finalScore = $mcScore;
-        } else {
-            $finalScore = round(($mcScore * $mcWeight) + ($essayScore * $essayWeight), 2);
-        }
+        $mcScoreTotal = $mcAnswers->sum(fn ($answer): int => $answer->is_correct ? 100 : 0);
+        $totalCount = $mcAnswers->count() + $manualCount;
+        $finalScore = $totalCount > 0
+            ? round(($mcScoreTotal + $manualScoreTotal) / $totalCount, 2)
+            : 0;
 
         $assessment->update([
             'score' => $finalScore,

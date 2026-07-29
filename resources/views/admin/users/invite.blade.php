@@ -29,8 +29,8 @@
                             <label for="invite_type" class="block text-sm font-medium text-gray-700">Tipe Peserta</label>
                             <select id="invite_type" name="type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">Pilih tipe</option>
-                                @foreach (($visibleTypes ?? ['operator', 'mekanik', 'she']) as $type)
-                                    <option value="{{ $type }}" @selected(old('type') === $type)>{{ $type === 'she' ? 'SHE' : ucfirst($type) }}</option>
+                                @foreach (($visibleTypes ?? \App\Models\QuestionPackage::TYPES) as $type)
+                                    <option value="{{ $type }}" @selected(old('type') === $type)>{{ \App\Models\QuestionPackage::typeLabel($type) }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('type')" class="mt-1" />
@@ -40,7 +40,7 @@
                             <select id="invite_question_package_id" name="question_package_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Semua paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
+                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('question_package_id')" class="mt-1" />
@@ -72,7 +72,7 @@
                         <div>
                             <label for="csv_file" class="block text-sm font-medium text-gray-700">Upload file CSV</label>
                             <input id="csv_file" type="file" name="csv_file" accept=".csv,.txt" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100" required>
-                            <p class="mt-1 text-xs text-gray-500">Kolom: email, nama, paket, tipe (operator/mekanik). Tipe & paket opsional.</p>
+                            <p class="mt-1 text-xs text-gray-500">Kolom: email, nama, paket, tipe (operator/mekanik/she/hr). Tipe & paket opsional.</p>
                             <x-input-error :messages="$errors->get('csv_file')" class="mt-1" />
                         </div>
                         <button class="w-full rounded-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 min-h-[44px]">

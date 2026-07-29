@@ -1,18 +1,26 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('ALTER TABLE questions ADD COLUMN image VARCHAR(500) NULL AFTER text');
+        if (Schema::hasColumn('questions', 'image')) {
+            return;
+        }
+
+        Schema::table('questions', function (Blueprint $table): void {
+            $table->string('image', 500)->nullable()->after('text');
+        });
     }
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE questions DROP COLUMN image');
+        Schema::table('questions', function (Blueprint $table): void {
+            $table->dropColumn('image');
+        });
     }
 };

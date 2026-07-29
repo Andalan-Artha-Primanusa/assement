@@ -65,10 +65,10 @@ class Question extends Model
     public function optionText(?string $option): string
     {
         return match ($option) {
-            'a' => $this->option_a,
-            'b' => $this->option_b,
-            'c' => $this->option_c,
-            'd' => $this->option_d,
+            'a' => $this->option_a ?? '',
+            'b' => $this->option_b ?? '',
+            'c' => $this->option_c ?? '',
+            'd' => $this->option_d ?? '',
             default => '',
         };
     }

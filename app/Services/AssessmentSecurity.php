@@ -23,17 +23,19 @@ class AssessmentSecurity
         $assessment->increment('security_violations');
         $assessment->refresh();
 
+        if ($assessment->security_violations > (int) config('assessment.max_security_blocks', 2)) {
+            $this->finishAssessment($assessment, $submittedAnswers, true);
+
+            return $this->status($assessment->fresh());
+        }
+
         $this->syncSelectedAnswers($assessment, $submittedAnswers);
 
-        $maxBlocks = (int) config('assessment.max_security_blocks', 2);
-
-        if ($assessment->security_violations > $maxBlocks) {
-            $assessment->update([
-                'blocked_at' => now(),
-                'block_reason' => $reason.' (Pelanggaran melebihi batas '.$assessment->security_violations.'/'.$maxBlocks.')',
-                'unlocked_at' => null,
-            ]);
-        }
+        $assessment->update([
+            'blocked_at' => now(),
+            'block_reason' => $reason,
+            'unlocked_at' => null,
+        ]);
 
         return $this->status($assessment->fresh());
     }
@@ -50,7 +52,6 @@ class AssessmentSecurity
         });
 
         $correctAnswers = 0;
-        $mcCount = 0;
 
         foreach ($assessment->answers as $answer) {
             if ($answer->question && $answer->question->isMultipleChoice()) {
@@ -65,8 +66,7 @@ class AssessmentSecurity
                 if ($isCorrect) {
                     $correctAnswers++;
                 }
-                $mcCount++;
-            } else {
+            } elseif ($answer->question && $answer->question->isEssay()) {
                 $answer->update([
                     'answer_text' => $submittedAnswers[$answer->id] ?? $answer->answer_text,
                 ]);
@@ -75,9 +75,9 @@ class AssessmentSecurity
 
         $totalQuestions = $assessment->answers->count();
 
-        $status = $hasEssayOrUpload && ! $autoSubmitted
+        $status = $hasEssayOrUpload
             ? Assessment::STATUS_PENDING_REVIEW
-            : Assessment::STATUS_IN_PROGRESS;
+            : Assessment::STATUS_GRADED;
 
         $score = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
 
@@ -108,7 +108,7 @@ class AssessmentSecurity
                     $answer->update([
                         'selected_option' => $submittedAnswers[$answer->id],
                     ]);
-                } else {
+                } elseif ($answer->question && $answer->question->isEssay()) {
                     $answer->update([
                         'answer_text' => $submittedAnswers[$answer->id],
                     ]);

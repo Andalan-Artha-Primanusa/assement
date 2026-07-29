@@ -34,14 +34,9 @@
         $nonMcGraded = $hasNonMc && $nonMcAnswers->every(fn($a) => $a->score !== null);
         $nonMcScore = $nonMcGraded ? round($nonMcAnswers->avg('score'), 2) : null;
 
-        $finalScore = null;
-        if ($mcScore !== null && $nonMcScore !== null) {
-            $finalScore = round($mcScore * 0.5 + $nonMcScore * 0.5, 2);
-        } elseif ($mcScore !== null) {
-            $finalScore = $mcScore;
-        } elseif ($nonMcScore !== null) {
-            $finalScore = $nonMcScore;
-        }
+        $finalScore = $assessment->isGraded()
+            ? (float) $assessment->score
+            : ($hasNonMc ? null : $mcScore);
 
         $passingGrade = $package?->min_score_lolos ?? 75;
         $isPassed = $finalScore !== null && $finalScore >= $passingGrade;
@@ -228,7 +223,7 @@
                             <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Paket Soal</p>
                             <p class="mt-1 text-sm font-bold text-gray-900 truncate">{{ $package?->name ?? 'Semua paket' }}</p>
                             @if ($package)
-                                <p class="text-[10px] text-gray-400 mt-0.5">{{ $package->type === 'she' ? 'SHE' : ucfirst($package->type) }}</p>
+                                <p class="text-[10px] text-gray-400 mt-0.5">{{ \App\Models\QuestionPackage::typeLabel($package->type) }}</p>
                             @endif
                         </div>
                     </div>

@@ -18,6 +18,8 @@ class UserTestingSeeder extends Seeder
             QuestionPackageSeeder::MECHANIC_M2,
             QuestionPackageSeeder::MECHANIC_M3,
             QuestionPackageSeeder::OPERATOR,
+            ShePackageSeeder::SHE_SECTION_HEAD,
+            HrPackageSeeder::HR_ADMIN_HRGA,
         ])->get()->keyBy('name');
 
         $users = [
@@ -56,6 +58,16 @@ class UserTestingSeeder extends Seeder
                 'email' => 'operator02@example.com',
                 'package' => QuestionPackageSeeder::OPERATOR,
             ],
+            [
+                'name' => 'Testing SHE 01',
+                'email' => 'she01@example.com',
+                'package' => ShePackageSeeder::SHE_SECTION_HEAD,
+            ],
+            [
+                'name' => 'Testing HR 01',
+                'email' => 'hr01@example.com',
+                'package' => HrPackageSeeder::HR_ADMIN_HRGA,
+            ],
         ];
 
         foreach ($users as $user) {
@@ -71,6 +83,7 @@ class UserTestingSeeder extends Seeder
                     'question_package_id' => $package?->id,
                     'assessment_access_expires_at' => now()->addDays(30),
                     'assessment_duration_minutes' => 120,
+                    'segment_config' => $package?->type === QuestionPackage::TYPE_SHE ? config('assessment.she_default_segments') : null,
                 ]
             );
         }

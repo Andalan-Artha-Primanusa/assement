@@ -31,6 +31,14 @@ class EnsureNoActiveAssessmentElsewhere
             return $next($request);
         }
 
+        $currentSegment = $assessment->segments()
+            ->where('status', 'in_progress')
+            ->first();
+
+        if ($currentSegment?->type === 'upload') {
+            return $next($request);
+        }
+
         if ($assessment->isExpired()) {
             app(AssessmentSecurity::class)->finishAssessment($assessment, [], true);
 

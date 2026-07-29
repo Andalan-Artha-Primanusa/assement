@@ -1,12 +1,14 @@
 <x-app-layout>
+    @php
+        $selectedTypeLabel = \App\Models\QuestionPackage::typeLabel($selectedType);
+    @endphp
+
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             @if ($selectedType === 'she')
                 {{ __('Review SHE Assessment') }}
-            @elseif ($selectedType === 'mekanik')
-                {{ __('Review Assessment Mekanik') }}
             @else
-                {{ __('Review Assessment Operator') }}
+                Review Assessment {{ $selectedTypeLabel }}
             @endif
         </h2>
     </x-slot>

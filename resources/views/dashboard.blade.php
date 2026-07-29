@@ -36,7 +36,7 @@
                         <div class="min-w-0 flex-1">
                             <p class="text-4xl font-semibold text-gray-900">{{ $activeQuestionCount }}</p>
                             <p class="mt-2 text-sm text-gray-600">
-                                Semua soal aktif akan ditampilkan saat assessment dimulai.
+                                Sistem akan memilih maksimal {{ config('assessment.question_limit') }} soal secara acak saat assessment dimulai.
                             </p>
                             <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                                 <span class="rounded-full bg-sky-50 px-3 py-1 text-sky-700">
@@ -57,10 +57,16 @@
                                 <span class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
                                     Durasi: {{ round(Auth::user()->assessmentDurationMinutes() / 60, 2) }} jam
                                 </span>
-                                @if ($assignedPackage?->has_segments && ! empty(Auth::user()->segment_config))
+                                @php
+                                    $displaySegmentConfig = Auth::user()->segment_config;
+                                    if (empty($displaySegmentConfig) && ($assignedPackage?->type === 'she' || $assignedPackage?->has_segments)) {
+                                        $displaySegmentConfig = config('assessment.she_default_segments', []);
+                                    }
+                                @endphp
+                                @if (($assignedPackage?->has_segments || $assignedPackage?->type === 'she') && ! empty($displaySegmentConfig))
                                     <span class="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
-                                        Bersegment: {{ count(Auth::user()->segment_config) }} segmen
-                                        ({{ implode(', ', array_map(fn ($s) => ($s['type'] === 'multiple_choice' ? 'PG' : ucfirst($s['type'])).': '.$s['duration'].'m', Auth::user()->segment_config)) }})
+                                        Bersegment: {{ count($displaySegmentConfig) }} segmen
+                                        ({{ implode(', ', array_map(fn ($s) => ($s['type'] === 'multiple_choice' ? 'PG' : ($s['type'] === 'upload' ? 'Portfolio' : ucfirst($s['type']))).': '.$s['duration'].'m', $displaySegmentConfig)) }})
                                     </span>
                                 @endif
                             </div>

@@ -34,7 +34,7 @@
             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">Semua paket</option>
                 @foreach ($packages as $pkg)
-                    <option value="{{ $pkg->id }}" data-has-segments="{{ $pkg->has_segments ? '1' : '0' }}" @selected(old('question_package_id', $user->question_package_id) == $pkg->id)>{{ $pkg->name }} ({{ $pkg->type === 'she' ? 'SHE' : ucfirst($pkg->type) }})</option>
+                    <option value="{{ $pkg->id }}" data-has-segments="{{ $pkg->has_segments ? '1' : '0' }}" @selected(old('question_package_id', $user->question_package_id) == $pkg->id)>{{ $pkg->name }} ({{ \App\Models\QuestionPackage::typeLabel($pkg->type) }})</option>
                 @endforeach
             </select>
             <x-input-error :messages="$errors->get('question_package_id')" class="mt-2" />
@@ -93,6 +93,7 @@
             <option value="admin_mekanik" @selected(old('role', $user->role) == 'admin_mekanik')>Admin Mekanik</option>
             <option value="admin_operation" @selected(old('role', $user->role) == 'admin_operation')>Admin Operator</option>
             <option value="admin_she" @selected(old('role', $user->role) == 'admin_she')>Admin SHE</option>
+            <option value="admin_hr" @selected(old('role', $user->role) == 'admin_hr')>Admin HR</option>
             @if (Auth::user()->isSuperAdmin())
                 <option value="super_admin" @selected(old('role', $user->role) == 'super_admin')>Super Admin</option>
             @endif
@@ -105,13 +106,13 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-sm font-semibold text-amber-800">Konfigurasi Segment</p>
-                <p class="text-xs text-amber-600 mt-0.5">Atur waktu pengerjaan per tipe soal. Urutan: PG → Essay → Upload.</p>
+                <p class="text-xs text-amber-600 mt-0.5">Atur waktu pengerjaan per tipe soal. Urutan: PG - Essay - Upload.</p>
             </div>
             <button type="button" id="add-segment-btn" class="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">+ Tambah</button>
         </div>
         <div id="segment-rows" class="mt-3 space-y-2">
             @php
-                $oldSegs = old('segment_config', $user->segment_config ?? [['type' => 'multiple_choice', 'duration' => 30]]);
+                $oldSegs = old('segment_config', $user->segment_config ?? config('assessment.she_default_segments', [['type' => 'multiple_choice', 'duration' => 30]]));
                 if (! is_array($oldSegs)) { $oldSegs = [['type' => 'multiple_choice', 'duration' => 30]]; }
             @endphp
             @foreach ($oldSegs as $idx => $seg)

@@ -7,6 +7,8 @@ use App\Models\ActivityLog;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class QuestionPackageController extends Controller
@@ -17,7 +19,7 @@ class QuestionPackageController extends Controller
         $visibleTypes = $adminUser->visiblePackageTypes();
 
         $selectedType = $request->string('type')->toString();
-        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, QuestionPackage::TYPES, true)) {
             $visibleTypes = [$selectedType];
         }
 
@@ -34,9 +36,10 @@ class QuestionPackageController extends Controller
     {
         $adminUser = request()->user();
         $defaultType = match (true) {
-            $adminUser->isAdminMekanik() => 'mekanik',
-            $adminUser->isAdminShe() => 'she',
-            default => 'operator',
+            $adminUser->isAdminMekanik() => QuestionPackage::TYPE_MEKANIK,
+            $adminUser->isAdminShe() => QuestionPackage::TYPE_SHE,
+            $adminUser->isAdminHr() => QuestionPackage::TYPE_HR,
+            default => QuestionPackage::TYPE_OPERATOR,
         };
 
         $package = new QuestionPackage(['is_active' => true, 'type' => $defaultType]);
@@ -51,8 +54,8 @@ class QuestionPackageController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'level' => ['nullable', 'string', 'in:M1,M2,M3,T1,T2,T3,AE1,AE2,AE3,W1,W2,W3,Departement Head,Section Head,Lead Of'],
+            'type' => ['required', 'string', Rule::in($visibleTypes)],
+            'level' => ['nullable', 'string', Rule::in(array_keys(QuestionPackage::levelOptions()))],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_certificate' => ['nullable', 'boolean'],
@@ -63,8 +66,9 @@ class QuestionPackageController extends Controller
 
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
-        $data['has_segments'] = $request->boolean('has_segments');
-        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
+        $data['has_segments'] = $data['type'] === QuestionPackage::TYPE_SHE || $request->boolean('has_segments');
+        $data['level'] = $data['type'] === QuestionPackage::TYPE_OPERATOR ? null : ($data['level'] ?: null);
+        $this->ensureLevelMatchesType($data['type'], $data['level']);
         $data['created_by'] = $adminUser->id;
 
         $package = QuestionPackage::create($data);
@@ -103,8 +107,8 @@ class QuestionPackageController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'level' => ['nullable', 'string', 'in:M1,M2,M3,T1,T2,T3,AE1,AE2,AE3,W1,W2,W3,Departement Head,Section Head,Lead Of'],
+            'type' => ['required', 'string', Rule::in($visibleTypes)],
+            'level' => ['nullable', 'string', Rule::in(array_keys(QuestionPackage::levelOptions()))],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_certificate' => ['nullable', 'boolean'],
@@ -115,8 +119,9 @@ class QuestionPackageController extends Controller
 
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
-        $data['has_segments'] = $request->boolean('has_segments');
-        $data['level'] = $data['type'] === 'operator' ? null : ($data['level'] ?: null);
+        $data['has_segments'] = $data['type'] === QuestionPackage::TYPE_SHE || $request->boolean('has_segments');
+        $data['level'] = $data['type'] === QuestionPackage::TYPE_OPERATOR ? null : ($data['level'] ?: null);
+        $this->ensureLevelMatchesType($data['type'], $data['level']);
 
         $package->update($data);
 
@@ -173,5 +178,18 @@ class QuestionPackageController extends Controller
         $package->delete();
 
         return back()->with('status', 'Paket berhasil dihapus.');
+    }
+
+    private function ensureLevelMatchesType(string $type, ?string $level): void
+    {
+        if ($level === null) {
+            return;
+        }
+
+        if (! array_key_exists($level, QuestionPackage::levelsFor($type))) {
+            throw ValidationException::withMessages([
+                'level' => 'Level harus sesuai dengan tipe paket yang dipilih.',
+            ]);
+        }
     }
 }

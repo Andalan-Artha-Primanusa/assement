@@ -1,13 +1,15 @@
 <x-app-layout>
+    @php
+        $selectedTypeLabel = \App\Models\QuestionPackage::typeLabel($selectedType);
+    @endphp
+
     <x-slot name="header">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 @if ($selectedType === 'she')
                     {{ __('Review SHE Assessment') }}
-                @elseif ($selectedType === 'mekanik')
-                    {{ __('Review Assessment Mekanik') }}
                 @else
-                    {{ __('Review Assessment Operator') }}
+                    Review Assessment {{ $selectedTypeLabel }}
                 @endif
             </h2>
             <a href="{{ route('admin.she-review.index', ['type' => $selectedType]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Kembali</a>
@@ -48,6 +50,9 @@
 
             @if ($selectedType === 'she')
                 {{-- SHE: Grading form --}}
+                <div class="mb-4 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+                    Rumus nilai SHE: PG benar bernilai 100, PG salah bernilai 0, sedangkan Essay dan Portfolio dinilai manual 0-100. Nilai akhir adalah rata-rata semua soal.
+                </div>
                 <form method="POST" action="{{ route('admin.she-review.grade', $assessment) }}" class="space-y-6">
                     @csrf
 

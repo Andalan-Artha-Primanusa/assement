@@ -14,8 +14,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminSeeder::class,
             QuestionPackageSeeder::class,
+            ShePackageSeeder::class,
+            HrPackageSeeder::class,
             UserTestingSeeder::class,
             QuestionTestingSeeder::class,
+            SheQuestionSeeder::class,
+            HrQuestionSeeder::class,
         ]);
     }
 }

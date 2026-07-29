@@ -50,6 +50,7 @@
                                                 'admin_mekanik' => 'bg-indigo-50 text-indigo-700',
                                                 'admin_operation' => 'bg-purple-50 text-purple-700',
                                                 'admin_she' => 'bg-cyan-50 text-cyan-700',
+                                                'admin_hr' => 'bg-rose-50 text-rose-700',
                                                 'user' => 'bg-emerald-50 text-emerald-700',
                                             ];
                                             $roleLabels = [
@@ -57,6 +58,7 @@
                                                 'admin_mekanik' => 'Admin Mekanik',
                                                 'admin_operation' => 'Admin Operator',
                                                 'admin_she' => 'Admin SHE',
+                                                'admin_hr' => 'Admin HR',
                                                 'user' => 'Peserta',
                                             ];
                                         @endphp
@@ -64,7 +66,16 @@
                                             {{ $roleLabels[$user->role] ?? $user->role }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $user->questionPackage?->name ?? 'Semua paket' }}</td>
+                                    <td class="px-6 py-4 text-gray-700">
+                                        @if ($user->questionPackage)
+                                            <div class="max-w-[260px]">
+                                                <p class="truncate font-medium text-gray-900">{{ $user->questionPackage->name }}</p>
+                                                <p class="mt-0.5 text-xs text-gray-500">{{ \App\Models\QuestionPackage::typeLabel($user->questionPackage->type) }}{{ $user->questionPackage->level ? ' - '.$user->questionPackage->level : '' }}</p>
+                                            </div>
+                                        @else
+                                            <span class="text-gray-500">Semua paket</span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-xs">
                                         @if (!empty($user->segment_config) && is_array($user->segment_config))
                                             <div class="flex flex-wrap gap-1">

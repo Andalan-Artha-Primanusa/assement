@@ -27,7 +27,7 @@ class DashboardController extends Controller
         $visibleTypes = $adminUser->visiblePackageTypes();
 
         $selectedType = $request->string('type')->toString();
-        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, QuestionPackage::TYPES, true)) {
             $visibleTypes = [$selectedType];
         }
 
@@ -44,7 +44,8 @@ class DashboardController extends Controller
             });
 
         $submitted = (clone $baseQuery)->whereNotNull('submitted_at');
-        $averageScore = (float) (clone $submitted)->avg('score');
+        $gradedSubmitted = (clone $submitted)->where('status', Assessment::STATUS_GRADED);
+        $averageScore = (float) (clone $gradedSubmitted)->avg('score');
 
         $packageIds = QuestionPackage::whereIn('type', $visibleTypes)->pluck('id');
 
@@ -68,11 +69,11 @@ class DashboardController extends Controller
         ];
 
         $scoreBuckets = [
-            '0-59' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [0, 59.99])->count(),
-            '60-69' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [60, 69.99])->count(),
-            '70-79' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [70, 79.99])->count(),
-            '80-89' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [80, 89.99])->count(),
-            '90-100' => (clone $baseQuery)->whereNotNull('submitted_at')->whereBetween('score', [90, 100])->count(),
+            '0-59' => (clone $baseQuery)->where('status', Assessment::STATUS_GRADED)->whereBetween('score', [0, 59.99])->count(),
+            '60-69' => (clone $baseQuery)->where('status', Assessment::STATUS_GRADED)->whereBetween('score', [60, 69.99])->count(),
+            '70-79' => (clone $baseQuery)->where('status', Assessment::STATUS_GRADED)->whereBetween('score', [70, 79.99])->count(),
+            '80-89' => (clone $baseQuery)->where('status', Assessment::STATUS_GRADED)->whereBetween('score', [80, 89.99])->count(),
+            '90-100' => (clone $baseQuery)->where('status', Assessment::STATUS_GRADED)->whereBetween('score', [90, 100])->count(),
         ];
 
         $pending = (clone $baseQuery)->whereNull('submitted_at')
@@ -107,7 +108,7 @@ class DashboardController extends Controller
 
         $packageData = QuestionPackage::whereIn('type', $visibleTypes)->get()->map(function ($p) use ($baseQuery) {
             $avg = (clone $baseQuery)->where('question_package_id', $p->id)
-                ->whereNotNull('submitted_at')
+                ->where('status', Assessment::STATUS_GRADED)
                 ->avg('score');
             return [
                 'name' => $p->name,

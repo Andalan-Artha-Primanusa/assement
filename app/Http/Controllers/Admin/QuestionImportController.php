@@ -8,6 +8,7 @@ use App\Models\Question;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
@@ -17,7 +18,9 @@ class QuestionImportController extends Controller
 {
     public function create(Request $request): View
     {
-        $packages = QuestionPackage::orderBy('name')->get();
+        $packages = QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
+            ->orderBy('name')
+            ->get();
         $selectedPackageId = $request->integer('question_package_id');
 
         return view('admin.questions.import', compact('packages', 'selectedPackageId'));
@@ -98,13 +101,19 @@ class QuestionImportController extends Controller
     {
         $data = $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
-            'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
+            'question_package_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('question_packages', 'id')->where(function ($query) use ($request): void {
+                    $query->whereIn('type', $request->user()->visiblePackageTypes());
+                }),
+            ],
             'category' => ['nullable', 'string', 'max:100'],
             'difficulty' => ['nullable', 'string', 'max:50'],
         ]);
 
         $packageId = $data['question_package_id'] ?? null;
-        $defaultCategory = $data['category'] ?? 'Mechanic';
+        $defaultCategory = $data['category'] ?? QuestionPackage::typeLabel($request->user()->visiblePackageTypes()[0] ?? QuestionPackage::TYPE_MEKANIK);
         $defaultDifficulty = $data['difficulty'] ?? 'basic';
 
         $reader = new Reader();

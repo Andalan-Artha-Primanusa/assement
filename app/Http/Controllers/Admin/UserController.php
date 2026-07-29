@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -25,7 +26,7 @@ class UserController extends Controller
         $visibleTypes = $adminUser->visiblePackageTypes();
 
         $selectedType = $request->string('type')->toString();
-        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, QuestionPackage::TYPES, true)) {
             $visibleTypes = [$selectedType];
         }
 
@@ -88,9 +89,8 @@ class UserController extends Controller
         $packageIndex = array_search(strtolower('paket'), array_map('strtolower', $header ?: []));
         $typeIndex = array_search(strtolower('tipe'), array_map('strtolower', $header ?: []));
 
-        $packagesByName = QuestionPackage::pluck('id', 'name');
-
         $adminUser = $request->user();
+        $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())->pluck('id', 'name');
         $created = 0;
         $errors = [];
 
@@ -110,10 +110,16 @@ class UserController extends Controller
                 ? trim($row[$nameIndex])
                 : 'Peserta '.strtoupper(Str::random(6));
 
-            $type = $adminUser->isAdminMekanik() ? 'mekanik' : 'operator';
+            $type = match (true) {
+                $adminUser->isAdminMekanik() => QuestionPackage::TYPE_MEKANIK,
+                $adminUser->isAdminOperation() => QuestionPackage::TYPE_OPERATOR,
+                $adminUser->isAdminShe() => QuestionPackage::TYPE_SHE,
+                $adminUser->isAdminHr() => QuestionPackage::TYPE_HR,
+                default => QuestionPackage::TYPE_OPERATOR,
+            };
             if ($adminUser->isSuperAdmin() && $typeIndex !== false && isset($row[$typeIndex])) {
                 $rawType = strtolower(trim($row[$typeIndex]));
-                if (in_array($rawType, ['operator', 'mekanik'])) {
+                if (in_array($rawType, QuestionPackage::TYPES, true)) {
                     $type = $rawType;
                 }
             }
@@ -179,7 +185,7 @@ class UserController extends Controller
 
         $availableTypes = collect($visibleTypes)->map(fn ($t) => [
             'value' => $t,
-            'label' => $t === 'she' ? 'SHE' : ucfirst($t),
+            'label' => QuestionPackage::typeLabel($t),
         ])->toArray();
 
         return view('admin.users.invite', compact('packages', 'visibleTypes', 'availableTypes'));
@@ -194,10 +200,18 @@ class UserController extends Controller
             'name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
-            'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
+            'question_package_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('question_packages', 'id')->where(function ($query) use ($visibleTypes): void {
+                    $query->whereIn('type', $visibleTypes);
+                }),
+            ],
             'access_days' => ['required', 'integer', 'min:1', 'max:365'],
             'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
         ]);
+
+        $this->ensurePackageMatchesType($data['question_package_id'] ?? null, $data['type']);
 
         $password = Str::upper(Str::random(4));
         $name = filled($data['name'] ?? null)
@@ -347,8 +361,8 @@ class UserController extends Controller
             : ['required', 'confirmed', Rules\Password::defaults()];
 
         $roles = $adminUser->isSuperAdmin()
-            ? ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she,super_admin']
-            : ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she'];
+            ? ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she,admin_hr,super_admin']
+            : ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she,admin_hr'];
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -362,7 +376,13 @@ class UserController extends Controller
             ],
             'password' => $passwordRules,
             'role' => $roles,
-            'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
+            'question_package_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('question_packages', 'id')->where(function ($query) use ($adminUser): void {
+                    $query->whereIn('type', $adminUser->visiblePackageTypes());
+                }),
+            ],
             'assessment_access_expires_at' => ['nullable', 'date'],
             'assessment_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
             'max_attempts' => ['required', 'integer', 'min:1', 'max:100'],
@@ -392,5 +412,19 @@ class UserController extends Controller
         $data['segment_config'] = $segmentConfig;
 
         return $data;
+    }
+
+    private function ensurePackageMatchesType(?int $packageId, string $type): void
+    {
+        if (! $packageId) {
+            return;
+        }
+
+        $package = QuestionPackage::find($packageId);
+        if (! $package || $package->type !== $type) {
+            throw ValidationException::withMessages([
+                'question_package_id' => 'Paket soal harus sesuai dengan tipe peserta.',
+            ]);
+        }
     }
 }

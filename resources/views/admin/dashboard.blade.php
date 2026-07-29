@@ -1,17 +1,21 @@
 <x-app-layout>
+    @php
+        $selectedTypeLabel = \App\Models\QuestionPackage::typeLabel($selectedType ?? null);
+    @endphp
+
     <x-slot name="header">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-900">
                     @if ($selectedType ?? null)
-                        Dashboard {{ match($selectedType) { 'mekanik' => 'Mekanik', 'operator' => 'Operator', 'she' => 'SHE', default => 'Admin' } }}
+                        Dashboard {{ $selectedTypeLabel }}
                     @else
                         {{ __('Dashboard Admin') }}
                     @endif
                 </h2>
                 <p class="mt-1 text-sm text-gray-500">
                     @if ($selectedType ?? null)
-                        Ringkasan screening {{ match($selectedType) { 'mekanik' => 'mekanik', 'operator' => 'operator', 'she' => 'SHE', default => '' } }} saja.
+                        Ringkasan screening {{ $selectedTypeLabel }} saja.
                     @else
                         Ringkasan screening, performa peserta, dan keamanan assessment.
                     @endif
@@ -43,7 +47,7 @@
             ['label' => 'Peserta', 'value' => $stats['users'], 'helper' => 'akun non-admin', 'accent' => 'bg-indigo-600'],
             ['label' => 'Assessment Selesai', 'value' => $stats['assessments'], 'helper' => $dailyTotal.' selesai dalam 30 hari', 'accent' => 'bg-emerald-600'],
             ['label' => 'Terblokir', 'value' => $stats['blocked_assessments'], 'helper' => 'butuh review admin', 'accent' => 'bg-rose-600'],
-            ['label' => 'Menunggu Review', 'value' => $stats['pending_review'] ?? 0, 'helper' => 'SHE essay/upload', 'accent' => 'bg-amber-600'],
+            ['label' => 'Menunggu Review', 'value' => $stats['pending_review'] ?? 0, 'helper' => ($selectedType ?? null) === \App\Models\QuestionPackage::TYPE_SHE ? 'SHE essay/upload' : 'status pending review', 'accent' => 'bg-amber-600'],
             ['label' => 'Rata-rata Nilai', 'value' => number_format($stats['average_score'], 1), 'helper' => 'dari assessment selesai', 'accent' => 'bg-violet-600'],
             ['label' => 'Completion', 'value' => $completionRate.'%', 'helper' => 'status selesai', 'accent' => 'bg-cyan-600'],
         ];
@@ -51,9 +55,9 @@
 
     <div class="py-6 sm:py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($metricCards as $metric)
-                    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <div class="min-h-[150px] rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $metric['label'] }}</p>
@@ -61,7 +65,7 @@
                             </div>
                             <span class="mt-1 h-3 w-3 shrink-0 rounded-full {{ $metric['accent'] }}"></span>
                         </div>
-                        <p class="mt-3 truncate text-sm text-gray-500">{{ $metric['helper'] }}</p>
+                        <p class="mt-3 text-sm leading-5 text-gray-500">{{ $metric['helper'] }}</p>
                     </div>
                 @endforeach
             </div>
@@ -229,9 +233,13 @@
                                     <td class="whitespace-nowrap px-4 py-3 text-gray-700">{{ $assessment->submitted_at?->format('d M Y H:i') }}</td>
                                     <td class="px-4 py-3 text-gray-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</td>
                                     <td class="px-4 py-3">
-                                        <span class="font-semibold {{ $assessment->score >= 80 ? 'text-emerald-700' : ($assessment->score >= 60 ? 'text-amber-700' : 'text-rose-700') }}">
-                                            {{ number_format($assessment->score, 2) }}
-                                        </span>
+                                        @if ($assessment->isPendingReview())
+                                            <span class="font-semibold text-amber-700">Menunggu Review</span>
+                                        @else
+                                            <span class="font-semibold {{ $assessment->score >= 80 ? 'text-emerald-700' : ($assessment->score >= 60 ? 'text-amber-700' : 'text-rose-700') }}">
+                                                {{ number_format($assessment->score, 2) }}
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="py-3 pl-4 text-right">
                                         <a href="{{ route('assessment.result', $assessment) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">Lihat</a>

@@ -18,6 +18,7 @@ class User extends Authenticatable
     public const ROLE_ADMIN_MEKANIK = 'admin_mekanik';
     public const ROLE_ADMIN_OPERATION = 'admin_operation';
     public const ROLE_ADMIN_SHE = 'admin_she';
+    public const ROLE_ADMIN_HR = 'admin_hr';
     public const ROLE_SUPER_ADMIN = 'super_admin';
 
     /**
@@ -92,6 +93,7 @@ class User extends Authenticatable
             self::ROLE_ADMIN_MEKANIK,
             self::ROLE_ADMIN_OPERATION,
             self::ROLE_ADMIN_SHE,
+            self::ROLE_ADMIN_HR,
         ]);
     }
 
@@ -110,21 +112,30 @@ class User extends Authenticatable
         return $this->role === self::ROLE_ADMIN_SHE;
     }
 
+    public function isAdminHr(): bool
+    {
+        return $this->role === self::ROLE_ADMIN_HR;
+    }
+
     public function canManageType(string $type): bool
     {
         if ($this->isSuperAdmin()) {
             return true;
         }
 
-        if ($this->role === self::ROLE_ADMIN_MEKANIK && $type === 'mekanik') {
+        if ($this->role === self::ROLE_ADMIN_MEKANIK && $type === QuestionPackage::TYPE_MEKANIK) {
             return true;
         }
 
-        if ($this->role === self::ROLE_ADMIN_OPERATION && $type === 'operator') {
+        if ($this->role === self::ROLE_ADMIN_OPERATION && $type === QuestionPackage::TYPE_OPERATOR) {
             return true;
         }
 
-        if ($this->role === self::ROLE_ADMIN_SHE && $type === 'she') {
+        if ($this->role === self::ROLE_ADMIN_SHE && $type === QuestionPackage::TYPE_SHE) {
+            return true;
+        }
+
+        if ($this->role === self::ROLE_ADMIN_HR && $type === QuestionPackage::TYPE_HR) {
             return true;
         }
 
@@ -134,19 +145,23 @@ class User extends Authenticatable
     public function visiblePackageTypes(): array
     {
         if ($this->isSuperAdmin()) {
-            return ['mekanik', 'operator', 'she'];
+            return QuestionPackage::TYPES;
         }
 
         if ($this->role === self::ROLE_ADMIN_MEKANIK) {
-            return ['mekanik'];
+            return [QuestionPackage::TYPE_MEKANIK];
         }
 
         if ($this->role === self::ROLE_ADMIN_OPERATION) {
-            return ['operator'];
+            return [QuestionPackage::TYPE_OPERATOR];
         }
 
         if ($this->role === self::ROLE_ADMIN_SHE) {
-            return ['she'];
+            return [QuestionPackage::TYPE_SHE];
+        }
+
+        if ($this->role === self::ROLE_ADMIN_HR) {
+            return [QuestionPackage::TYPE_HR];
         }
 
         return [];

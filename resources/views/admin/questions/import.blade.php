@@ -1,4 +1,8 @@
 <x-app-layout>
+    @php
+        $defaultImportCategory = \App\Models\QuestionPackage::typeLabel(Auth::user()->visiblePackageTypes()[0] ?? \App\Models\QuestionPackage::TYPE_MEKANIK);
+    @endphp
+
     <x-slot name="header">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Import Soal dari Excel') }}</h2>
@@ -22,9 +26,9 @@
                 <div class="mt-2 rounded-md bg-blue-50 p-3 text-xs text-blue-800">
                     <p class="font-semibold">Tipe soal:</p>
                     <ul class="mt-1 list-inside list-disc space-y-0.5">
-                        <li><strong>multiple_choice</strong> — wajib isi option_a s/d option_d + correct_option (a/b/c/d)</li>
-                        <li><strong>essay</strong> — kolom pilihan & correct_option dikosongkan</li>
-                        <li><strong>upload</strong> — kolom pilihan & correct_option dikosongkan, peserta upload file</li>
+                        <li><strong>multiple_choice</strong> - wajib isi option_a s/d option_d + correct_option (a/b/c/d)</li>
+                        <li><strong>essay</strong> - kolom pilihan & correct_option dikosongkan</li>
+                        <li><strong>upload</strong> - kolom pilihan & correct_option dikosongkan, peserta upload file</li>
                     </ul>
                     <p class="mt-1">Category & difficulty opsional (default: yang dipilih di bawah). Baris header otomatis di-skip.</p>
                 </div>
@@ -44,13 +48,13 @@
                             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Tanpa paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }}</option>
+                                    <option value="{{ $package->id }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <x-input-label for="category" value="Kategori Default" />
-                            <input id="category" type="text" name="category" value="Mechanic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <input id="category" type="text" name="category" value="{{ $defaultImportCategory }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
                             <x-input-label for="difficulty" value="Kesulitan Default" />

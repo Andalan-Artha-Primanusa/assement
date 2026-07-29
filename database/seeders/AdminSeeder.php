@@ -51,5 +51,15 @@ class AdminSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        User::updateOrCreate(
+            ['email' => 'admin.hr@andalan.co.id'],
+            [
+                'name' => 'Admin HR',
+                'password' => 'password',
+                'role' => 'admin_hr',
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }

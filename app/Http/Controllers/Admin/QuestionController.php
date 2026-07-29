@@ -8,6 +8,7 @@ use App\Models\Question;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -18,8 +19,16 @@ class QuestionController extends Controller
      */
     public function index(Request $request): View
     {
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+
         $questions = Question::query()
             ->with('questionPackage')
+            ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
+                $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
+                    $q->whereIn('type', $visibleTypes);
+                });
+            })
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $query->where('text', 'like', '%'.$request->string('search')->toString().'%');
             })
@@ -37,7 +46,7 @@ class QuestionController extends Controller
             ->withQueryString();
 
         $categories = Question::query()->select('category')->distinct()->orderBy('category')->pluck('category');
-        $packages = QuestionPackage::orderBy('name')->get();
+        $packages = QuestionPackage::whereIn('type', $visibleTypes)->orderBy('name')->get();
 
         return view('admin.questions.index', compact('questions', 'categories', 'packages'));
     }
@@ -47,16 +56,18 @@ class QuestionController extends Controller
      */
     public function create(Request $request): View
     {
+        $defaultType = $request->user()->visiblePackageTypes()[0] ?? QuestionPackage::TYPE_MEKANIK;
+
         $question = new Question([
             'question_package_id' => $request->integer('question_package_id'),
             'type' => Question::TYPE_MULTIPLE_CHOICE,
-            'category' => 'Mechanic',
+            'category' => QuestionPackage::typeLabel($defaultType),
             'difficulty' => 'basic',
             'correct_option' => 'a',
             'is_active' => true,
         ]);
 
-        $packages = QuestionPackage::orderBy('name')->get();
+        $packages = QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())->orderBy('name')->get();
 
         return view('admin.questions.create', compact('question', 'packages'));
     }
@@ -91,7 +102,9 @@ class QuestionController extends Controller
      */
     public function edit(Question $question): View
     {
-        $packages = QuestionPackage::orderBy('name')->get();
+        $this->authorizeQuestionPackage(request(), $question);
+
+        $packages = QuestionPackage::whereIn('type', request()->user()->visiblePackageTypes())->orderBy('name')->get();
 
         return view('admin.questions.edit', compact('question', 'packages'));
     }
@@ -101,6 +114,8 @@ class QuestionController extends Controller
      */
     public function update(Request $request, Question $question): RedirectResponse
     {
+        $this->authorizeQuestionPackage($request, $question);
+
         $data = $this->validated($request, $question);
         $question->update($data);
 
@@ -118,6 +133,8 @@ class QuestionController extends Controller
      */
     public function destroy(Question $question): RedirectResponse
     {
+        $this->authorizeQuestionPackage(request(), $question);
+
         if ($question->answers()->exists()) {
             $question->update(['is_active' => false]);
 
@@ -136,7 +153,13 @@ class QuestionController extends Controller
     private function validated(Request $request, ?Question $question = null): array
     {
         $data = $request->validate([
-            'question_package_id' => ['nullable', 'integer', 'exists:question_packages,id'],
+            'question_package_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('question_packages', 'id')->where(function ($query) use ($request): void {
+                    $query->whereIn('type', $request->user()->visiblePackageTypes());
+                }),
+            ],
             'type' => ['required', 'in:multiple_choice,essay,upload'],
             'category' => ['required', 'string', 'max:100'],
             'difficulty' => ['required', 'in:basic,intermediate,advanced'],
@@ -177,9 +200,20 @@ class QuestionController extends Controller
             $data['option_d'] = $data['option_d'] ?? '';
             $data['correct_option'] = $data['correct_option'] ?? 'a';
         } else {
-            unset($data['option_a'], $data['option_b'], $data['option_c'], $data['option_d'], $data['correct_option']);
+            $data['option_a'] = null;
+            $data['option_b'] = null;
+            $data['option_c'] = null;
+            $data['option_d'] = null;
+            $data['correct_option'] = null;
         }
 
         return $data;
+    }
+
+    private function authorizeQuestionPackage(Request $request, Question $question): void
+    {
+        $packageType = $question->questionPackage?->type;
+
+        abort_unless($packageType && $request->user()->canManageType($packageType), 403);
     }
 }

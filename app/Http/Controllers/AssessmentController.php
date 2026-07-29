@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\AssessmentAnswer;
 use App\Models\AssessmentSegment;
 use App\Models\Question;
+use App\Models\QuestionPackage;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +26,7 @@ class AssessmentController extends Controller
         $visibleTypes = $adminUser->visiblePackageTypes();
 
         $selectedType = $request->string('type')->toString();
-        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, ['mekanik', 'operator', 'she'])) {
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, QuestionPackage::TYPES, true)) {
             $visibleTypes = [$selectedType];
         }
 
@@ -73,7 +74,18 @@ class AssessmentController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
+        $adminUser = $request->user();
+        $visibleTypes = $adminUser->visiblePackageTypes();
+        $selectedType = $request->string('type')->toString();
+
+        if ($adminUser->isSuperAdmin() && $selectedType && in_array($selectedType, QuestionPackage::TYPES, true)) {
+            $visibleTypes = [$selectedType];
+        }
+
         $assessments = Assessment::with('user', 'questionPackage')
+            ->whereHas('questionPackage', function ($query) use ($visibleTypes): void {
+                $query->whereIn('type', $visibleTypes);
+            })
             ->when($request->filled('status'), function ($query) use ($request): void {
                 match ($request->string('status')->toString()) {
                     'submitted' => $query->whereNotNull('submitted_at'),
@@ -168,13 +180,17 @@ class AssessmentController extends Controller
         }
 
         $user = $request->user();
-        $hasSegments = $package && $package->has_segments && ! empty($user->segment_config);
+        $segmentConfig = $this->segmentConfigFor($user, $package);
+        $hasSegments = $package
+            && ($package->has_segments || $package->type === QuestionPackage::TYPE_SHE)
+            && $segmentConfig !== [];
 
         if ($hasSegments) {
-            return $this->startSegmentedAssessment($request, $package, $questionQuery, $activeQuestionCount);
+            return $this->startSegmentedAssessment($request, $package, $questionQuery, $segmentConfig);
         }
 
-        $limit = $activeQuestionCount;
+        $configuredLimit = (int) config('assessment.question_limit', $activeQuestionCount);
+        $limit = $configuredLimit > 0 ? min($activeQuestionCount, $configuredLimit) : $activeQuestionCount;
         $durationMinutes = $user->assessmentDurationMinutes();
 
         $assessment = DB::transaction(function () use ($request, $limit, $durationMinutes, $package, $questionQuery) {
@@ -207,39 +223,59 @@ class AssessmentController extends Controller
         return redirect()->route('assessment.show', $assessment);
     }
 
-    private function startSegmentedAssessment(Request $request, $package, $questionQuery, int $activeQuestionCount): RedirectResponse
+    /**
+     * @param  array<int, array{type:string,duration:int}>  $segmentConfig
+     */
+    private function startSegmentedAssessment(Request $request, QuestionPackage $package, $questionQuery, array $segmentConfig): RedirectResponse
     {
-        $user = $request->user();
-        $segmentConfig = $user->segment_config;
-        $totalDuration = collect($segmentConfig)->sum('duration');
+        $segmentQuestionGroups = collect($segmentConfig)
+            ->map(function (array $segment) use ($questionQuery): array {
+                return [
+                    'type' => $segment['type'],
+                    'duration' => (int) $segment['duration'],
+                    'questions' => (clone $questionQuery)
+                        ->where('type', $segment['type'])
+                        ->inRandomOrder()
+                        ->get(),
+                ];
+            })
+            ->filter(fn (array $segment): bool => $segment['questions']->isNotEmpty())
+            ->values();
 
-        $assessment = DB::transaction(function () use ($request, $package, $questionQuery, $activeQuestionCount, $segmentConfig, $totalDuration) {
+        if ($segmentQuestionGroups->isEmpty()) {
+            return back()->with('status', 'Paket SHE belum memiliki soal aktif untuk segmen PG, Essay, atau Portfolio.');
+        }
+
+        $totalQuestions = $segmentQuestionGroups->sum(fn (array $segment): int => $segment['questions']->count());
+        $totalDuration = $segmentQuestionGroups->sum('duration');
+
+        $assessment = DB::transaction(function () use ($request, $package, $segmentQuestionGroups, $totalQuestions, $totalDuration) {
             $assessment = Assessment::create([
                 'user_id' => $request->user()->id,
                 'question_package_id' => $package->id,
-                'total_questions' => $activeQuestionCount,
+                'total_questions' => $totalQuestions,
                 'started_at' => now(),
                 'duration_minutes' => $totalDuration,
                 'ends_at' => now()->addMinutes($totalDuration),
             ]);
 
-            (clone $questionQuery)
-                ->inRandomOrder()
-                ->limit($activeQuestionCount)
-                ->get()
-                ->each(function (Question $question, int $index) use ($assessment): void {
+            $position = 1;
+            foreach ($segmentQuestionGroups as $group) {
+                foreach ($group['questions'] as $question) {
                     AssessmentAnswer::create([
                         'assessment_id' => $assessment->id,
                         'question_id' => $question->id,
-                        'position' => $index + 1,
+                        'position' => $position,
                     ]);
-                });
+                    $position++;
+                }
+            }
 
-            foreach ($segmentConfig as $index => $seg) {
+            foreach ($segmentQuestionGroups as $index => $seg) {
                 AssessmentSegment::create([
                     'assessment_id' => $assessment->id,
                     'type' => $seg['type'],
-                    'duration_minutes' => (int) $seg['duration'],
+                    'duration_minutes' => $seg['duration'],
                     'order_index' => $index,
                     'status' => $index === 0 ? AssessmentSegment::STATUS_IN_PROGRESS : AssessmentSegment::STATUS_PENDING,
                     'started_at' => $index === 0 ? now() : null,
@@ -331,7 +367,7 @@ class AssessmentController extends Controller
             return redirect()->route('assessment.show', $assessment);
         }
 
-        app(AssessmentSecurity::class)->finishAssessment($assessment, [], true);
+        app(AssessmentSecurity::class)->finishAssessment($assessment);
 
         $this->notifyAdmins($assessment);
 
@@ -408,6 +444,18 @@ class AssessmentController extends Controller
         $segmentAnswers = $assessment->answers->filter(
             fn ($a) => $a->question->type === $segment->type
         );
+
+        $validationRules = ['answers' => ['array']];
+        foreach ($segmentAnswers as $answer) {
+            if ($answer->question->isEssay()) {
+                $validationRules['answers.'.$answer->id] = ['nullable', 'string', 'max:5000'];
+            } elseif ($answer->question->isUpload()) {
+                $validationRules['answers.'.$answer->id] = ['nullable', 'file', 'max:10240'];
+            } else {
+                $validationRules['answers.'.$answer->id] = ['nullable', 'in:a,b,c,d'];
+            }
+        }
+        $request->validate($validationRules);
 
         foreach ($segmentAnswers as $answer) {
             if ($answer->question->isEssay()) {
@@ -499,7 +547,6 @@ class AssessmentController extends Controller
             'unlocked_at' => now(),
             'blocked_at' => null,
             'block_reason' => null,
-            'security_violations' => 0,
         ]);
 
         ActivityLog::log('assessment_unblock', 'Membuka blokir assessment #'.$assessment->id, Assessment::class, $assessment->id);
@@ -553,11 +600,45 @@ class AssessmentController extends Controller
         }
     }
 
+    /**
+     * @return array<int, array{type:string,duration:int}>
+     */
+    private function segmentConfigFor(User $user, ?QuestionPackage $package): array
+    {
+        if (! $package) {
+            return [];
+        }
+
+        $config = $user->segment_config;
+
+        if (empty($config) && ($package->type === QuestionPackage::TYPE_SHE || $package->has_segments)) {
+            $config = config('assessment.she_default_segments', []);
+        }
+
+        return collect($config)
+            ->map(fn (array $segment): array => [
+                'type' => $segment['type'] ?? '',
+                'duration' => (int) ($segment['duration'] ?? 0),
+            ])
+            ->filter(fn (array $segment): bool => in_array($segment['type'], [
+                Question::TYPE_MULTIPLE_CHOICE,
+                Question::TYPE_ESSAY,
+                Question::TYPE_UPLOAD,
+            ], true) && $segment['duration'] > 0)
+            ->values()
+            ->all();
+    }
+
     private function notifyAdmins(Assessment $assessment): void
     {
         try {
             $assessment->loadMissing('user');
-            $admins = User::whereIn('role', [User::ROLE_ADMIN_MEKANIK, User::ROLE_ADMIN_OPERATION, User::ROLE_ADMIN_SHE])->get();
+            $admins = User::whereIn('role', [
+                User::ROLE_ADMIN_MEKANIK,
+                User::ROLE_ADMIN_OPERATION,
+                User::ROLE_ADMIN_SHE,
+                User::ROLE_ADMIN_HR,
+            ])->get();
 
             foreach ($admins as $admin) {
                 Mail::send('emails.assessment-completed', [

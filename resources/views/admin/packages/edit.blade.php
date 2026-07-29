@@ -1,11 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Edit Paket Soal') }}</h2>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-950">{{ __('Edit Paket Soal') }}</h2>
+                <p class="mt-1 text-sm text-gray-500">{{ $package->name }} - {{ \App\Models\QuestionPackage::typeLabel($package->type) }}</p>
+            </div>
+            <a href="{{ route('admin.packages.index') }}" class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Kembali</a>
+        </div>
     </x-slot>
 
-    <div class="py-6 sm:py-12">
+    <div class="py-6 sm:py-10">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+            <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                 @include('admin.packages.form', [
                     'action' => route('admin.packages.update', $package),
                     'method' => 'PUT',
@@ -14,10 +20,10 @@
             </div>
 
             <div class="mt-6 grid gap-6 lg:grid-cols-2">
-                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                     <div class="flex items-center justify-between gap-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Soal dalam Paket</h3>
-                        <a href="{{ route('admin.packages.questions', $package) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                        <h3 class="text-base font-semibold text-gray-950">Soal dalam Paket</h3>
+                        <a href="{{ route('admin.packages.questions', $package) }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">
                             Lihat semua
                         </a>
                     </div>
@@ -25,10 +31,14 @@
 
                     <div class="mt-4 space-y-3">
                         @forelse ($package->questions as $question)
-                            <div class="rounded-md border border-gray-200 p-4">
+                            <div class="rounded-md border border-gray-200 bg-gray-50/60 p-4">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">{{ $question->category }}</span>
-                                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Kunci {{ strtoupper($question->correct_option) }}</span>
+                                    @if ($question->isMultipleChoice())
+                                        <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Kunci {{ strtoupper($question->correct_option) }}</span>
+                                    @else
+                                        <span class="rounded-full bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700">{{ $question->isEssay() ? 'Essay' : 'Upload' }}</span>
+                                    @endif
                                 </div>
                                 <p class="mt-2 line-clamp-2 text-sm font-medium text-gray-900">{{ $question->text }}</p>
                             </div>
@@ -38,10 +48,10 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+                <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                     <div class="flex items-center justify-between gap-4">
-                        <h3 class="text-lg font-semibold text-gray-900">User Paket Ini</h3>
-                        <a href="{{ route('admin.users.index', ['package' => $package->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                        <h3 class="text-base font-semibold text-gray-950">User Paket Ini</h3>
+                        <a href="{{ route('admin.users.index', ['package' => $package->id]) }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">
                             Lihat semua
                         </a>
                     </div>

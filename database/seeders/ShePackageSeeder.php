@@ -43,6 +43,7 @@ class ShePackageSeeder extends Seeder
                 array_merge($data, [
                     'type' => 'she',
                     'is_active' => true,
+                    'has_segments' => true,
                     'created_by' => $adminShe?->id,
                 ])
             );

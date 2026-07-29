@@ -10,11 +10,20 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            @php
+                $secureMode = $currentSegment->type !== 'upload';
+                $segmentLabel = match ($currentSegment->type) {
+                    'multiple_choice' => 'PG (Pilihan Ganda)',
+                    'essay' => 'Essay',
+                    'upload' => 'Portfolio / Upload Hasil',
+                    default => ucfirst($currentSegment->type),
+                };
+            @endphp
 
             {{-- Segment Progress --}}
             <div class="mb-6 bg-white p-4 shadow-sm sm:rounded-lg">
                 <div class="flex items-center justify-between mb-3">
-                    <p class="text-sm font-semibold text-gray-700">Segment: <span class="text-indigo-600">{{ $currentSegment->type === 'multiple_choice' ? 'PG (Multiple Choice)' : ucfirst($currentSegment->type) }}</span></p>
+                    <p class="text-sm font-semibold text-gray-700">Segment: <span class="text-indigo-600">{{ $segmentLabel }}</span></p>
                     <p class="text-xs text-gray-500">Sisa waktu segment: <span id="segment-countdown" class="font-bold text-rose-600">--:--</span></p>
                 </div>
                 <div class="flex gap-2">
@@ -36,8 +45,32 @@
                 <span class="font-semibold"> Sisa percobaan: <span id="violations-count">{{ config('assessment.max_security_blocks', 2) - ($assessment->security_violations ?? 0) }}</span></span>
             </div>
 
+            @if ($secureMode)
+                <div class="mb-6 grid gap-4 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-[220px_1fr]">
+                    <div class="overflow-hidden rounded-md bg-gray-900">
+                        <video id="camera-preview" class="aspect-video h-full w-full object-cover" autoplay muted playsinline></video>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="camera-badge" class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Kamera belum aktif</span>
+                            <span class="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Mode ketat</span>
+                        </div>
+                        <p id="camera-status" class="mt-3 text-sm text-gray-600">
+                            Kamera wajib aktif. Pada segmen PG dan Essay, pindah tab atau membuka halaman lain akan mengunci assessment.
+                        </p>
+                        <button type="button" id="start-camera" class="mt-4 w-full rounded-md bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-black sm:w-fit">
+                            Nyalakan Kamera
+                        </button>
+                    </div>
+                </div>
+            @else
+                <div class="mb-6 rounded-md border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
+                    <strong>Mode upload portfolio:</strong> peserta boleh membuka folder, memilih file, atau berpindah tab untuk mengambil dokumen pendukung. Aktivitas ini tidak akan memicu blokir.
+                </div>
+            @endif
+
             {{-- Questions --}}
-            <form id="assessment-form" method="POST" action="{{ route('assessment.submit', $assessment) }}" enctype="multipart/form-data">
+            <form id="assessment-form" method="POST" action="{{ route('assessment.submit', $assessment) }}" enctype="multipart/form-data" class="{{ $secureMode ? 'pointer-events-none opacity-40' : '' }}" data-secure-mode="{{ $secureMode ? '1' : '0' }}">
                 @csrf
                 <div class="space-y-4">
                     @foreach ($segmentAnswers as $answer)
@@ -82,7 +115,7 @@
 
                 <div class="mt-6 flex items-center justify-end gap-3">
                     <button type="submit" class="rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 min-h-[44px]">
-                        {{ $assessment->segments()->where('status', 'completed')->count() === $assessment->segments()->count() - 1 ? 'Selesai & Kirim' : 'Selesai Segment Ini →' }}
+                        {{ $assessment->segments()->where('status', 'completed')->count() === $assessment->segments()->count() - 1 ? 'Selesai & Kirim' : 'Selesai Segment Ini' }}
                     </button>
                 </div>
             </form>
@@ -90,15 +123,27 @@
     </div>
 
     <script>
-        const segmentRemaining = {{ $currentSegment->remainingSeconds() }};
-        const overallRemaining = {{ $assessment->ends_at ? $assessment->ends_at->diffInSeconds(now()) : 999999 }};
-        const maxViolations = {{ config('assessment.max_security_blocks', 2) }};
-        const assessmentId = {{ $assessment->id }};
+        (() => {
+            const segmentRemaining = {{ $currentSegment->remainingSeconds() }};
+            const overallRemaining = {{ $assessment->ends_at ? $assessment->ends_at->diffInSeconds(now()) : 999999 }};
+            const maxViolations = {{ config('assessment.max_security_blocks', 2) }};
+            const secureMode = @json($secureMode);
+            const form = document.getElementById('assessment-form');
+            const cameraPreview = document.getElementById('camera-preview');
+            const cameraBadge = document.getElementById('camera-badge');
+            const cameraStatus = document.getElementById('camera-status');
+            const startCameraButton = document.getElementById('start-camera');
+            let cameraReady = !secureMode;
+            let cameraStarted = false;
+            let cameraPromptOpen = false;
+            let violations = {{ $assessment->security_violations ?? 0 }};
+            let armed = false;
+            let locked = false;
 
-        function startCountdowns() {
+            setTimeout(() => { armed = true; }, 1500);
+
             let segLeft = segmentRemaining;
             let overallLeft = overallRemaining;
-
             const segEl = document.getElementById('segment-countdown');
             const overallEl = document.getElementById('countdown');
 
@@ -114,14 +159,10 @@
                 const oS = overallLeft % 60;
                 overallEl.textContent = String(oM).padStart(2, '0') + ':' + String(oS).padStart(2, '0');
 
-                if (segLeft <= 0) {
+                if (segLeft <= 0 || overallLeft <= 0) {
                     clearInterval(interval);
-                    document.getElementById('assessment-form').submit();
-                }
-
-                if (overallLeft <= 0) {
-                    clearInterval(interval);
-                    window.location.href = '{{ route("assessment.result", $assessment) }}';
+                    form.dataset.submitting = '1';
+                    form.submit();
                 }
 
                 if (segLeft <= 60) {
@@ -133,50 +174,144 @@
                     overallEl.classList.remove('bg-rose-100', 'text-rose-700');
                 }
             }, 1000);
-        }
 
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('copy', e => e.preventDefault());
+            if (secureMode) {
+                const enableAssessment = () => {
+                    form.classList.remove('pointer-events-none', 'opacity-40');
+                    cameraBadge.className = 'rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700';
+                    cameraBadge.textContent = 'Kamera aktif';
+                    cameraStatus.textContent = 'Kamera aktif. Tetap berada di halaman assessment sampai segmen selesai.';
+                };
 
-        let violations = {{ $assessment->security_violations ?? 0 }};
-        let armed = false;
-        let locked = false;
+                const requestCamera = async () => {
+                    if (!navigator.mediaDevices?.getUserMedia) {
+                        cameraStatus.textContent = 'Browser tidak mendukung akses kamera. Gunakan browser modern untuk assessment.';
+                        return;
+                    }
 
-        setTimeout(() => { armed = true; }, 1500);
+                    cameraPromptOpen = true;
 
-        document.addEventListener('visibilitychange', function () {
-            if (document.hidden && armed && !locked && !document.getElementById('assessment-form').dataset.submitting) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({
+                            video: { width: { ideal: 640 }, height: { ideal: 360 }, facingMode: 'user' },
+                            audio: false,
+                        });
+
+                        cameraPreview.srcObject = stream;
+                        cameraReady = true;
+                        cameraStarted = true;
+                        enableAssessment();
+
+                        stream.getVideoTracks().forEach((track) => {
+                            track.addEventListener('ended', () => {
+                                cameraReady = false;
+                                reportViolation('Kamera assessment mati atau terputus.');
+                            });
+                        });
+                    } catch (error) {
+                        cameraReady = false;
+                        cameraStatus.textContent = 'Kamera belum bisa aktif. Izinkan akses kamera untuk mulai mengerjakan soal.';
+                    } finally {
+                        cameraPromptOpen = false;
+                    }
+                };
+
+                startCameraButton.addEventListener('click', requestCamera);
+                requestCamera();
+
+                document.addEventListener('contextmenu', e => e.preventDefault());
+                document.addEventListener('copy', e => e.preventDefault());
+                document.addEventListener('cut', e => e.preventDefault());
+                document.addEventListener('dragstart', e => e.preventDefault());
+
+                document.addEventListener('keydown', (event) => {
+                    const key = event.key.toLowerCase();
+                    const isBlockedShortcut = (event.ctrlKey || event.metaKey) && ['p', 's', 'u'].includes(key);
+
+                    if (event.key === 'PrintScreen' || isBlockedShortcut) {
+                        event.preventDefault();
+                        reportViolation(event.key === 'PrintScreen' ? 'Percobaan screenshot terdeteksi.' : 'Shortcut terlarang digunakan.');
+                    }
+                });
+
+                document.addEventListener('visibilitychange', function () {
+                    if (document.hidden) {
+                        reportViolation('Peserta meninggalkan tab assessment.');
+                    }
+                });
+
+                window.addEventListener('blur', () => {
+                    reportViolation('Jendela assessment kehilangan fokus.');
+                });
+
+                setInterval(() => {
+                    if (cameraStarted && !cameraReady) {
+                        reportViolation('Kamera assessment tidak aktif.');
+                    }
+                }, 3000);
+            }
+
+            form.addEventListener('submit', function (event) {
+                if (secureMode && !cameraReady) {
+                    event.preventDefault();
+                    alert('Kamera wajib aktif sebelum menyelesaikan segmen ini.');
+                    return;
+                }
+
+                form.dataset.submitting = '1';
+            });
+
+            function reportViolation(reason) {
+                if (!secureMode || !armed || locked || cameraPromptOpen || form.dataset.submitting === '1') {
+                    return;
+                }
+
                 locked = true;
-                const payload = JSON.stringify({ reason: 'Tab beralih', answers: collectAnswers() });
+                const payload = JSON.stringify({ reason, answers: collectAnswers() });
+
                 fetch('{{ route("assessment.security-violation", $assessment) }}', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
                     body: payload,
                 })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.submitted) { window.location.href = data.redirect; return; }
-                    if (data.blocked) { window.location.reload(); return; }
-                    violations++;
-                    const remaining = maxViolations - violations + 1;
-                    document.getElementById('violations-count').textContent = Math.max(0, remaining);
-                    document.getElementById('security-message').textContent = 'Anda meninggalkan halaman assessment.';
-                    document.getElementById('security-warning').classList.remove('hidden');
-                    setTimeout(() => { locked = false; }, 3000);
-                })
-                .catch(() => { locked = false; });
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.submitted) {
+                            window.location.href = data.redirect;
+                            return;
+                        }
+
+                        if (data.blocked) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        violations = data.violations || violations + 1;
+                        const remaining = maxViolations - violations;
+                        document.getElementById('violations-count').textContent = Math.max(0, remaining);
+                        document.getElementById('security-message').textContent = 'Aktivitas di luar halaman assessment terdeteksi.';
+                        document.getElementById('security-warning').classList.remove('hidden');
+                        setTimeout(() => { locked = false; }, 3000);
+                    })
+                    .catch(() => { locked = false; });
             }
-        });
 
-        function collectAnswers() {
-            const answers = {};
-            document.querySelectorAll('#assessment-form [name^="answers"]').forEach(el => {
-                const id = el.name.match(/\d+/)?.[0];
-                if (id) answers[id] = el.value || '';
-            });
-            return answers;
-        }
+            function collectAnswers() {
+                const answers = {};
 
-        startCountdowns();
+                document.querySelectorAll('#assessment-form input[type="radio"]:checked, #assessment-form textarea').forEach(el => {
+                    const id = el.name.match(/\d+/)?.[0];
+                    if (id) {
+                        answers[id] = el.value || '';
+                    }
+                });
+
+                return answers;
+            }
+        })();
     </script>
 </x-app-layout>
