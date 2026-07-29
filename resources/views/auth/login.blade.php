@@ -52,6 +52,6 @@
 
     <div class="pt-6 mt-7 border-t border-gray-200">
         <p class="text-[11px] font-semibold uppercase text-gray-400">Assessment powered by</p>
-        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="w-auto h-9 mt-3">
+        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="w-auto h-6 mt-3">
     </div>
 </x-guest-layout>
