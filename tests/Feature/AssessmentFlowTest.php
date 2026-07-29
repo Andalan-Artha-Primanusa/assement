@@ -7,6 +7,7 @@ use App\Models\AssessmentAnswer;
 use App\Models\Question;
 use App\Models\QuestionPackage;
 use App\Models\User;
+use App\Services\AssessmentSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -126,6 +127,143 @@ class AssessmentFlowTest extends TestCase
                 fn (AssessmentAnswer $answer): bool => $answer->question->question_package_id === $assignedPackage->id
             )
         );
+    }
+
+    public function test_manual_questions_only_trigger_pending_review_for_she_assessment(): void
+    {
+        $shePackage = QuestionPackage::create([
+            'name' => 'Paket SHE Manual',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+        ]);
+        $hrPackage = QuestionPackage::create([
+            'name' => 'Paket HR Manual Legacy',
+            'type' => QuestionPackage::TYPE_HR,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create(['role' => 'user']);
+
+        $sheAssessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $shePackage->id,
+            'total_questions' => 2,
+            'started_at' => now(),
+        ]);
+        $hrAssessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $hrPackage->id,
+            'total_questions' => 2,
+            'started_at' => now(),
+        ]);
+
+        $multipleChoiceQuestion = Question::create([
+            'question_package_id' => $shePackage->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE PG',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $sheEssayQuestion = Question::create([
+            'question_package_id' => $shePackage->id,
+            'type' => Question::TYPE_ESSAY,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE Essay',
+            'is_active' => true,
+        ]);
+        $hrEssayQuestion = Question::create([
+            'question_package_id' => $hrPackage->id,
+            'type' => Question::TYPE_ESSAY,
+            'category' => 'HR',
+            'difficulty' => 'basic',
+            'text' => 'Legacy HR Essay',
+            'is_active' => true,
+        ]);
+
+        $sheMcAnswer = AssessmentAnswer::create([
+            'assessment_id' => $sheAssessment->id,
+            'question_id' => $multipleChoiceQuestion->id,
+            'position' => 1,
+        ]);
+        $sheEssayAnswer = AssessmentAnswer::create([
+            'assessment_id' => $sheAssessment->id,
+            'question_id' => $sheEssayQuestion->id,
+            'position' => 2,
+        ]);
+        $hrEssayAnswer = AssessmentAnswer::create([
+            'assessment_id' => $hrAssessment->id,
+            'question_id' => $hrEssayQuestion->id,
+            'position' => 1,
+        ]);
+
+        app(AssessmentSecurity::class)->finishAssessment($sheAssessment, [
+            $sheMcAnswer->id => 'a',
+            $sheEssayAnswer->id => 'Jawaban SHE',
+        ]);
+        app(AssessmentSecurity::class)->finishAssessment($hrAssessment, [
+            $hrEssayAnswer->id => 'Jawaban HR legacy',
+        ]);
+
+        $this->assertSame(Assessment::STATUS_PENDING_REVIEW, $sheAssessment->fresh()->status);
+        $this->assertTrue($sheAssessment->fresh()->isPendingReview());
+        $this->assertSame(Assessment::STATUS_GRADED, $hrAssessment->fresh()->status);
+        $this->assertFalse($hrAssessment->fresh()->isPendingReview());
+    }
+
+    public function test_admin_cannot_create_essay_or_upload_question_for_non_she_package(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_hr']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket HR',
+            'type' => QuestionPackage::TYPE_HR,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.questions.store'), [
+                'question_package_id' => $package->id,
+                'type' => Question::TYPE_ESSAY,
+                'category' => 'HR',
+                'difficulty' => 'basic',
+                'text' => 'Essay HR tidak boleh',
+                'is_active' => '1',
+            ])
+            ->assertSessionHasErrors('type');
+
+        $this->assertSame(0, Question::where('question_package_id', $package->id)->count());
+    }
+
+    public function test_admin_she_can_create_essay_question_for_she_package(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_she']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.questions.store'), [
+                'question_package_id' => $package->id,
+                'type' => Question::TYPE_ESSAY,
+                'category' => 'SHE',
+                'difficulty' => 'basic',
+                'text' => 'Essay SHE boleh',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.packages.questions', $package->id));
+
+        $this->assertDatabaseHas('questions', [
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_ESSAY,
+            'text' => 'Essay SHE boleh',
+        ]);
     }
 
     public function test_admin_can_invite_user_with_generated_credentials(): void

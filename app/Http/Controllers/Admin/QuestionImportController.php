@@ -113,6 +113,7 @@ class QuestionImportController extends Controller
         ]);
 
         $packageId = $data['question_package_id'] ?? null;
+        $package = $packageId ? QuestionPackage::find($packageId) : null;
         $defaultCategory = $data['category'] ?? QuestionPackage::typeLabel($request->user()->visiblePackageTypes()[0] ?? QuestionPackage::TYPE_MEKANIK);
         $defaultDifficulty = $data['difficulty'] ?? 'basic';
 
@@ -122,9 +123,11 @@ class QuestionImportController extends Controller
         $imported = 0;
         $errors = [];
         $isFirstRow = true;
+        $rowNumber = 0;
 
         foreach ($reader->getSheetIterator() as $sheet) {
             foreach ($sheet->getRowIterator() as $row) {
+                $rowNumber++;
                 $cells = $row->getCells();
                 $cellValues = [];
                 foreach ($cells as $cell) {
@@ -144,6 +147,11 @@ class QuestionImportController extends Controller
                     $type = 'multiple_choice';
                 }
 
+                if ($type !== Question::TYPE_MULTIPLE_CHOICE && $package?->type !== QuestionPackage::TYPE_SHE) {
+                    $errors[] = "Baris ke-{$rowNumber}: Essay/Upload khusus untuk paket SHE. Paket lain wajib menggunakan multiple_choice.";
+                    continue;
+                }
+
                 $text = $cellValues[1] ?? '';
                 if (empty($text)) {
                     continue;
@@ -156,13 +164,13 @@ class QuestionImportController extends Controller
                 $correct = isset($cellValues[6]) ? strtolower(trim($cellValues[6])) : '';
 
                 if ($type === 'multiple_choice' && ! in_array($correct, ['a', 'b', 'c', 'd'])) {
-                    $errors[] = "Baris ke-".($imported + 2).": correct_option harus a/b/c/d, got '{$correct}'";
+                    $errors[] = "Baris ke-{$rowNumber}: correct_option harus a/b/c/d, got '{$correct}'";
                     continue;
                 }
 
                 if ($type === 'multiple_choice') {
                     if (empty($optionA) || empty($optionB) || empty($optionC) || empty($optionD)) {
-                        $errors[] = "Baris ke-".($imported + 2).": MC wajib punya 4 pilihan (A/B/C/D)";
+                        $errors[] = "Baris ke-{$rowNumber}: MC wajib punya 4 pilihan (A/B/C/D)";
                         continue;
                     }
                 }
@@ -183,7 +191,7 @@ class QuestionImportController extends Controller
                     ]);
                     $imported++;
                 } catch (\Throwable $e) {
-                    $errors[] = "Baris ke-".($imported + 2).": ".$e->getMessage();
+                    $errors[] = "Baris ke-{$rowNumber}: ".$e->getMessage();
                 }
             }
         }

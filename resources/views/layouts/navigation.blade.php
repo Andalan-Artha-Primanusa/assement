@@ -129,9 +129,9 @@
                     </svg>
                 </button>
                 <div x-show="open" class="mt-1 space-y-0.5" style="display: none;">
-                    @foreach ($visibleTypes as $type)
-                        <a href="{{ route('admin.she-review.index', ['type' => $type]) }}" class="{{ $subLinkBase }} {{ $isReview && $currentType === $type ? $activeSubLink : $inactiveSubLink }}">{{ $typeLabel($type) }}</a>
-                    @endforeach
+                    @if (in_array(\App\Models\QuestionPackage::TYPE_SHE, $visibleTypes, true))
+                        <a href="{{ route('admin.she-review.index') }}" class="{{ $subLinkBase }} {{ $isReview ? $activeSubLink : $inactiveSubLink }}">SHE</a>
+                    @endif
                 </div>
             </div>
 
@@ -166,9 +166,11 @@
             <x-nav-link :href="route('admin.packages.index')" :active="request()->routeIs('admin.packages.*')">
                 {{ __($menuLabels['packages']) }}
             </x-nav-link>
-            <x-nav-link :href="route('admin.she-review.index', ['type' => $adminType])" :active="request()->routeIs('admin.she-review.*')">
-                {{ __($menuLabels['review']) }}
-            </x-nav-link>
+            @if ($adminType === \App\Models\QuestionPackage::TYPE_SHE)
+                <x-nav-link :href="route('admin.she-review.index')" :active="request()->routeIs('admin.she-review.*')">
+                    {{ __('Review SHE') }}
+                </x-nav-link>
+            @endif
             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">
                 {{ __($menuLabels['users']) }}
             </x-nav-link>

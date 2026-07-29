@@ -53,7 +53,10 @@ class AssessmentController extends Controller
                     'submitted' => $query->whereNotNull('submitted_at'),
                     'pending' => $query->whereNull('submitted_at')->whereNull('blocked_at'),
                     'blocked' => $query->whereNotNull('blocked_at')->whereNull('submitted_at'),
-                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW),
+                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW)
+                        ->whereHas('questionPackage', function ($q): void {
+                            $q->where('type', QuestionPackage::TYPE_SHE);
+                        }),
                     'graded' => $query->where('status', Assessment::STATUS_GRADED),
                     default => null,
                 };
@@ -91,6 +94,11 @@ class AssessmentController extends Controller
                     'submitted' => $query->whereNotNull('submitted_at'),
                     'pending' => $query->whereNull('submitted_at')->whereNull('blocked_at'),
                     'blocked' => $query->whereNotNull('blocked_at')->whereNull('submitted_at'),
+                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW)
+                        ->whereHas('questionPackage', function ($q): void {
+                            $q->where('type', QuestionPackage::TYPE_SHE);
+                        }),
+                    'graded' => $query->where('status', Assessment::STATUS_GRADED),
                     default => null,
                 };
             })
@@ -113,7 +121,9 @@ class AssessmentController extends Controller
             ]);
 
             foreach ($assessments as $a) {
-                $status = $a->isSubmitted() ? 'Selesai' : ($a->isBlocked() ? 'Terblokir' : 'Berjalan');
+                $status = $a->isPendingReview()
+                    ? 'Menunggu Review SHE'
+                    : ($a->isSubmitted() ? 'Selesai' : ($a->isBlocked() ? 'Terblokir' : 'Berjalan'));
                 fputcsv($output, [
                     $a->user->name,
                     $a->user->email,
@@ -122,7 +132,7 @@ class AssessmentController extends Controller
                     $a->submitted_at?->format('d/m/Y H:i'),
                     $a->correct_answers ?? 0,
                     $a->total_questions ?? 0,
-                    $a->score ? number_format($a->score, 2) : '-',
+                    $a->isPendingReview() ? 'Review SHE' : ($a->isSubmitted() ? number_format($a->score ?? 0, 2) : '-'),
                     $status,
                     $a->security_violations ?? 0,
                 ]);

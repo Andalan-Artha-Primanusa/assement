@@ -18,23 +18,12 @@ class SheReviewController extends Controller
     {
         $adminUser = $request->user();
         $visibleTypes = $adminUser->visiblePackageTypes();
-        $selectedType = $request->string('type')->toString();
+        $selectedType = QuestionPackage::TYPE_SHE;
 
-        if (! in_array($selectedType, QuestionPackage::TYPES, true)) {
-            $selectedType = in_array(QuestionPackage::TYPE_SHE, $visibleTypes, true)
-                ? QuestionPackage::TYPE_SHE
-                : ($visibleTypes[0] ?? QuestionPackage::TYPE_SHE);
-        }
-
-        abort_unless($adminUser->canManageType($selectedType), 403);
+        abort_unless(in_array(QuestionPackage::TYPE_SHE, $visibleTypes, true), 403);
 
         $assessments = Assessment::with('user', 'questionPackage', 'answers')
-            ->when($selectedType === QuestionPackage::TYPE_SHE, function ($query): void {
-                $query->where('status', Assessment::STATUS_PENDING_REVIEW);
-            })
-            ->when($selectedType !== QuestionPackage::TYPE_SHE, function ($query): void {
-                $query->whereNotNull('submitted_at');
-            })
+            ->where('status', Assessment::STATUS_PENDING_REVIEW)
             ->whereHas('questionPackage', function ($q) use ($selectedType): void {
                 $q->where('type', $selectedType);
             })
@@ -57,6 +46,7 @@ class SheReviewController extends Controller
         abort_unless($assessment->submitted_at !== null, 404);
 
         $assessment->load('user', 'questionPackage', 'answers.question');
+        abort_unless($assessment->questionPackage?->type === QuestionPackage::TYPE_SHE, 404);
         abort_unless(request()->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
 
         $answers = $assessment->answers->filter(function ($answer) {
@@ -73,6 +63,7 @@ class SheReviewController extends Controller
         abort_unless($assessment->status === Assessment::STATUS_PENDING_REVIEW, 400);
 
         $assessment->load('questionPackage');
+        abort_unless($assessment->questionPackage?->type === QuestionPackage::TYPE_SHE, 404);
         abort_unless($request->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
 
         $validated = $request->validate([

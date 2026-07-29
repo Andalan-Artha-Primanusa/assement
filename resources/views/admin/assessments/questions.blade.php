@@ -23,19 +23,6 @@
         $uploadGraded = $uploadAnswers->isNotEmpty() && $uploadAnswers->every(fn($a) => $a->score !== null);
         $uploadScore = $uploadGraded ? round($uploadAnswers->avg('score'), 2) : null;
 
-        $nonMcAnswers = $assessment->answers->filter(fn($a) => $a->question && in_array($a->question->type, ['essay', 'upload']));
-        $nonMcGraded = $nonMcAnswers->isNotEmpty() && $nonMcAnswers->every(fn($a) => $a->score !== null);
-        $nonMcScore = $nonMcGraded ? round($nonMcAnswers->avg('score'), 2) : null;
-
-        $finalScore = null;
-        if ($mcScore !== null && $nonMcScore !== null) {
-            $finalScore = round($mcScore * 0.5 + $nonMcScore * 0.5, 2);
-        } elseif ($mcScore !== null) {
-            $finalScore = $mcScore;
-        } elseif ($nonMcScore !== null) {
-            $finalScore = $nonMcScore;
-        }
-
         $needsReview = $assessment->answers->filter(fn($a) => $a->question && in_array($a->question->type, ['essay', 'upload']) && $a->score === null)->count();
     @endphp
 
@@ -104,8 +91,11 @@
                 </div>
                 <div class="bg-white p-5 shadow-sm rounded-xl">
                     <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Nilai Akhir</p>
-                    @if ($assessment->isGraded())
+                    @if ($assessment->isGraded() || ($assessment->isSubmitted() && ! $assessment->isPendingReview()))
                         <p class="mt-1 text-2xl font-bold text-indigo-600">{{ number_format($assessment->score, 2) }}</p>
+                    @elseif ($assessment->isPendingReview())
+                        <span class="mt-2 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Menunggu Review SHE</span>
+                        <p class="mt-2 text-xs leading-5 text-gray-500">Nilai final muncul setelah essay/upload dinilai.</p>
                     @else
                         <p class="mt-1 text-2xl font-bold text-gray-300">--</p>
                     @endif

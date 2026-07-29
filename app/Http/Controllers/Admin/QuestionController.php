@@ -9,6 +9,7 @@ use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -177,6 +178,8 @@ class QuestionController extends Controller
         $data['question_package_id'] = $data['question_package_id'] ?? null;
         $data['is_active'] = $request->boolean('is_active');
 
+        $this->ensureTypeAllowedForPackage($request, $data);
+
         if ($request->hasFile('image')) {
             if ($question && $question->image) {
                 Storage::disk('public')->delete($question->image);
@@ -208,6 +211,31 @@ class QuestionController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ValidationException
+     */
+    private function ensureTypeAllowedForPackage(Request $request, array $data): void
+    {
+        if (($data['type'] ?? null) === Question::TYPE_MULTIPLE_CHOICE) {
+            return;
+        }
+
+        $package = ! empty($data['question_package_id'])
+            ? QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
+                ->find($data['question_package_id'])
+            : null;
+
+        if ($package?->type === QuestionPackage::TYPE_SHE) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'type' => 'Essay dan Upload File khusus untuk paket SHE. Paket Mekanik, Operator, dan HR hanya menggunakan Multiple Choice.',
+        ]);
     }
 
     private function authorizeQuestionPackage(Request $request, Question $question): void

@@ -77,13 +77,19 @@
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 text-center text-gray-700">{{ $assessment->correct_answers }}/{{ $assessment->total_questions }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-center font-semibold text-gray-900">
-                                        {{ $assessment->isPendingReview() ? '-' : ($assessment->score ? number_format($assessment->score, 2) : '-') }}
+                                        @if ($assessment->isPendingReview())
+                                            <span class="text-xs font-semibold text-amber-700">Review SHE</span>
+                                        @elseif ($assessment->isSubmitted())
+                                            {{ number_format($assessment->score ?? 0, 2) }}
+                                        @else
+                                            -
+                                        @endif
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 text-center whitespace-nowrap">
                                         @if ($assessment->isGraded())
                                             <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai Direview</span>
                                         @elseif ($assessment->isPendingReview())
-                                            <span class="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">Menunggu Review</span>
+                                            <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Menunggu Review SHE</span>
                                         @elseif ($assessment->isSubmitted())
                                             <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Selesai</span>
                                         @elseif ($assessment->isBlocked())

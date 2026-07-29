@@ -47,7 +47,7 @@
             ['label' => 'Peserta', 'value' => $stats['users'], 'helper' => 'akun non-admin', 'accent' => 'bg-indigo-600'],
             ['label' => 'Assessment Selesai', 'value' => $stats['assessments'], 'helper' => $dailyTotal.' selesai dalam 30 hari', 'accent' => 'bg-emerald-600'],
             ['label' => 'Terblokir', 'value' => $stats['blocked_assessments'], 'helper' => 'butuh review admin', 'accent' => 'bg-rose-600'],
-            ['label' => 'Menunggu Review', 'value' => $stats['pending_review'] ?? 0, 'helper' => ($selectedType ?? null) === \App\Models\QuestionPackage::TYPE_SHE ? 'SHE essay/upload' : 'status pending review', 'accent' => 'bg-amber-600'],
+            ['label' => 'Menunggu Review', 'value' => $stats['pending_review'] ?? 0, 'helper' => 'khusus SHE essay/upload', 'accent' => 'bg-amber-600'],
             ['label' => 'Rata-rata Nilai', 'value' => number_format($stats['average_score'], 1), 'helper' => 'dari assessment selesai', 'accent' => 'bg-violet-600'],
             ['label' => 'Completion', 'value' => $completionRate.'%', 'helper' => 'status selesai', 'accent' => 'bg-cyan-600'],
         ];

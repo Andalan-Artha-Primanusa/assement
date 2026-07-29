@@ -33,7 +33,8 @@
                     @if ($assessment->isGraded())
                         <p class="mt-1 text-lg font-semibold {{ ($assessment->score ?? 0) >= 50 ? 'text-emerald-700' : 'text-rose-700' }}">{{ number_format($assessment->score, 2) }}</p>
                     @else
-                        <p class="mt-1 text-lg font-semibold text-gray-400">-</p>
+                        <span class="mt-1 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Menunggu Review SHE</span>
+                        <p class="mt-2 text-xs leading-5 text-gray-500">Nilai akhir muncul setelah essay/upload diberi nilai.</p>
                     @endif
                 </div>
                 <div class="bg-white p-4 shadow-sm sm:rounded-lg">

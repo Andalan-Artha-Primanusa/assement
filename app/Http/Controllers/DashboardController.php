@@ -64,7 +64,12 @@ class DashboardController extends Controller
                         ->orWhereColumn('unlocked_at', '<', 'blocked_at');
                 })
                 ->count(),
-            'pending_review' => (clone $baseQuery)->where('status', Assessment::STATUS_PENDING_REVIEW)->count(),
+            'pending_review' => (clone $baseQuery)
+                ->where('status', Assessment::STATUS_PENDING_REVIEW)
+                ->whereHas('questionPackage', function ($q): void {
+                    $q->where('type', QuestionPackage::TYPE_SHE);
+                })
+                ->count(),
             'average_score' => round($averageScore, 1),
         ];
 
@@ -141,7 +146,7 @@ class DashboardController extends Controller
             return $item->total > 0 ? round(($item->correct / $item->total) * 100, 1) : 0;
         })->toArray();
 
-        $latestAssessments = (clone $baseQuery)->with('user')
+        $latestAssessments = (clone $baseQuery)->with('user', 'questionPackage')
             ->whereNotNull('submitted_at')
             ->latest('submitted_at')
             ->limit(8)

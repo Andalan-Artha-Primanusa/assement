@@ -37,9 +37,13 @@
                         <div class="flex flex-wrap items-center gap-3">
                             <h3 class="font-semibold text-gray-900">{{ $assessment->questionPackage?->name ?? 'Paket Tidak Diketahui' }}</h3>
                             <span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-600 uppercase">{{ $packageType }}</span>
-                            @if ($assessment->isGraded())
+                            @if ($assessment->isSubmitted() && ! $assessment->isPendingReview())
                                 <span class="rounded-full {{ $score >= 50 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }} px-2.5 py-0.5 text-xs font-bold">
                                     Nilai: {{ number_format($score, 2) }}
+                                </span>
+                            @elseif ($assessment->isPendingReview())
+                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700">
+                                    Menunggu Review SHE
                                 </span>
                             @endif
                         </div>

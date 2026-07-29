@@ -27,10 +27,10 @@
                     <p class="font-semibold">Tipe soal:</p>
                     <ul class="mt-1 list-inside list-disc space-y-0.5">
                         <li><strong>multiple_choice</strong> - wajib isi option_a s/d option_d + correct_option (a/b/c/d)</li>
-                        <li><strong>essay</strong> - kolom pilihan & correct_option dikosongkan</li>
-                        <li><strong>upload</strong> - kolom pilihan & correct_option dikosongkan, peserta upload file</li>
+                        <li><strong>essay</strong> - khusus paket SHE, kolom pilihan & correct_option dikosongkan</li>
+                        <li><strong>upload</strong> - khusus paket SHE, peserta upload file</li>
                     </ul>
-                    <p class="mt-1">Category & difficulty opsional (default: yang dipilih di bawah). Baris header otomatis di-skip.</p>
+                    <p class="mt-1">Mekanik, Operator, dan HR hanya memakai multiple_choice. Category & difficulty opsional; baris header otomatis di-skip.</p>
                 </div>
 
                 <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5" data-confirm
@@ -126,7 +126,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Download template di atas untuk format lengkap.</p>
+                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Contoh essay/upload hanya dipakai saat paket yang dipilih adalah SHE.</p>
             </div>
         </div>
     </div>

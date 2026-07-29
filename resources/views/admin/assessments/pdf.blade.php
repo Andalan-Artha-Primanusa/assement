@@ -29,7 +29,7 @@
     </div>
 
     <div class="score-box">
-        <div class="score">{{ number_format($assessment->score, 2) }}</div>
+        <div class="score">{{ $assessment->isPendingReview() ? 'Review SHE' : number_format($assessment->score ?? 0, 2) }}</div>
         <div class="label">Nilai Akhir</div>
     </div>
 

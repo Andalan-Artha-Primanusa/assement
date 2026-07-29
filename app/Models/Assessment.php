@@ -73,7 +73,9 @@ class Assessment extends Model
 
     public function isPendingReview(): bool
     {
-        return $this->isSubmitted() && $this->status === self::STATUS_PENDING_REVIEW;
+        return $this->isSubmitted()
+            && $this->status === self::STATUS_PENDING_REVIEW
+            && $this->questionPackage?->type === QuestionPackage::TYPE_SHE;
     }
 
     public function isGraded(): bool

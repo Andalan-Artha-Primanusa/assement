@@ -13,7 +13,7 @@
             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">Tanpa Paket</option>
                 @foreach ($packages as $pkg)
-                    <option value="{{ $pkg->id }}" @selected(old('question_package_id', $question->question_package_id) == $pkg->id)>{{ $pkg->name }} ({{ \App\Models\QuestionPackage::typeLabel($pkg->type) }}{{ $pkg->level ? ' - '.$pkg->level : '' }})</option>
+                    <option value="{{ $pkg->id }}" data-package-type="{{ $pkg->type }}" @selected(old('question_package_id', $question->question_package_id) == $pkg->id)>{{ $pkg->name }} ({{ \App\Models\QuestionPackage::typeLabel($pkg->type) }}{{ $pkg->level ? ' - '.$pkg->level : '' }})</option>
                 @endforeach
             </select>
             <x-input-error :messages="$errors->get('question_package_id')" class="mt-2" />
@@ -22,9 +22,10 @@
             <x-input-label for="type" value="Tipe Soal" />
             <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 @foreach (['multiple_choice' => 'Multiple Choice', 'essay' => 'Essay', 'upload' => 'Upload File'] as $value => $label)
-                    <option value="{{ $value }}" @selected(old('type', $question->type) === $value)>{{ $label }}</option>
+                    <option value="{{ $value }}" data-manual-review="{{ in_array($value, ['essay', 'upload'], true) ? 'true' : 'false' }}" @selected(old('type', $question->type) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
+            <p id="manual-type-note" class="mt-1 text-xs text-gray-500">Essay dan Upload File hanya tersedia untuk paket SHE.</p>
             <x-input-error :messages="$errors->get('type')" class="mt-2" />
         </div>
         <div>
@@ -121,21 +122,53 @@
 </form>
 
 <script>
-    document.getElementById('type').addEventListener('change', function() {
+    (() => {
+        const packageSelect = document.getElementById('question_package_id');
+        const typeSelect = document.getElementById('type');
         const mcFields = document.getElementById('mc-fields');
         const essayInfo = document.getElementById('essay-info');
         const uploadInfo = document.getElementById('upload-info');
+        const manualTypeNote = document.getElementById('manual-type-note');
 
-        mcFields.classList.add('hidden');
-        essayInfo.classList.add('hidden');
-        uploadInfo.classList.add('hidden');
+        function selectedPackageType() {
+            const selectedOption = packageSelect?.options[packageSelect.selectedIndex];
 
-        if (this.value === 'multiple_choice') {
-            mcFields.classList.remove('hidden');
-        } else if (this.value === 'essay') {
-            essayInfo.classList.remove('hidden');
-        } else if (this.value === 'upload') {
-            uploadInfo.classList.remove('hidden');
+            return selectedOption?.dataset.packageType || '';
         }
-    });
+
+        function syncVisibleFields() {
+            mcFields.classList.add('hidden');
+            essayInfo.classList.add('hidden');
+            uploadInfo.classList.add('hidden');
+
+            if (typeSelect.value === 'multiple_choice') {
+                mcFields.classList.remove('hidden');
+            } else if (typeSelect.value === 'essay') {
+                essayInfo.classList.remove('hidden');
+            } else if (typeSelect.value === 'upload') {
+                uploadInfo.classList.remove('hidden');
+            }
+        }
+
+        function syncAllowedTypes() {
+            const isShePackage = selectedPackageType() === 'she';
+
+            typeSelect.querySelectorAll('option[data-manual-review="true"]').forEach((option) => {
+                option.disabled = ! isShePackage;
+                option.hidden = ! isShePackage;
+            });
+
+            if (! isShePackage && ['essay', 'upload'].includes(typeSelect.value)) {
+                typeSelect.value = 'multiple_choice';
+            }
+
+            manualTypeNote.classList.toggle('text-amber-600', ! isShePackage);
+            manualTypeNote.classList.toggle('text-gray-500', isShePackage);
+            syncVisibleFields();
+        }
+
+        typeSelect.addEventListener('change', syncVisibleFields);
+        packageSelect.addEventListener('change', syncAllowedTypes);
+        syncAllowedTypes();
+    })();
 </script>

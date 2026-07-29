@@ -8,7 +8,8 @@
 
     @php
         $package = $assessment->questionPackage;
-        $grade = $package ? $package->getGrade((float) $assessment->score) : null;
+        $hasFinalScore = $assessment->isSubmitted() && ! $assessment->isPendingReview();
+        $grade = $hasFinalScore && $package ? $package->getGrade((float) $assessment->score) : null;
         $showCertificate = $package && $package->is_certificate && $grade && in_array($grade, ['Lolos', 'Dipertimbangkan']);
 
         $allAnswers = $assessment->answers;
@@ -34,7 +35,7 @@
         $nonMcGraded = $hasNonMc && $nonMcAnswers->every(fn($a) => $a->score !== null);
         $nonMcScore = $nonMcGraded ? round($nonMcAnswers->avg('score'), 2) : null;
 
-        $finalScore = $assessment->isGraded()
+        $finalScore = $hasFinalScore
             ? (float) $assessment->score
             : ($hasNonMc ? null : $mcScore);
 
@@ -194,8 +195,8 @@
                         <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                     <div>
-                        <p class="font-semibold">Menunggu review admin</p>
-                        <p class="text-blue-700 text-xs mt-0.5">Soal Essay/Upload sedang dalam proses penilaian. Nilai akhir akan diperbarui setelah review selesai.</p>
+                        <p class="font-semibold">Menunggu Review SHE</p>
+                        <p class="text-blue-700 text-xs mt-0.5">Essay/Upload sedang dinilai admin SHE. Nilai akhir akan diperbarui setelah review selesai.</p>
                     </div>
                 </div>
             @endif
@@ -248,8 +249,10 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Nilai Akhir</p>
-                            @if ($assessment->isGraded())
+                            @if ($hasFinalScore)
                                 <p class="mt-1 text-2xl font-bold text-amber-600">{{ number_format($assessment->score, 2) }}</p>
+                            @elseif ($assessment->isPendingReview())
+                                <span class="mt-2 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Menunggu Review SHE</span>
                             @else
                                 <p class="mt-1 text-2xl font-bold text-gray-300">--</p>
                             @endif
@@ -484,7 +487,7 @@
             </div>
 
             {{-- Certificate --}}
-            @if ($showCertificate && $assessment->isGraded())
+            @if ($showCertificate && $hasFinalScore)
                 <div class="score-card mb-6 text-center animate-fade-in delay-4">
                     <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-indigo-200">
                         <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Assessment;
+use App\Models\QuestionPackage;
 
 class AssessmentSecurity
 {
@@ -45,16 +46,21 @@ class AssessmentSecurity
      */
     public function finishAssessment(Assessment $assessment, array $submittedAnswers = [], bool $autoSubmitted = false): void
     {
-        $assessment->load('answers.question');
+        $assessment->load('answers.question', 'questionPackage');
 
         $hasEssayOrUpload = $assessment->answers->contains(function ($answer) {
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
         });
 
+        $needsManualReview = $assessment->questionPackage?->type === QuestionPackage::TYPE_SHE
+            && $hasEssayOrUpload;
+
         $correctAnswers = 0;
+        $multipleChoiceCount = 0;
 
         foreach ($assessment->answers as $answer) {
             if ($answer->question && $answer->question->isMultipleChoice()) {
+                $multipleChoiceCount++;
                 $selected = $submittedAnswers[$answer->id] ?? $answer->selected_option;
                 $isCorrect = $selected !== null && $selected === $answer->question->correct_option;
 
@@ -75,11 +81,12 @@ class AssessmentSecurity
 
         $totalQuestions = $assessment->answers->count();
 
-        $status = $hasEssayOrUpload
+        $status = $needsManualReview
             ? Assessment::STATUS_PENDING_REVIEW
             : Assessment::STATUS_GRADED;
 
-        $score = $totalQuestions > 0 ? round(($correctAnswers / $totalQuestions) * 100, 2) : 0;
+        $autoScoredQuestions = $multipleChoiceCount > 0 ? $multipleChoiceCount : $totalQuestions;
+        $score = $autoScoredQuestions > 0 ? round(($correctAnswers / $autoScoredQuestions) * 100, 2) : 0;
 
         $assessment->update([
             'total_questions' => $totalQuestions,
