@@ -50,8 +50,8 @@
         </div>
     </form>
 
-    <div class="pt-6 mt-7 border-t border-gray-200">
-        <p class="text-[11px] font-semibold uppercase text-gray-400">Assessment powered by</p>
-        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="w-auto h-6 mt-3">
+    <div class="pt-6 mt-7 border-t border-gray-200 text-center">
+        <p class="text-xs font-semibold uppercase text-gray-400">Assessment powered by</p>
+        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="mx-auto mt-2 h-auto w-32">
     </div>
 </x-guest-layout>
