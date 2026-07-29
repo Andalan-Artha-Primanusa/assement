@@ -9,13 +9,20 @@
     @php
         $package = $assessment->questionPackage;
         $isSheAssessment = $package?->type === \App\Models\QuestionPackage::TYPE_SHE;
+        $isHrAssessment = $package?->type === \App\Models\QuestionPackage::TYPE_HR;
         $grade = $package ? $package->getGrade((float) $assessment->score) : null;
 
         $mcAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isMultipleChoice());
         $essayAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isEssay());
         $uploadAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isUpload());
 
-        $mcScore = $mcAnswers->count() > 0 ? round($mcAnswers->where('is_correct', true)->count() / $mcAnswers->count() * 100, 2) : null;
+        $mcTotalPoints = $isHrAssessment ? $mcAnswers->sum(fn($a) => $a->question?->pointValue() ?? 1) : null;
+        $mcCorrectPoints = $isHrAssessment ? $mcAnswers->where('is_correct', true)->sum(fn($a) => $a->question?->pointValue() ?? 1) : null;
+        $mcScore = $mcAnswers->count() > 0
+            ? ($isHrAssessment && $mcTotalPoints > 0
+                ? round(($mcCorrectPoints / $mcTotalPoints) * 100, 2)
+                : round($mcAnswers->where('is_correct', true)->count() / $mcAnswers->count() * 100, 2))
+            : null;
         $mcCorrect = $mcAnswers->where('is_correct', true)->count();
 
         $essayGraded = $essayAnswers->isNotEmpty() && $essayAnswers->every(fn($a) => $a->score !== null);
@@ -122,7 +129,11 @@
                             <p class="text-xs text-gray-500 font-medium">Multiple Choice</p>
                             @if ($mcScore !== null)
                                 <p class="text-2xl font-bold mt-1" style="color: #2563EB">{{ number_format($mcScore, 2) }}</p>
-                                <p class="text-xs text-gray-400">{{ $mcCorrect }}/{{ $mcAnswers->count() }} benar</p>
+                                @if ($isHrAssessment)
+                                    <p class="text-xs text-gray-400">{{ number_format($mcCorrectPoints, 2) }}/{{ number_format($mcTotalPoints, 2) }} poin</p>
+                                @else
+                                    <p class="text-xs text-gray-400">{{ $mcCorrect }}/{{ $mcAnswers->count() }} benar</p>
+                                @endif
                             @else
                                 <p class="text-2xl font-bold text-gray-300 mt-1">--</p>
                             @endif
@@ -231,6 +242,9 @@
                                             $typeLabels = ['multiple_choice' => 'MC', 'essay' => 'Essay', 'upload' => 'Upload'];
                                         @endphp
                                         <span class="rounded-full px-2 py-0.5 text-xs font-semibold {{ $typeColors[$question->type] ?? '' }}">{{ $typeLabels[$question->type] ?? $question->type }}</span>
+                                        @if ($isHrAssessment && $question->isMultipleChoice())
+                                            <span class="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">Nilai: {{ number_format($question->pointValue(), 2) }}</span>
+                                        @endif
 
                                         @if ($question->isMultipleChoice() && $answer->is_correct !== null)
                                             @if ($answer->is_correct)

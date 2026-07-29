@@ -266,6 +266,108 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_hr_can_create_question_with_custom_points(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_hr']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket HR Nilai',
+            'type' => QuestionPackage::TYPE_HR,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.questions.store'), [
+                'question_package_id' => $package->id,
+                'type' => Question::TYPE_MULTIPLE_CHOICE,
+                'category' => 'HR',
+                'difficulty' => 'intermediate',
+                'text' => 'Soal HR berbobot',
+                'option_a' => 'Benar',
+                'option_b' => 'Salah',
+                'option_c' => 'Salah',
+                'option_d' => 'Salah',
+                'correct_option' => 'a',
+                'points' => 7.5,
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.packages.questions', $package->id));
+
+        $this->assertDatabaseHas('questions', [
+            'question_package_id' => $package->id,
+            'text' => 'Soal HR berbobot',
+            'points' => 7.5,
+        ]);
+    }
+
+    public function test_hr_assessment_uses_question_points_for_final_score(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket HR Weighted',
+            'type' => QuestionPackage::TYPE_HR,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 2,
+            'started_at' => now(),
+        ]);
+
+        $lowPointQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'HR',
+            'difficulty' => 'basic',
+            'text' => 'Soal bobot kecil',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'points' => 2,
+            'is_active' => true,
+        ]);
+        $highPointQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'HR',
+            'difficulty' => 'advanced',
+            'text' => 'Soal bobot besar',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'points' => 8,
+            'is_active' => true,
+        ]);
+        $lowAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $lowPointQuestion->id,
+            'position' => 1,
+        ]);
+        $highAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $highPointQuestion->id,
+            'position' => 2,
+        ]);
+
+        app(AssessmentSecurity::class)->finishAssessment($assessment, [
+            $lowAnswer->id => 'a',
+            $highAnswer->id => 'b',
+        ]);
+
+        $assessment->refresh();
+
+        $this->assertSame(Assessment::STATUS_GRADED, $assessment->status);
+        $this->assertSame(1, $assessment->correct_answers);
+        $this->assertEquals(20.0, (float) $assessment->score);
+    }
+
     public function test_admin_can_invite_user_with_generated_credentials(): void
     {
         Mail::fake();

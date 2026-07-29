@@ -70,6 +70,9 @@
                                         <div class="flex flex-wrap items-center gap-2 mb-1">
                                             @if ($question->isMultipleChoice())
                                                 <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">PG</span>
+                                                @if ($packageType === \App\Models\QuestionPackage::TYPE_HR)
+                                                    <span class="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">Nilai HR: {{ number_format($question->pointValue(), 2) }}</span>
+                                                @endif
                                             @elseif ($question->isEssay())
                                                 <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">Essay</span>
                                             @elseif ($question->isUpload())

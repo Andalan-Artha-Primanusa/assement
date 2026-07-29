@@ -31,6 +31,7 @@ class HrQuestionSeeder extends Seeder
                     'd' => 'Menyimpan dokumen sampai pemohon menanyakan kembali',
                 ],
                 'correct' => 'c',
+                'points' => 3,
             ],
             [
                 'category' => 'Kerahasiaan Data',
@@ -43,6 +44,7 @@ class HrQuestionSeeder extends Seeder
                     'd' => 'Vendor eksternal tanpa persetujuan internal',
                 ],
                 'correct' => 'b',
+                'points' => 4,
             ],
             [
                 'category' => 'Akurasi Data',
@@ -55,6 +57,7 @@ class HrQuestionSeeder extends Seeder
                     'd' => 'Menghapus data yang tampak berbeda dari mayoritas',
                 ],
                 'correct' => 'c',
+                'points' => 5,
             ],
             [
                 'category' => 'Prioritas Kerja',
@@ -67,6 +70,7 @@ class HrQuestionSeeder extends Seeder
                     'd' => 'Mengerjakan yang diminta oleh teman paling dekat',
                 ],
                 'correct' => 'b',
+                'points' => 4,
             ],
             [
                 'category' => 'Komunikasi',
@@ -79,6 +83,7 @@ class HrQuestionSeeder extends Seeder
                     'd' => 'Membiarkan karena bukan tanggung jawab admin',
                 ],
                 'correct' => 'c',
+                'points' => 3,
             ],
             [
                 'category' => 'Kontrol Dokumen',
@@ -91,6 +96,7 @@ class HrQuestionSeeder extends Seeder
                     'd' => 'Versi lama dihapus tanpa catatan perubahan',
                 ],
                 'correct' => 'a',
+                'points' => 5,
             ],
         ];
 
@@ -109,6 +115,7 @@ class HrQuestionSeeder extends Seeder
                     'option_c' => $question['options']['c'],
                     'option_d' => $question['options']['d'],
                     'correct_option' => $question['correct'],
+                    'points' => $question['points'],
                     'is_active' => true,
                 ]
             );

@@ -54,13 +54,18 @@ class AssessmentSecurity
 
         $needsManualReview = $assessment->questionPackage?->type === QuestionPackage::TYPE_SHE
             && $hasEssayOrUpload;
+        $usesWeightedScore = $assessment->questionPackage?->type === QuestionPackage::TYPE_HR;
 
         $correctAnswers = 0;
         $multipleChoiceCount = 0;
+        $weightedCorrectPoints = 0.0;
+        $weightedTotalPoints = 0.0;
 
         foreach ($assessment->answers as $answer) {
             if ($answer->question && $answer->question->isMultipleChoice()) {
                 $multipleChoiceCount++;
+                $points = $answer->question->pointValue();
+                $weightedTotalPoints += $points;
                 $selected = $submittedAnswers[$answer->id] ?? $answer->selected_option;
                 $isCorrect = $selected !== null && $selected === $answer->question->correct_option;
 
@@ -71,6 +76,7 @@ class AssessmentSecurity
 
                 if ($isCorrect) {
                     $correctAnswers++;
+                    $weightedCorrectPoints += $points;
                 }
             } elseif ($answer->question && $answer->question->isEssay()) {
                 $answer->update([
@@ -86,7 +92,9 @@ class AssessmentSecurity
             : Assessment::STATUS_GRADED;
 
         $autoScoredQuestions = $multipleChoiceCount > 0 ? $multipleChoiceCount : $totalQuestions;
-        $score = $autoScoredQuestions > 0 ? round(($correctAnswers / $autoScoredQuestions) * 100, 2) : 0;
+        $score = $usesWeightedScore && $weightedTotalPoints > 0
+            ? round(($weightedCorrectPoints / $weightedTotalPoints) * 100, 2)
+            : ($autoScoredQuestions > 0 ? round(($correctAnswers / $autoScoredQuestions) * 100, 2) : 0);
 
         $assessment->update([
             'total_questions' => $totalQuestions,

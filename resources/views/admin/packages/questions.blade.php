@@ -36,6 +36,9 @@
                                 <th class="px-6 py-3">Soal</th>
                                 <th class="px-6 py-3">Kategori</th>
                                 <th class="px-6 py-3">Level</th>
+                                @if ($package->type === \App\Models\QuestionPackage::TYPE_HR)
+                                    <th class="px-6 py-3 text-center">Nilai</th>
+                                @endif
                                 <th class="px-6 py-3 text-center">Kunci</th>
                                 <th class="px-6 py-3 text-center">Status</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
@@ -54,6 +57,9 @@
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->category }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ ucfirst($question->difficulty) }}</td>
+                                    @if ($package->type === \App\Models\QuestionPackage::TYPE_HR)
+                                        <td class="px-6 py-4 text-center font-semibold text-gray-900">{{ number_format($question->pointValue(), 2) }}</td>
+                                    @endif
                                     <td class="px-6 py-4 text-center font-semibold uppercase text-gray-900">{{ $question->correct_option }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $question->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
@@ -77,7 +83,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-10 text-center text-gray-500">Belum ada soal di paket ini.</td>
+                                    <td colspan="{{ $package->type === \App\Models\QuestionPackage::TYPE_HR ? 7 : 6 }}" class="px-6 py-10 text-center text-gray-500">Belum ada soal di paket ini.</td>
                                 </tr>
                             @endforelse
                         </tbody>

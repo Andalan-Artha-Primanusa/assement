@@ -26,9 +26,10 @@ class QuestionImportController extends Controller
         return view('admin.questions.import', compact('packages', 'selectedPackageId'));
     }
 
-    public function template()
+    public function template(Request $request)
     {
-        $filename = 'template-soal.xlsx';
+        $isHrTemplate = $request->string('type')->toString() === QuestionPackage::TYPE_HR;
+        $filename = $isHrTemplate ? 'template-soal-hr.xlsx' : 'template-soal.xlsx';
         $tempPath = storage_path('app/temp_'.$filename);
 
         $options = new XLSXOptions();
@@ -39,10 +40,38 @@ class QuestionImportController extends Controller
 
         $writer->addRow(Row::fromValues([
             'type', 'text', 'option_a', 'option_b', 'option_c', 'option_d',
-            'correct_option', 'category', 'difficulty',
+            'correct_option', 'category', 'difficulty', 'points',
         ]));
 
-        $examples = [
+        $examples = $isHrTemplate ? [
+            Row::fromValues([
+                'multiple_choice',
+                'Dokumen apa yang digunakan untuk mencatat pengajuan cuti karyawan?',
+                'Form cuti',
+                'Surat jalan',
+                'Invoice vendor',
+                'Berita acara unit',
+                'a', 'Administrasi HR', 'basic', '2',
+            ]),
+            Row::fromValues([
+                'multiple_choice',
+                'Data personal karyawan wajib dijaga karena termasuk?',
+                'Informasi publik',
+                'Data rahasia perusahaan',
+                'Materi promosi',
+                'Dokumen operasional umum',
+                'b', 'Kerahasiaan Data', 'intermediate', '5',
+            ]),
+            Row::fromValues([
+                'multiple_choice',
+                'Langkah pertama saat menerima keluhan karyawan adalah?',
+                'Mengabaikan sampai ada bukti tertulis',
+                'Mencatat dan mengklarifikasi informasi awal',
+                'Langsung memberi sanksi',
+                'Menyebarkan informasi ke grup kerja',
+                'b', 'Employee Relation', 'advanced', '8',
+            ]),
+        ] : [
             Row::fromValues([
                 'multiple_choice',
                 'Apa fungsi oli mesin?',
@@ -50,19 +79,19 @@ class QuestionImportController extends Controller
                 'Mendinginkan mesin',
                 'Membersihkan sirkuit oli',
                 'Semua benar',
-                'd', 'Engine', 'basic',
+                'd', 'Engine', 'basic', '1',
             ]),
             Row::fromValues([
                 'essay',
                 'Jelaskan proses perawatan harian pada heavy equipment!',
                 '', '', '', '',
-                '', 'Maintenance', 'intermediate',
+                '', 'Maintenance', 'intermediate', '1',
             ]),
             Row::fromValues([
                 'upload',
                 'Upload foto hasil inspeksi undercarriage unit!',
                 '', '', '', '',
-                '', 'Inspection', 'advanced',
+                '', 'Inspection', 'advanced', '1',
             ]),
             Row::fromValues([
                 'multiple_choice',
@@ -71,7 +100,7 @@ class QuestionImportController extends Controller
                 'Crankshaft',
                 'Camshaft',
                 'Flywheel',
-                'a', 'Engine', 'basic',
+                'a', 'Engine', 'basic', '1',
             ]),
         ];
 
@@ -162,6 +191,7 @@ class QuestionImportController extends Controller
                 $optionC = $cellValues[4] ?? '';
                 $optionD = $cellValues[5] ?? '';
                 $correct = isset($cellValues[6]) ? strtolower(trim($cellValues[6])) : '';
+                $points = $this->parsePoints($cellValues[9] ?? null);
 
                 if ($type === 'multiple_choice' && ! in_array($correct, ['a', 'b', 'c', 'd'])) {
                     $errors[] = "Baris ke-{$rowNumber}: correct_option harus a/b/c/d, got '{$correct}'";
@@ -173,6 +203,11 @@ class QuestionImportController extends Controller
                         $errors[] = "Baris ke-{$rowNumber}: MC wajib punya 4 pilihan (A/B/C/D)";
                         continue;
                     }
+                }
+
+                if ($package?->type === QuestionPackage::TYPE_HR && $points === null) {
+                    $errors[] = "Baris ke-{$rowNumber}: points wajib angka lebih dari 0 untuk paket HR.";
+                    continue;
                 }
 
                 try {
@@ -187,6 +222,7 @@ class QuestionImportController extends Controller
                         'option_c' => $type === 'multiple_choice' ? $optionC : null,
                         'option_d' => $type === 'multiple_choice' ? $optionD : null,
                         'correct_option' => $type === 'multiple_choice' ? $correct : null,
+                        'points' => $package?->type === QuestionPackage::TYPE_HR ? $points : 1,
                         'is_active' => true,
                     ]);
                     $imported++;
@@ -210,5 +246,22 @@ class QuestionImportController extends Controller
             : redirect()->route('admin.questions.index');
 
         return $redirect->with('status', $message);
+    }
+
+    private function parsePoints(?string $value): ?float
+    {
+        if ($value === null || trim($value) === '') {
+            return 1;
+        }
+
+        $normalized = str_replace(',', '.', trim($value));
+
+        if (! is_numeric($normalized)) {
+            return null;
+        }
+
+        $points = (float) $normalized;
+
+        return $points > 0 && $points <= 1000 ? $points : null;
     }
 }

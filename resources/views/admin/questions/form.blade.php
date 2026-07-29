@@ -7,7 +7,7 @@
         @method($method)
     @endif
 
-    <div class="grid gap-4 sm:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
             <x-input-label for="question_package_id" value="Paket Soal" />
             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -41,6 +41,12 @@
                 @endforeach
             </select>
             <x-input-error :messages="$errors->get('difficulty')" class="mt-2" />
+        </div>
+        <div id="points-field" class="hidden">
+            <x-input-label for="points" value="Nilai Soal HR" />
+            <input id="points" type="number" name="points" value="{{ old('points', $question->points ?? 1) }}" min="0.01" max="1000" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <p class="mt-1 text-xs text-gray-500">Dipakai sebagai bobot nilai khusus paket HR.</p>
+            <x-input-error :messages="$errors->get('points')" class="mt-2" />
         </div>
     </div>
 
@@ -129,6 +135,8 @@
         const essayInfo = document.getElementById('essay-info');
         const uploadInfo = document.getElementById('upload-info');
         const manualTypeNote = document.getElementById('manual-type-note');
+        const pointsField = document.getElementById('points-field');
+        const pointsInput = document.getElementById('points');
 
         function selectedPackageType() {
             const selectedOption = packageSelect?.options[packageSelect.selectedIndex];
@@ -151,7 +159,9 @@
         }
 
         function syncAllowedTypes() {
-            const isShePackage = selectedPackageType() === 'she';
+            const packageType = selectedPackageType();
+            const isShePackage = packageType === 'she';
+            const isHrPackage = packageType === 'hr';
 
             typeSelect.querySelectorAll('option[data-manual-review="true"]').forEach((option) => {
                 option.disabled = ! isShePackage;
@@ -164,6 +174,12 @@
 
             manualTypeNote.classList.toggle('text-amber-600', ! isShePackage);
             manualTypeNote.classList.toggle('text-gray-500', isShePackage);
+            pointsField.classList.toggle('hidden', ! isHrPackage);
+
+            if (! isHrPackage) {
+                pointsInput.value = '1';
+            }
+
             syncVisibleFields();
         }
 

@@ -46,6 +46,7 @@
                                 <th class="px-6 py-3 text-center">Tipe</th>
                                 <th class="px-6 py-3">Kategori</th>
                                 <th class="px-6 py-3 text-center">Level</th>
+                                <th class="px-6 py-3 text-center">Nilai HR</th>
                                 <th class="px-6 py-3 text-center">Kunci</th>
                                 <th class="px-6 py-3 text-center">Status</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
@@ -82,6 +83,13 @@
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->category }}</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ ucfirst($question->difficulty) }}</td>
+                                    <td class="px-6 py-4 text-center font-semibold text-gray-900">
+                                        @if ($question->questionPackage?->type === \App\Models\QuestionPackage::TYPE_HR)
+                                            {{ number_format($question->pointValue(), 2) }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-center font-semibold uppercase text-gray-900">{{ $question->correct_option ?? '-' }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $question->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
@@ -105,7 +113,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-10 text-center text-gray-500">Belum ada soal.</td>
+                                    <td colspan="9" class="px-6 py-10 text-center text-gray-500">Belum ada soal.</td>
                                 </tr>
                             @endforelse
                         </tbody>

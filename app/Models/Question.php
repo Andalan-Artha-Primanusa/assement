@@ -27,12 +27,14 @@ class Question extends Model
         'option_c',
         'option_d',
         'correct_option',
+        'points',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
+            'points' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
@@ -71,5 +73,10 @@ class Question extends Model
             'd' => $this->option_d ?? '',
             default => '',
         };
+    }
+
+    public function pointValue(): float
+    {
+        return max(0.01, (float) ($this->points ?? 1));
     }
 }

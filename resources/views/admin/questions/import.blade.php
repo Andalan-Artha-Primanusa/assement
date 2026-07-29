@@ -15,13 +15,19 @@
             <div class="bg-white p-6 shadow-sm sm:rounded-lg">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">Upload File Excel</h3>
-                    <a href="{{ route('admin.questions.import.template') }}" class="inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        Download Template Excel
-                    </a>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('admin.questions.import.template') }}" class="inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Template Umum/SHE
+                        </a>
+                        <a href="{{ route('admin.questions.import.template', ['type' => 'hr']) }}" class="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Template HR
+                        </a>
+                    </div>
                 </div>
                 <p class="mt-2 text-sm text-gray-600">
-                    Format kolom: <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">type, text, option_a, option_b, option_c, option_d, correct_option, category, difficulty</code>
+                    Format kolom: <code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">type, text, option_a, option_b, option_c, option_d, correct_option, category, difficulty, points</code>
                 </p>
                 <div class="mt-2 rounded-md bg-blue-50 p-3 text-xs text-blue-800">
                     <p class="font-semibold">Tipe soal:</p>
@@ -30,7 +36,7 @@
                         <li><strong>essay</strong> - khusus paket SHE, kolom pilihan & correct_option dikosongkan</li>
                         <li><strong>upload</strong> - khusus paket SHE, peserta upload file</li>
                     </ul>
-                    <p class="mt-1">Mekanik, Operator, dan HR hanya memakai multiple_choice. Category & difficulty opsional; baris header otomatis di-skip.</p>
+                    <p class="mt-1">Mekanik, Operator, dan HR hanya memakai multiple_choice. Kolom <strong>points</strong> dipakai khusus HR sebagai nilai/bobot per soal.</p>
                 </div>
 
                 <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5" data-confirm
@@ -51,7 +57,7 @@
                             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Tanpa paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
+                                    <option value="{{ $package->id }}" data-package-type="{{ $package->type }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
                                 @endforeach
                             </select>
                         </div>
@@ -87,6 +93,7 @@
                                 <th class="px-3 py-2 text-left">correct</th>
                                 <th class="px-3 py-2 text-left">category</th>
                                 <th class="px-3 py-2 text-left">difficulty</th>
+                                <th class="px-3 py-2 text-left">points</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -100,6 +107,19 @@
                                 <td class="px-3 py-2 text-emerald-600">d</td>
                                 <td class="px-3 py-2">Engine</td>
                                 <td class="px-3 py-2">basic</td>
+                                <td class="px-3 py-2 text-gray-400">1</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 text-indigo-600">multiple_choice</td>
+                                <td class="px-3 py-2">Data personal karyawan wajib dijaga karena termasuk?</td>
+                                <td class="px-3 py-2">Informasi publik</td>
+                                <td class="px-3 py-2">Data rahasia perusahaan</td>
+                                <td class="px-3 py-2">Materi promosi</td>
+                                <td class="px-3 py-2">Dokumen operasional umum</td>
+                                <td class="px-3 py-2 text-emerald-600">b</td>
+                                <td class="px-3 py-2">Kerahasiaan Data</td>
+                                <td class="px-3 py-2">intermediate</td>
+                                <td class="px-3 py-2 text-rose-600">5</td>
                             </tr>
                             <tr>
                                 <td class="px-3 py-2 text-amber-600">essay</td>
@@ -111,6 +131,7 @@
                                 <td class="px-3 py-2 text-gray-400">-</td>
                                 <td class="px-3 py-2">Maintenance</td>
                                 <td class="px-3 py-2">intermediate</td>
+                                <td class="px-3 py-2 text-gray-400">1</td>
                             </tr>
                             <tr>
                                 <td class="px-3 py-2 text-rose-600">upload</td>
@@ -122,11 +143,12 @@
                                 <td class="px-3 py-2 text-gray-400">-</td>
                                 <td class="px-3 py-2">Inspection</td>
                                 <td class="px-3 py-2">advanced</td>
+                                <td class="px-3 py-2 text-gray-400">1</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Contoh essay/upload hanya dipakai saat paket yang dipilih adalah SHE.</p>
+                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Untuk HR, isi points dengan nilai/bobot soal; contoh essay/upload hanya dipakai saat paket yang dipilih adalah SHE.</p>
             </div>
         </div>
     </div>

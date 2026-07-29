@@ -65,6 +65,7 @@ class QuestionController extends Controller
             'category' => QuestionPackage::typeLabel($defaultType),
             'difficulty' => 'basic',
             'correct_option' => 'a',
+            'points' => 1,
             'is_active' => true,
         ]);
 
@@ -171,6 +172,7 @@ class QuestionController extends Controller
             'option_c' => ['nullable', 'string'],
             'option_d' => ['nullable', 'string'],
             'correct_option' => ['nullable', 'in:a,b,c,d'],
+            'points' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
             'is_active' => ['nullable', 'boolean'],
             'remove_image' => ['nullable', 'boolean'],
         ]);
@@ -178,7 +180,11 @@ class QuestionController extends Controller
         $data['question_package_id'] = $data['question_package_id'] ?? null;
         $data['is_active'] = $request->boolean('is_active');
 
+        $package = $this->packageForData($request, $data);
         $this->ensureTypeAllowedForPackage($request, $data);
+        $data['points'] = $package?->type === QuestionPackage::TYPE_HR
+            ? (float) ($data['points'] ?? 1)
+            : 1;
 
         if ($request->hasFile('image')) {
             if ($question && $question->image) {
@@ -224,10 +230,7 @@ class QuestionController extends Controller
             return;
         }
 
-        $package = ! empty($data['question_package_id'])
-            ? QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
-                ->find($data['question_package_id'])
-            : null;
+        $package = $this->packageForData($request, $data);
 
         if ($package?->type === QuestionPackage::TYPE_SHE) {
             return;
@@ -236,6 +239,17 @@ class QuestionController extends Controller
         throw ValidationException::withMessages([
             'type' => 'Essay dan Upload File khusus untuk paket SHE. Paket Mekanik, Operator, dan HR hanya menggunakan Multiple Choice.',
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function packageForData(Request $request, array $data): ?QuestionPackage
+    {
+        return ! empty($data['question_package_id'])
+            ? QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
+                ->find($data['question_package_id'])
+            : null;
     }
 
     private function authorizeQuestionPackage(Request $request, Question $question): void
