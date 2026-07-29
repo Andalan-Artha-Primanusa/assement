@@ -45,8 +45,8 @@
 
     <div class="flex h-16 shrink-0 items-center border-b border-gray-100 px-5">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 flex-1 items-center gap-3">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
-                <img src="{{ asset('favicon-192x192.png') }}" alt="Assessment" class="h-full w-full object-contain">
+            <span class="flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm" style="width: 36px; height: 36px;">
+                <img src="{{ asset('favicon-48x48.png') }}" alt="Assessment" style="display: block; width: 26px; height: 26px; max-width: 26px; max-height: 26px; object-fit: contain;">
             </span>
             <span class="min-w-0">
                 <span class="block truncate text-sm font-semibold text-gray-950">
