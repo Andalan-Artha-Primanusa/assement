@@ -45,8 +45,8 @@
 
     <div class="flex h-16 shrink-0 items-center border-b border-gray-100 px-5">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 flex-1 items-center gap-3">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-sm font-bold text-white">
-                {{ $authUser?->isSuperAdmin() ? 'SA' : strtoupper(substr($typeLabel($visibleTypes[0] ?? null), 0, 2)) }}
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+                <img src="{{ asset('favicon-192x192.png') }}" alt="Assessment" class="h-full w-full object-contain">
             </span>
             <span class="min-w-0">
                 <span class="block truncate text-sm font-semibold text-gray-950">

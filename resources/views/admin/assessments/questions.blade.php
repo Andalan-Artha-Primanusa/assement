@@ -8,6 +8,7 @@
 
     @php
         $package = $assessment->questionPackage;
+        $isSheAssessment = $package?->type === \App\Models\QuestionPackage::TYPE_SHE;
         $grade = $package ? $package->getGrade((float) $assessment->score) : null;
 
         $mcAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isMultipleChoice());
@@ -109,10 +110,10 @@
             </div>
 
             {{-- Score Breakdown --}}
-            @if ($mcScore !== null || $essayScore !== null || $uploadScore !== null)
+            @if ($mcScore !== null || ($isSheAssessment && ($essayScore !== null || $uploadScore !== null)))
                 <div class="bg-white p-6 shadow-sm rounded-xl mb-6">
                     <h3 class="text-sm font-bold text-gray-900 mb-4">Rincian Skor</h3>
-                    <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="grid gap-4 {{ $isSheAssessment ? 'sm:grid-cols-3' : 'sm:grid-cols-1' }}">
                         {{-- MC --}}
                         <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center">
                             <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
@@ -126,40 +127,42 @@
                                 <p class="text-2xl font-bold text-gray-300 mt-1">--</p>
                             @endif
                         </div>
-                        {{-- Essay --}}
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center">
-                            <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50">
-                                <svg class="h-5 w-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        @if ($isSheAssessment)
+                            {{-- Essay --}}
+                            <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center">
+                                <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50">
+                                    <svg class="h-5 w-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </div>
+                                <p class="text-xs text-gray-500 font-medium">Essay</p>
+                                @if ($essayScore !== null)
+                                    <p class="text-2xl font-bold mt-1" style="color: #F59E0B">{{ number_format($essayScore, 2) }}</p>
+                                    <p class="text-xs text-gray-400">Rata-rata</p>
+                                @elseif ($essayAnswers->isNotEmpty())
+                                    <p class="text-sm font-semibold mt-1" style="color: #D97706">Menunggu</p>
+                                    <p class="text-xs text-gray-400">{{ $essayAnswers->count() }} soal</p>
+                                @else
+                                    <p class="text-2xl font-bold text-gray-300 mt-1">--</p>
+                                    <p class="text-xs text-gray-400">Tidak ada</p>
+                                @endif
                             </div>
-                            <p class="text-xs text-gray-500 font-medium">Essay</p>
-                            @if ($essayScore !== null)
-                                <p class="text-2xl font-bold mt-1" style="color: #F59E0B">{{ number_format($essayScore, 2) }}</p>
-                                <p class="text-xs text-gray-400">Rata-rata</p>
-                            @elseif ($essayAnswers->isNotEmpty())
-                                <p class="text-sm font-semibold mt-1" style="color: #D97706">Menunggu</p>
-                                <p class="text-xs text-gray-400">{{ $essayAnswers->count() }} soal</p>
-                            @else
-                                <p class="text-2xl font-bold text-gray-300 mt-1">--</p>
-                                <p class="text-xs text-gray-400">Tidak ada</p>
-                            @endif
-                        </div>
-                        {{-- Upload --}}
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center">
-                            <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-purple-50">
-                                <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{-- Upload --}}
+                            <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center">
+                                <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-purple-50">
+                                    <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                </div>
+                                <p class="text-xs text-gray-500 font-medium">Portfolio</p>
+                                @if ($uploadScore !== null)
+                                    <p class="text-2xl font-bold mt-1" style="color: #8B5CF6">{{ number_format($uploadScore, 2) }}</p>
+                                    <p class="text-xs text-gray-400">Rata-rata</p>
+                                @elseif ($uploadAnswers->isNotEmpty())
+                                    <p class="text-sm font-semibold mt-1" style="color: #7C3AED">Menunggu</p>
+                                    <p class="text-xs text-gray-400">{{ $uploadAnswers->count() }} soal</p>
+                                @else
+                                    <p class="text-2xl font-bold text-gray-300 mt-1">--</p>
+                                    <p class="text-xs text-gray-400">Tidak ada</p>
+                                @endif
                             </div>
-                            <p class="text-xs text-gray-500 font-medium">Portfolio</p>
-                            @if ($uploadScore !== null)
-                                <p class="text-2xl font-bold mt-1" style="color: #8B5CF6">{{ number_format($uploadScore, 2) }}</p>
-                                <p class="text-xs text-gray-400">Rata-rata</p>
-                            @elseif ($uploadAnswers->isNotEmpty())
-                                <p class="text-sm font-semibold mt-1" style="color: #7C3AED">Menunggu</p>
-                                <p class="text-xs text-gray-400">{{ $uploadAnswers->count() }} soal</p>
-                            @else
-                                <p class="text-2xl font-bold text-gray-300 mt-1">--</p>
-                                <p class="text-xs text-gray-400">Tidak ada</p>
-                            @endif
-                        </div>
+                        @endif
                     </div>
 
                     @if ($grade && $package)

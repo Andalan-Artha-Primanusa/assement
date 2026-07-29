@@ -8,6 +8,7 @@
 
     @php
         $package = $assessment->questionPackage;
+        $isSheAssessment = $package?->type === \App\Models\QuestionPackage::TYPE_SHE;
         $hasFinalScore = $assessment->isSubmitted() && ! $assessment->isPendingReview();
         $grade = $hasFinalScore && $package ? $package->getGrade((float) $assessment->score) : null;
         $showCertificate = $package && $package->is_certificate && $grade && in_array($grade, ['Lolos', 'Dipertimbangkan']);
@@ -267,7 +268,7 @@
                 <p class="text-sm text-gray-400 mb-8">Rincian skor penilaian Anda</p>
 
                 {{-- Circular Progress Cards --}}
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-8">
+                <div class="grid {{ $isSheAssessment ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2' }} gap-6 lg:gap-8 mb-8">
 
                     {{-- Multiple Choice --}}
                     <div class="flex flex-col items-center">
@@ -294,75 +295,77 @@
                         @endif
                     </div>
 
-                    {{-- Essay --}}
-                    <div class="flex flex-col items-center">
-                        <div class="circle-wrapper" data-size="120">
-                            <svg class="circle-svg" width="120" height="120" viewBox="0 0 120 120">
-                                <circle class="circle-track" cx="60" cy="60" r="52" stroke-width="8"/>
-                                <circle class="circle-progress" cx="60" cy="60" r="52" stroke-width="8"
-                                    stroke="{{ $essayScore !== null ? '#F59E0B' : '#D97706' }}"
-                                    stroke-dasharray="326.73"
-                                    stroke-dashoffset="326.73"
-                                    data-target="{{ $essayScore !== null ? $essayScore : 0 }}"/>
-                            </svg>
-                            <span class="circle-score text-xl" style="color: {{ $essayScore !== null ? '#F59E0B' : '#D97706' }}">
-                                @if ($essayScore !== null)
-                                    <span class="counter" data-target="{{ $essayScore }}">0</span>
-                                @elseif ($hasEssay)
-                                    <span class="text-lg" style="color: #D97706">
-                                        <svg class="h-5 w-5 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" opacity="0.25"/><path stroke-width="2" stroke-linecap="round" d="M4 12a8 8 0 018-8" stroke="currentColor"/></svg>
-                                    </span>
-                                @else
-                                    --
-                                @endif
-                            </span>
+                    @if ($isSheAssessment)
+                        {{-- Essay --}}
+                        <div class="flex flex-col items-center">
+                            <div class="circle-wrapper" data-size="120">
+                                <svg class="circle-svg" width="120" height="120" viewBox="0 0 120 120">
+                                    <circle class="circle-track" cx="60" cy="60" r="52" stroke-width="8"/>
+                                    <circle class="circle-progress" cx="60" cy="60" r="52" stroke-width="8"
+                                        stroke="{{ $essayScore !== null ? '#F59E0B' : '#D97706' }}"
+                                        stroke-dasharray="326.73"
+                                        stroke-dashoffset="326.73"
+                                        data-target="{{ $essayScore !== null ? $essayScore : 0 }}"/>
+                                </svg>
+                                <span class="circle-score text-xl" style="color: {{ $essayScore !== null ? '#F59E0B' : '#D97706' }}">
+                                    @if ($essayScore !== null)
+                                        <span class="counter" data-target="{{ $essayScore }}">0</span>
+                                    @elseif ($hasEssay)
+                                        <span class="text-lg" style="color: #D97706">
+                                            <svg class="h-5 w-5 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" opacity="0.25"/><path stroke-width="2" stroke-linecap="round" d="M4 12a8 8 0 018-8" stroke="currentColor"/></svg>
+                                        </span>
+                                    @else
+                                        --
+                                    @endif
+                                </span>
+                            </div>
+                            <p class="circle-label text-sm">Essay</p>
+                            @if ($hasEssay && $essayScore === null)
+                                <p class="text-xs mt-0.5 font-semibold" style="color: #D97706">
+                                    <span class="inline-block animate-pulse">&#9203;</span> Waiting SHE Review
+                                </p>
+                            @elseif ($essayScore !== null)
+                                <p class="text-xs text-gray-400 mt-0.5">Skor rata-rata</p>
+                            @else
+                                <p class="text-xs text-gray-300 mt-0.5">Tidak ada</p>
+                            @endif
                         </div>
-                        <p class="circle-label text-sm">Essay</p>
-                        @if ($hasEssay && $essayScore === null)
-                            <p class="text-xs mt-0.5 font-semibold" style="color: #D97706">
-                                <span class="inline-block animate-pulse">&#9203;</span> Waiting HR Review
-                            </p>
-                        @elseif ($essayScore !== null)
-                            <p class="text-xs text-gray-400 mt-0.5">Skor rata-rata</p>
-                        @else
-                            <p class="text-xs text-gray-300 mt-0.5">Tidak ada</p>
-                        @endif
-                    </div>
 
-                    {{-- Portfolio (Upload) --}}
-                    <div class="flex flex-col items-center">
-                        <div class="circle-wrapper" data-size="120">
-                            <svg class="circle-svg" width="120" height="120" viewBox="0 0 120 120">
-                                <circle class="circle-track" cx="60" cy="60" r="52" stroke-width="8"/>
-                                <circle class="circle-progress" cx="60" cy="60" r="52" stroke-width="8"
-                                    stroke="{{ $uploadScore !== null ? '#8B5CF6' : '#7C3AED' }}"
-                                    stroke-dasharray="326.73"
-                                    stroke-dashoffset="326.73"
-                                    data-target="{{ $uploadScore !== null ? $uploadScore : 0 }}"/>
-                            </svg>
-                            <span class="circle-score text-xl" style="color: {{ $uploadScore !== null ? '#8B5CF6' : '#7C3AED' }}">
-                                @if ($uploadScore !== null)
-                                    <span class="counter" data-target="{{ $uploadScore }}">0</span>
-                                @elseif ($hasUpload)
-                                    <span class="text-lg" style="color: #7C3AED">
-                                        <svg class="h-5 w-5 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" opacity="0.25"/><path stroke-width="2" stroke-linecap="round" d="M4 12a8 8 0 018-8" stroke="currentColor"/></svg>
-                                    </span>
-                                @else
-                                    --
-                                @endif
-                            </span>
+                        {{-- Portfolio (Upload) --}}
+                        <div class="flex flex-col items-center">
+                            <div class="circle-wrapper" data-size="120">
+                                <svg class="circle-svg" width="120" height="120" viewBox="0 0 120 120">
+                                    <circle class="circle-track" cx="60" cy="60" r="52" stroke-width="8"/>
+                                    <circle class="circle-progress" cx="60" cy="60" r="52" stroke-width="8"
+                                        stroke="{{ $uploadScore !== null ? '#8B5CF6' : '#7C3AED' }}"
+                                        stroke-dasharray="326.73"
+                                        stroke-dashoffset="326.73"
+                                        data-target="{{ $uploadScore !== null ? $uploadScore : 0 }}"/>
+                                </svg>
+                                <span class="circle-score text-xl" style="color: {{ $uploadScore !== null ? '#8B5CF6' : '#7C3AED' }}">
+                                    @if ($uploadScore !== null)
+                                        <span class="counter" data-target="{{ $uploadScore }}">0</span>
+                                    @elseif ($hasUpload)
+                                        <span class="text-lg" style="color: #7C3AED">
+                                            <svg class="h-5 w-5 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" opacity="0.25"/><path stroke-width="2" stroke-linecap="round" d="M4 12a8 8 0 018-8" stroke="currentColor"/></svg>
+                                        </span>
+                                    @else
+                                        --
+                                    @endif
+                                </span>
+                            </div>
+                            <p class="circle-label text-sm">Portfolio</p>
+                            @if ($hasUpload && $uploadScore === null)
+                                <p class="text-xs mt-0.5 font-semibold" style="color: #7C3AED">
+                                    <span class="inline-block animate-pulse">&#9203;</span> Waiting SHE Review
+                                </p>
+                            @elseif ($uploadScore !== null)
+                                <p class="text-xs text-gray-400 mt-0.5">Skor rata-rata</p>
+                            @else
+                                <p class="text-xs text-gray-300 mt-0.5">Tidak ada</p>
+                            @endif
                         </div>
-                        <p class="circle-label text-sm">Portfolio</p>
-                        @if ($hasUpload && $uploadScore === null)
-                            <p class="text-xs mt-0.5 font-semibold" style="color: #7C3AED">
-                                <span class="inline-block animate-pulse">&#9203;</span> Waiting HR Review
-                            </p>
-                        @elseif ($uploadScore !== null)
-                            <p class="text-xs text-gray-400 mt-0.5">Skor rata-rata</p>
-                        @else
-                            <p class="text-xs text-gray-300 mt-0.5">Tidak ada</p>
-                        @endif
-                    </div>
+                    @endif
 
                     {{-- Final Score --}}
                     <div class="flex flex-col items-center">
@@ -413,7 +416,7 @@
                         @else
                             <span class="badge-pass waiting">
                                 <svg class="h-5 w-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke="currentColor" opacity="0.25"/><path stroke-width="2" stroke-linecap="round" d="M4 12a8 8 0 018-8" stroke="currentColor"/></svg>
-                                Waiting for Essay Review
+                                Waiting for SHE Review
                             </span>
                         @endif
                     </div>
@@ -447,26 +450,28 @@
                         <span class="detail-label">Multiple Choice Score</span>
                         <span class="detail-value" style="color: #2563EB">{{ $mcScore !== null ? number_format($mcScore, 2) : '--' }}</span>
                     </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Essay Score</span>
-                        @if ($essayScore !== null)
-                            <span class="detail-value" style="color: #F59E0B">{{ number_format($essayScore, 2) }}</span>
-                        @elseif ($hasEssay)
-                            <span class="text-sm font-semibold" style="color: #D97706">&#9203; Menunggu</span>
-                        @else
-                            <span class="detail-value text-gray-300">--</span>
-                        @endif
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Portfolio Score</span>
-                        @if ($uploadScore !== null)
-                            <span class="detail-value" style="color: #8B5CF6">{{ number_format($uploadScore, 2) }}</span>
-                        @elseif ($hasUpload)
-                            <span class="text-sm font-semibold" style="color: #7C3AED">&#9203; Menunggu</span>
-                        @else
-                            <span class="detail-value text-gray-300">--</span>
-                        @endif
-                    </div>
+                    @if ($isSheAssessment)
+                        <div class="detail-row">
+                            <span class="detail-label">Essay Score</span>
+                            @if ($essayScore !== null)
+                                <span class="detail-value" style="color: #F59E0B">{{ number_format($essayScore, 2) }}</span>
+                            @elseif ($hasEssay)
+                                <span class="text-sm font-semibold" style="color: #D97706">&#9203; Menunggu</span>
+                            @else
+                                <span class="detail-value text-gray-300">--</span>
+                            @endif
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Portfolio Score</span>
+                            @if ($uploadScore !== null)
+                                <span class="detail-value" style="color: #8B5CF6">{{ number_format($uploadScore, 2) }}</span>
+                            @elseif ($hasUpload)
+                                <span class="text-sm font-semibold" style="color: #7C3AED">&#9203; Menunggu</span>
+                            @else
+                                <span class="detail-value text-gray-300">--</span>
+                            @endif
+                        </div>
+                    @endif
                     <div class="detail-row">
                         <span class="detail-label">Final Score</span>
                         @if ($finalScore !== null)
