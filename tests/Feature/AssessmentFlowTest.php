@@ -67,6 +67,216 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Assessment Mechanic');
     }
 
+    public function test_user_dashboard_disables_start_when_attempts_are_used(): void
+    {
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'max_attempts' => 1,
+        ]);
+
+        Assessment::create([
+            'user_id' => $user->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 1,
+            'correct_answers' => 1,
+            'score' => 100,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Batas Percobaan Terpakai')
+            ->assertSee('Percobaan Habis')
+            ->assertDontSee('Mulai Assessment');
+    }
+
+    public function test_user_dashboard_shows_pending_review_for_she_result(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Review Dashboard',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'max_attempts' => 2,
+        ]);
+
+        Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_PENDING_REVIEW,
+            'total_questions' => 72,
+            'correct_answers' => 0,
+            'score' => 0,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Menunggu Review SHE')
+            ->assertSee('Essay/Portfolio SHE sedang dinilai admin.');
+    }
+
+    public function test_user_dashboard_shows_positive_access_days_for_future_expiry(): void
+    {
+        $this->travelTo(now()->startOfDay());
+
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'assessment_access_expires_at' => now()->addDays(7),
+            'max_attempts' => 1,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Akses: Sisa 7 hari')
+            ->assertDontSee('Akses: Telah berakhir');
+    }
+
+    public function test_unsubmitted_she_result_redirects_to_active_assessment(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Belum Selesai',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 3,
+            'started_at' => now(),
+            'duration_minutes' => 105,
+            'ends_at' => now()->addMinutes(105),
+        ]);
+        AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'duration_minutes' => 30,
+            'order_index' => 0,
+            'status' => AssessmentSegment::STATUS_IN_PROGRESS,
+            'started_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('assessment.result', $assessment))
+            ->assertRedirect(route('assessment.show', $assessment))
+            ->assertSessionHas('status', 'Assessment belum selesai. Lanjutkan pengerjaan terlebih dahulu.');
+    }
+
+    public function test_she_result_summary_counts_only_multiple_choice_questions(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Ringkasan',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_PENDING_REVIEW,
+            'total_questions' => 4,
+            'correct_answers' => 1,
+            'score' => 50,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $correctQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'PG benar',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $wrongQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'PG salah',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $essayQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_ESSAY,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'Essay SHE',
+            'is_active' => true,
+        ]);
+        $uploadQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_UPLOAD,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'Upload portfolio',
+            'is_active' => true,
+        ]);
+
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $correctQuestion->id,
+            'position' => 1,
+            'selected_option' => 'a',
+            'is_correct' => true,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $wrongQuestion->id,
+            'position' => 2,
+            'selected_option' => 'b',
+            'is_correct' => false,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $essayQuestion->id,
+            'position' => 3,
+            'answer_text' => 'Jawaban essay',
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $uploadQuestion->id,
+            'position' => 4,
+            'file_path' => 'assessment-uploads/sample.pdf',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('assessment.result', $assessment))
+            ->assertOk()
+            ->assertSee('PG Benar')
+            ->assertDontSee('Jawaban Benar')
+            ->assertSee('1<span class="text-sm font-medium text-gray-400">/2</span>', false)
+            ->assertDontSee('1<span class="text-sm font-medium text-gray-400">/4</span>', false);
+    }
+
     public function test_user_assessment_uses_assigned_question_package(): void
     {
         config(['assessment.question_limit' => 4]);
@@ -367,6 +577,148 @@ class AssessmentFlowTest extends TestCase
             $assessment->segments()->pluck('type')->all()
         );
         $this->assertSame([30, 45, 30], $assessment->segments()->pluck('duration_minutes')->all());
+    }
+
+    public function test_she_assessment_does_not_start_when_required_segments_have_no_active_questions(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Tidak Lengkap',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'assessment_access_expires_at' => now()->addDays(3),
+            'segment_config' => config('assessment.she_default_segments'),
+        ]);
+
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE PG saja',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertSessionHas('status', 'Paket SHE belum lengkap. Soal aktif yang kurang: Essay, Portfolio.');
+
+        $this->assertSame(0, Assessment::count());
+    }
+
+    public function test_segmented_assessment_recovers_when_no_segment_is_in_progress(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Recover',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 0,
+            'started_at' => now(),
+            'duration_minutes' => 75,
+            'ends_at' => now()->addMinutes(75),
+        ]);
+
+        AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'duration_minutes' => 30,
+            'order_index' => 0,
+            'status' => AssessmentSegment::STATUS_COMPLETED,
+            'started_at' => now()->subMinutes(30),
+            'completed_at' => now(),
+        ]);
+        $essaySegment = AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_ESSAY,
+            'duration_minutes' => 45,
+            'order_index' => 1,
+            'status' => AssessmentSegment::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('assessment.show', $assessment))
+            ->assertRedirect(route('assessment.show', $assessment));
+
+        $essaySegment->refresh();
+
+        $this->assertSame(AssessmentSegment::STATUS_IN_PROGRESS, $essaySegment->status);
+        $this->assertNotNull($essaySegment->started_at);
+    }
+
+    public function test_segmented_assessment_finalizes_when_all_segments_are_completed_without_submission(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Finalize',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 1,
+            'started_at' => now(),
+            'duration_minutes' => 30,
+            'ends_at' => now()->addMinutes(30),
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'SHE PG finalize',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $question->id,
+            'position' => 1,
+        ]);
+        AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'duration_minutes' => 30,
+            'order_index' => 0,
+            'status' => AssessmentSegment::STATUS_COMPLETED,
+            'started_at' => now()->subMinutes(30),
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('assessment.show', $assessment))
+            ->assertRedirect(route('assessment.result', $assessment));
+
+        $assessment->refresh();
+
+        $this->assertTrue($assessment->isSubmitted());
+        $this->assertSame(Assessment::STATUS_GRADED, $assessment->status);
     }
 
     public function test_she_segmented_page_keeps_positive_overall_countdown(): void

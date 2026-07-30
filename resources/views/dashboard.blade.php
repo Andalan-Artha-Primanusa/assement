@@ -21,8 +21,25 @@
                                 Silakan hubungi admin untuk memperpanjang akses.
                             </p>
                             @if (Auth::user()->assessment_access_expires_at)
-                                <p class="mt-2 text-xs font-semibold text-red-600">Berkhir: {{ Auth::user()->assessment_access_expires_at->format('d M Y H:i') }}</p>
+                                <p class="mt-2 text-xs font-semibold text-red-600">Berakhir: {{ Auth::user()->assessment_access_expires_at->format('d M Y H:i') }}</p>
                             @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if (! $accessExpired && $attemptLimitReached && ! $openAssessment)
+                <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
+                    <div class="flex items-start gap-3">
+                        <div class="shrink-0 mt-0.5">
+                            <svg class="h-5 w-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-amber-800">Batas Percobaan Terpakai</h3>
+                            <p class="mt-1 text-sm text-amber-700">
+                                Akun ini sudah memakai {{ $completedCount }} dari {{ $maxAttempts }} percobaan assessment.
+                                Hubungi admin jika peserta perlu mengulang.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -44,7 +61,8 @@
                                 </span>
                                 @if (Auth::user()->assessment_access_expires_at)
                                     @php
-                                        $daysLeft = max(0, (int) Auth::user()->assessment_access_expires_at->diffInDays(now(), false));
+                                        $secondsLeft = Auth::user()->assessment_access_expires_at->timestamp - now()->timestamp;
+                                        $daysLeft = max(0, (int) ceil($secondsLeft / 86400));
                                     @endphp
                                     <span class="rounded-full {{ $daysLeft > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }} px-3 py-1">
                                         Akses: {{ $daysLeft > 0 ? 'Sisa '.$daysLeft.' hari' : 'Telah berakhir' }} ({{ Auth::user()->assessment_access_expires_at->format('d M Y') }})
@@ -56,6 +74,9 @@
                                 @endif
                                 <span class="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700">
                                     Durasi: {{ round(Auth::user()->assessmentDurationMinutes() / 60, 2) }} jam
+                                </span>
+                                <span class="rounded-full {{ $remainingAttempts > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }} px-3 py-1">
+                                    Percobaan: {{ $completedCount }}/{{ $maxAttempts }}
                                 </span>
                                 @php
                                     $displaySegmentConfig = Auth::user()->segment_config;
@@ -76,6 +97,10 @@
                             @if ($accessExpired)
                                 <span class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed">
                                     Akses Berakhir
+                                </span>
+                            @elseif ($attemptLimitReached && ! $openAssessment)
+                                <span class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 cursor-not-allowed">
+                                    Percobaan Habis
                                 </span>
                             @elseif ($openAssessment)
                                 <a href="{{ route('assessment.show', $openAssessment) }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
@@ -102,10 +127,17 @@
                         <p class="text-sm font-medium text-gray-500">Status terakhir</p>
                         @if ($assessments->isNotEmpty())
                             @php($latest = $assessments->first())
-                            <p class="mt-2 text-4xl font-semibold text-gray-900">{{ number_format($latest->score, 0) }}</p>
-                            <p class="mt-2 text-sm text-gray-600">
-                                {{ $latest->correct_answers }} benar dari {{ $latest->total_questions }} soal.
-                            </p>
+                            @if ($latest->isPendingReview())
+                                <p class="mt-2 text-2xl font-semibold text-amber-700">Menunggu Review</p>
+                                <p class="mt-2 text-sm text-gray-600">
+                                    Essay/Portfolio SHE sedang dinilai admin.
+                                </p>
+                            @else
+                                <p class="mt-2 text-4xl font-semibold text-gray-900">{{ number_format($latest->score, 0) }}</p>
+                                <p class="mt-2 text-sm text-gray-600">
+                                    {{ $latest->correct_answers }} benar dari {{ $latest->total_questions }} soal.
+                                </p>
+                            @endif
                         @else
                             <p class="mt-2 text-2xl font-semibold text-gray-900">Belum ada hasil</p>
                             <p class="mt-2 text-sm text-gray-600">Mulai assessment pertama untuk melihat nilai.</p>
@@ -137,7 +169,13 @@
                                         <td class="py-3 pr-2 sm:pr-4 text-gray-700 whitespace-nowrap">{{ $assessment->submitted_at?->format('d M Y H:i') }}</td>
                                         <td class="px-2 sm:px-4 py-3 text-gray-700">{{ $assessment->correct_answers }}</td>
                                         <td class="px-2 sm:px-4 py-3 text-gray-700">{{ $assessment->total_questions }}</td>
-                                        <td class="px-2 sm:px-4 py-3 font-semibold text-gray-900">{{ number_format($assessment->score, 2) }}</td>
+                                        <td class="px-2 sm:px-4 py-3 font-semibold text-gray-900">
+                                            @if ($assessment->isPendingReview())
+                                                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Menunggu Review SHE</span>
+                                            @else
+                                                {{ number_format($assessment->score, 2) }}
+                                            @endif
+                                        </td>
                                         <td class="py-3 pl-2 sm:pl-4 text-right whitespace-nowrap">
                                             <a href="{{ route('assessment.result', $assessment) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Detail</a>
                                         </td>

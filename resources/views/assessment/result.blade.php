@@ -27,6 +27,8 @@
                 ? round(($mcCorrectPoints / $mcTotalPoints) * 100, 2)
                 : round($mcAnswers->where('is_correct', true)->count() / $mcAnswers->count() * 100, 2))
             : null;
+        $correctSummaryLabel = $isSheAssessment ? 'PG Benar' : 'Jawaban Benar';
+        $correctSummaryTotal = $isSheAssessment ? $mcAnswers->count() : $assessment->total_questions;
 
         $hasEssay = $essayAnswers->isNotEmpty();
         $hasUpload = $uploadAnswers->isNotEmpty();
@@ -242,8 +244,8 @@
                             <svg class="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Jawaban Benar</p>
-                            <p class="mt-1 text-2xl font-bold text-emerald-600">{{ $assessment->correct_answers }}<span class="text-sm font-medium text-gray-400">/{{ $assessment->total_questions }}</span></p>
+                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $correctSummaryLabel }}</p>
+                            <p class="mt-1 text-2xl font-bold text-emerald-600">{{ $assessment->correct_answers }}<span class="text-sm font-medium text-gray-400">/{{ $correctSummaryTotal }}</span></p>
                         </div>
                     </div>
                 </div>

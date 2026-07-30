@@ -250,6 +250,24 @@ class AssessmentController extends Controller
                         ->get(),
                 ];
             })
+            ->values();
+
+        if ($package->type === QuestionPackage::TYPE_SHE) {
+            $missingSegments = collect(AssessmentSegmentConfig::SHE_SEGMENT_TYPES)
+                ->filter(function (string $type) use ($segmentQuestionGroups): bool {
+                    $segment = $segmentQuestionGroups->firstWhere('type', $type);
+
+                    return ! $segment || $segment['questions']->isEmpty();
+                })
+                ->map(fn (string $type): string => $this->segmentTypeLabel($type))
+                ->values();
+
+            if ($missingSegments->isNotEmpty()) {
+                return back()->with('status', 'Paket SHE belum lengkap. Soal aktif yang kurang: '.$missingSegments->implode(', ').'.');
+            }
+        }
+
+        $segmentQuestionGroups = $segmentQuestionGroups
             ->filter(fn (array $segment): bool => $segment['questions']->isNotEmpty())
             ->values();
 
@@ -332,11 +350,30 @@ class AssessmentController extends Controller
                 ->first();
 
             if (! $currentSegment) {
-                $lastCompleted = $assessment->segments()->orderByDesc('order_index')->first();
-                if ($lastCompleted && $lastCompleted->isCompleted()) {
-                    return redirect()->route('assessment.result', $assessment);
+                $nextSegment = $assessment->segments()
+                    ->where('status', AssessmentSegment::STATUS_PENDING)
+                    ->orderBy('order_index')
+                    ->first();
+
+                if ($nextSegment) {
+                    $nextSegment->update([
+                        'status' => AssessmentSegment::STATUS_IN_PROGRESS,
+                        'started_at' => now(),
+                    ]);
+
+                    ActivityLog::log('assessment_segment_recover', 'Memulihkan segment '.$nextSegment->type, Assessment::class, $assessment->id);
+
+                    return redirect()->route('assessment.show', $assessment);
                 }
-                return redirect()->route('assessment.show', $assessment);
+
+                app(AssessmentSecurity::class)->finishAssessment($assessment);
+
+                $this->notifyAdmins($assessment);
+
+                ActivityLog::log('assessment_submit', 'Semua segment selesai, assessment difinalkan otomatis', Assessment::class, $assessment->id);
+
+                return redirect()->route('assessment.result', $assessment)
+                    ->with('status', 'Semua segment sudah selesai. Assessment otomatis dikirim.');
             }
 
             if ($currentSegment->remainingSeconds() <= 0) {
@@ -490,9 +527,14 @@ class AssessmentController extends Controller
         }
     }
 
-    public function result(Request $request, Assessment $assessment): View
+    public function result(Request $request, Assessment $assessment): View|RedirectResponse
     {
         $this->authorizeAssessment($request, $assessment);
+
+        if (! $assessment->isSubmitted()) {
+            return redirect()->route('assessment.show', $assessment)
+                ->with('status', 'Assessment belum selesai. Lanjutkan pengerjaan terlebih dahulu.');
+        }
 
         $assessment->load('user', 'questionPackage', 'segments', 'answers.question');
 
@@ -621,6 +663,16 @@ class AssessmentController extends Controller
         }
 
         return AssessmentSegmentConfig::forPackage($package, $user->segment_config);
+    }
+
+    private function segmentTypeLabel(string $type): string
+    {
+        return match ($type) {
+            Question::TYPE_MULTIPLE_CHOICE => 'PG',
+            Question::TYPE_ESSAY => 'Essay',
+            Question::TYPE_UPLOAD => 'Portfolio',
+            default => $type,
+        };
     }
 
     private function notifyAdmins(Assessment $assessment): void

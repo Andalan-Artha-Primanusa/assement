@@ -201,16 +201,32 @@ class DashboardController extends Controller
 
         $activeQuestionCount = (clone $activeQuestionQuery)->count();
         $openAssessment = $user->assessments()
+            ->with('questionPackage')
             ->whereNull('submitted_at')
             ->latest()
             ->first();
+        $maxAttempts = $user->max_attempts ?? (int) config('assessment.max_attempts', 1);
+        $completedCount = $user->assessments()->whereNotNull('submitted_at')->count();
+        $remainingAttempts = max(0, $maxAttempts - $completedCount);
+        $attemptLimitReached = $remainingAttempts <= 0;
         $assessments = $user->assessments()
+            ->with('questionPackage')
             ->whereNotNull('submitted_at')
             ->latest('submitted_at')
             ->paginate(10);
 
         $accessExpired = ! $user->canAccessAssessment();
 
-        return view('dashboard', compact('activeQuestionCount', 'openAssessment', 'assessments', 'assignedPackage', 'accessExpired'));
+        return view('dashboard', compact(
+            'activeQuestionCount',
+            'openAssessment',
+            'assessments',
+            'assignedPackage',
+            'accessExpired',
+            'maxAttempts',
+            'completedCount',
+            'remainingAttempts',
+            'attemptLimitReached',
+        ));
     }
 }
