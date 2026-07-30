@@ -139,6 +139,7 @@
             let violations = {{ $assessment->security_violations ?? 0 }};
             let armed = false;
             let locked = false;
+            let manualPromptOpen = false;
 
             setTimeout(() => { armed = true; }, 1500);
 
@@ -271,15 +272,22 @@
                 }
 
                 const buttonLabel = event.submitter?.textContent?.trim() || 'Kirim jawaban';
-                const confirmed = window.appConfirm
-                    ? await window.appConfirm({
-                        title: buttonLabel.includes('Selesai & Kirim') ? 'Kirim assessment sekarang?' : 'Selesaikan segmen ini?',
-                        message: buttonLabel.includes('Selesai & Kirim')
-                            ? 'Pastikan semua jawaban final sudah benar. Setelah dikirim, assessment tidak bisa diedit lagi.'
-                            : 'Jawaban segmen ini akan disimpan dan kamu lanjut ke segmen berikutnya.',
-                        confirmText: buttonLabel.includes('Selesai & Kirim') ? 'Ya, kirim assessment' : 'Ya, lanjut segmen',
-                    })
-                    : false;
+                const isFinalSubmit = buttonLabel.includes('Selesai & Kirim');
+                const title = isFinalSubmit ? 'Kirim assessment sekarang?' : 'Selesaikan segmen ini?';
+                const message = isFinalSubmit
+                    ? 'Pastikan semua jawaban final sudah benar. Setelah dikirim, assessment tidak bisa diedit lagi.'
+                    : 'Jawaban segmen ini akan disimpan dan kamu lanjut ke segmen berikutnya.';
+                const confirmText = isFinalSubmit ? 'Ya, kirim assessment' : 'Ya, lanjut segmen';
+                let confirmed = false;
+
+                manualPromptOpen = true;
+                try {
+                    confirmed = window.appConfirm
+                        ? await window.appConfirm({ title, message, confirmText })
+                        : window.confirm(`${title}\n\n${message}`);
+                } finally {
+                    setTimeout(() => { manualPromptOpen = false; }, 300);
+                }
 
                 if (!confirmed) {
                     return;
@@ -298,7 +306,7 @@
             });
 
             function reportViolation(reason) {
-                if (!secureMode || !armed || locked || cameraPromptOpen || form.dataset.submitting === '1') {
+                if (!secureMode || !armed || locked || cameraPromptOpen || manualPromptOpen || form.dataset.submitting === '1') {
                     return;
                 }
 

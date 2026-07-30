@@ -721,6 +721,94 @@ class AssessmentFlowTest extends TestCase
         $this->assertSame(Assessment::STATUS_GRADED, $assessment->status);
     }
 
+    public function test_she_segment_can_be_completed_before_timer_expires(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Lanjut Manual',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 2,
+            'started_at' => now(),
+            'duration_minutes' => 75,
+            'ends_at' => now()->addMinutes(75),
+        ]);
+        $mcQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'PG lanjut manual',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $essayQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_ESSAY,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'Essay setelah PG',
+            'is_active' => true,
+        ]);
+        $mcAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $mcQuestion->id,
+            'position' => 1,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $essayQuestion->id,
+            'position' => 2,
+        ]);
+        $mcSegment = AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'duration_minutes' => 30,
+            'order_index' => 0,
+            'status' => AssessmentSegment::STATUS_IN_PROGRESS,
+            'started_at' => now(),
+        ]);
+        $essaySegment = AssessmentSegment::create([
+            'assessment_id' => $assessment->id,
+            'type' => Question::TYPE_ESSAY,
+            'duration_minutes' => 45,
+            'order_index' => 1,
+            'status' => AssessmentSegment::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('assessment.submit', $assessment), [
+                'answers' => [
+                    $mcAnswer->id => 'a',
+                ],
+            ])
+            ->assertRedirect(route('assessment.show', $assessment));
+
+        $assessment->refresh();
+        $mcAnswer->refresh();
+        $mcSegment->refresh();
+        $essaySegment->refresh();
+
+        $this->assertFalse($assessment->isSubmitted());
+        $this->assertSame('a', $mcAnswer->selected_option);
+        $this->assertTrue($mcAnswer->is_correct);
+        $this->assertSame(AssessmentSegment::STATUS_COMPLETED, $mcSegment->status);
+        $this->assertSame(AssessmentSegment::STATUS_IN_PROGRESS, $essaySegment->status);
+        $this->assertNotNull($essaySegment->started_at);
+    }
+
     public function test_she_segmented_page_keeps_positive_overall_countdown(): void
     {
         $this->travelTo(now()->startOfMinute());
@@ -775,7 +863,9 @@ class AssessmentFlowTest extends TestCase
             ->get(route('assessment.show', $assessment))
             ->assertOk()
             ->assertSee('const segmentRemaining = 1800;', false)
-            ->assertSee('const overallRemaining = 6300;', false);
+            ->assertSee('const overallRemaining = 6300;', false)
+            ->assertSee('let manualPromptOpen = false;', false)
+            ->assertSee('window.confirm', false);
     }
 
     public function test_admin_hr_can_create_question_with_custom_points(): void

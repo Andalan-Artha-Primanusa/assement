@@ -165,6 +165,7 @@
             let cameraReady = false;
             let cameraStarted = false;
             let cameraPromptOpen = false;
+            let manualPromptOpen = false;
 
             const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || initialCsrfToken;
 
@@ -246,7 +247,7 @@
             };
 
             const reportViolation = (reason, useBeacon = false) => {
-                if (!armed || locked || submitting || cameraPromptOpen) {
+                if (!armed || locked || submitting || cameraPromptOpen || manualPromptOpen) {
                     return;
                 }
 
@@ -408,13 +409,22 @@
                     return;
                 }
 
-                const confirmed = window.appConfirm
-                    ? await window.appConfirm({
-                        title: 'Kirim jawaban sekarang?',
-                        message: 'Pastikan semua jawaban sudah diisi. Setelah dikirim, assessment tidak bisa diedit lagi.',
-                        confirmText: 'Ya, kirim jawaban',
-                    })
-                    : false;
+                const title = 'Kirim jawaban sekarang?';
+                const message = 'Pastikan semua jawaban sudah diisi. Setelah dikirim, assessment tidak bisa diedit lagi.';
+                let confirmed = false;
+
+                manualPromptOpen = true;
+                try {
+                    confirmed = window.appConfirm
+                        ? await window.appConfirm({
+                            title,
+                            message,
+                            confirmText: 'Ya, kirim jawaban',
+                        })
+                        : window.confirm(`${title}\n\n${message}`);
+                } finally {
+                    setTimeout(() => { manualPromptOpen = false; }, 300);
+                }
 
                 if (!confirmed) {
                     return;
