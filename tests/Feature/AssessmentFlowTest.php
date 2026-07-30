@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\AssessmentSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AssessmentFlowTest extends TestCase
@@ -275,6 +276,71 @@ class AssessmentFlowTest extends TestCase
             ->assertDontSee('Jawaban Benar')
             ->assertSee('1<span class="text-sm font-medium text-gray-400">/2</span>', false)
             ->assertDontSee('1<span class="text-sm font-medium text-gray-400">/4</span>', false);
+    }
+
+    public function test_admin_she_review_can_see_uploaded_portfolio_file(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('assessment-uploads/sample.pdf', 'portfolio file');
+
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_SHE,
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE File Review',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_PENDING_REVIEW,
+            'total_questions' => 1,
+            'correct_answers' => 0,
+            'score' => 0,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+        $uploadQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_UPLOAD,
+            'category' => 'SHE Portfolio',
+            'difficulty' => 'basic',
+            'text' => 'Upload portfolio SHE',
+            'is_active' => true,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $uploadQuestion->id,
+            'position' => 1,
+            'file_path' => 'assessment-uploads/sample.pdf',
+        ]);
+
+        $fileUrl = route('files.show', 'assessment-uploads/sample.pdf');
+
+        $this->actingAs($admin)
+            ->get(route('admin.she-review.show', $assessment))
+            ->assertOk()
+            ->assertSee('File yang diupload:')
+            ->assertSee('sample.pdf')
+            ->assertSee('Lihat File')
+            ->assertSee('Download')
+            ->assertSee($fileUrl, false)
+            ->assertSee($fileUrl.'?download=1', false);
+
+        $this->actingAs($admin)
+            ->get($fileUrl)
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get($fileUrl.'?download=1')
+            ->assertOk()
+            ->assertHeader('content-disposition');
     }
 
     public function test_user_assessment_uses_assigned_question_package(): void
