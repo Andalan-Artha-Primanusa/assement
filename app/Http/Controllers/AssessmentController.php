@@ -200,8 +200,7 @@ class AssessmentController extends Controller
             return $this->startSegmentedAssessment($request, $package, $questionQuery, $segmentConfig);
         }
 
-        $configuredLimit = (int) config('assessment.question_limit', $activeQuestionCount);
-        $limit = $configuredLimit > 0 ? min($activeQuestionCount, $configuredLimit) : $activeQuestionCount;
+        $limit = $this->questionLimitFor($package, $activeQuestionCount);
         $durationMinutes = $user->assessmentDurationMinutes();
 
         $assessment = DB::transaction(function () use ($request, $limit, $durationMinutes, $package, $questionQuery) {
@@ -232,6 +231,19 @@ class AssessmentController extends Controller
         ActivityLog::log('assessment_start', 'Memulai assessment', Assessment::class, $assessment->id);
 
         return redirect()->route('assessment.show', $assessment);
+    }
+
+    private function questionLimitFor(?QuestionPackage $package, int $activeQuestionCount): int
+    {
+        if ($package?->type === QuestionPackage::TYPE_HR) {
+            $configuredLimit = (int) config('assessment.hr_question_limit', 0);
+
+            return $configuredLimit > 0 ? min($activeQuestionCount, $configuredLimit) : $activeQuestionCount;
+        }
+
+        $configuredLimit = (int) config('assessment.question_limit', $activeQuestionCount);
+
+        return $configuredLimit > 0 ? min($activeQuestionCount, $configuredLimit) : $activeQuestionCount;
     }
 
     /**

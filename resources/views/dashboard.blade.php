@@ -53,7 +53,15 @@
                         <div class="min-w-0 flex-1">
                             <p class="text-4xl font-semibold text-gray-900">{{ $activeQuestionCount }}</p>
                             <p class="mt-2 text-sm text-gray-600">
-                                Sistem akan memilih maksimal {{ config('assessment.question_limit') }} soal secara acak saat assessment dimulai.
+                                @php
+                                    $isHrPackage = $assignedPackage?->type === \App\Models\QuestionPackage::TYPE_HR;
+                                    $hrQuestionLimit = (int) config('assessment.hr_question_limit', 0);
+                                @endphp
+                                @if ($isHrPackage && $hrQuestionLimit <= 0)
+                                    Sistem akan memilih semua soal aktif HR secara acak saat assessment dimulai.
+                                @else
+                                    Sistem akan memilih maksimal {{ $isHrPackage ? $hrQuestionLimit : config('assessment.question_limit') }} soal secara acak saat assessment dimulai.
+                                @endif
                             </p>
                             <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                                 <span class="rounded-full bg-sky-50 px-3 py-1 text-sky-700">

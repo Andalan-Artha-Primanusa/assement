@@ -172,6 +172,52 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Assessment Mechanic');
     }
 
+    public function test_hr_assessment_uses_all_active_questions_by_default(): void
+    {
+        config([
+            'assessment.question_limit' => 12,
+            'assessment.hr_question_limit' => 0,
+        ]);
+
+        $package = QuestionPackage::create([
+            'name' => 'Screening HR Test',
+            'type' => QuestionPackage::TYPE_HR,
+            'level' => 'Admin General',
+            'is_active' => true,
+        ]);
+
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+
+        for ($i = 1; $i <= 15; $i++) {
+            Question::create([
+                'question_package_id' => $package->id,
+                'type' => Question::TYPE_MULTIPLE_CHOICE,
+                'category' => 'HR',
+                'difficulty' => 'basic',
+                'text' => 'Pertanyaan HR '.$i,
+                'option_a' => 'A',
+                'option_b' => 'B',
+                'option_c' => 'C',
+                'option_d' => 'D',
+                'correct_option' => 'a',
+                'points' => 1,
+                'is_active' => true,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertRedirect();
+
+        $assessment = Assessment::firstOrFail();
+
+        $this->assertSame(15, $assessment->total_questions);
+        $this->assertSame(15, AssessmentAnswer::where('assessment_id', $assessment->id)->count());
+    }
+
     public function test_user_dashboard_disables_start_when_attempts_are_used(): void
     {
         $user = User::factory()->create([
