@@ -37,6 +37,110 @@ class AssessmentFlowTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_delete_package_that_still_has_unused_questions(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket HR Hapus Unused',
+            'type' => QuestionPackage::TYPE_HR,
+            'level' => 'Admin General',
+            'is_active' => true,
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'HR',
+            'difficulty' => 'basic',
+            'text' => 'Soal ikut hapus',
+            'option_a' => 'A',
+            'option_b' => 'B',
+            'option_c' => 'C',
+            'option_d' => 'D',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.packages.destroy', $package))
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Paket berhasil dihapus. 1 soal ikut dihapus, 0 soal dinonaktifkan karena sudah punya riwayat.');
+
+        $this->assertDatabaseMissing('question_packages', ['id' => $package->id]);
+        $this->assertDatabaseMissing('questions', ['id' => $question->id]);
+    }
+
+    public function test_admin_can_delete_package_and_deactivate_used_questions(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+        $participant = User::factory()->create(['role' => User::ROLE_USER]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket HR Hapus Used',
+            'type' => QuestionPackage::TYPE_HR,
+            'level' => 'Admin General',
+            'is_active' => true,
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'HR',
+            'difficulty' => 'basic',
+            'text' => 'Soal punya riwayat',
+            'option_a' => 'A',
+            'option_b' => 'B',
+            'option_c' => 'C',
+            'option_d' => 'D',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $participant->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 1,
+            'started_at' => now(),
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $question->id,
+            'position' => 1,
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.packages.destroy', $package))
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Paket berhasil dihapus. 0 soal ikut dihapus, 1 soal dinonaktifkan karena sudah punya riwayat.');
+
+        $this->assertDatabaseMissing('question_packages', ['id' => $package->id]);
+        $this->assertDatabaseHas('questions', [
+            'id' => $question->id,
+            'question_package_id' => null,
+            'is_active' => false,
+        ]);
+    }
+
+    public function test_admin_hr_can_create_admin_general_package(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.packages.store'), [
+                'name' => 'Screening HR Admin General',
+                'type' => QuestionPackage::TYPE_HR,
+                'level' => 'Admin General',
+                'description' => 'Paket HR general.',
+                'is_active' => '1',
+                'min_score_pertimbangan' => 60,
+                'min_score_lolos' => 70,
+            ])
+            ->assertRedirect(route('admin.packages.index'))
+            ->assertSessionHas('status', 'Paket berhasil ditambahkan.');
+
+        $this->assertDatabaseHas('question_packages', [
+            'name' => 'Screening HR Admin General',
+            'type' => QuestionPackage::TYPE_HR,
+            'level' => 'Admin General',
+        ]);
+    }
+
     public function test_user_can_start_random_assessment_from_active_questions(): void
     {
         $user = User::factory()->create(['role' => 'user']);

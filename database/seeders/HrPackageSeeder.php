@@ -16,6 +16,7 @@ class HrPackageSeeder extends Seeder
     public const HR_ADMIN_HRGA = 'Screening HR Admin HRGA';
     public const HR_ADMIN_OPERATION = 'Screening HR Admin Operation';
     public const HR_ADMIN_ENGINEERING = 'Screening HR Admin Engineering';
+    public const HR_ADMIN_GENERAL = 'Screening HR Admin General';
 
     public const PACKAGES = [
         'Dispatch Plant' => self::HR_DISPATCH_PLANT,
@@ -26,6 +27,7 @@ class HrPackageSeeder extends Seeder
         'Admin HRGA' => self::HR_ADMIN_HRGA,
         'Admin Operation' => self::HR_ADMIN_OPERATION,
         'Admin Engineering' => self::HR_ADMIN_ENGINEERING,
+        'Admin General' => self::HR_ADMIN_GENERAL,
     ];
 
     public function run(): void

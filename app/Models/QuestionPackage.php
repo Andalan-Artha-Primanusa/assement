@@ -50,6 +50,7 @@ class QuestionPackage extends Model
             'Admin HRGA' => 'Admin HRGA',
             'Admin Operation' => 'Admin Operation',
             'Admin Engineering' => 'Admin Engineering',
+            'Admin General' => 'Admin General',
         ],
     ];
 

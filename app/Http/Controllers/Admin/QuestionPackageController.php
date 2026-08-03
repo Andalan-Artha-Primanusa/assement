@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Question;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -165,19 +166,54 @@ class QuestionPackageController extends Controller
             abort(403, 'Anda tidak memiliki akses ke paket ini.');
         }
 
-        if ($package->questions()->exists()) {
-            return back()->with('status', 'Paket masih memiliki soal. Pindahkan atau hapus soal terlebih dahulu.');
-        }
-
         if ($package->users()->exists()) {
             return back()->with('status', 'Paket masih dipakai user. Pindahkan user terlebih dahulu.');
         }
+
+        $questionStats = $this->deleteOrDetachPackageQuestions($package);
 
         ActivityLog::log('package_delete', 'Menghapus paket '.$package->name, QuestionPackage::class, $package->id);
 
         $package->delete();
 
-        return back()->with('status', 'Paket berhasil dihapus.');
+        $message = 'Paket berhasil dihapus.';
+        if ($questionStats['deleted'] > 0 || $questionStats['deactivated'] > 0) {
+            $message .= ' '.$questionStats['deleted'].' soal ikut dihapus, '.$questionStats['deactivated'].' soal dinonaktifkan karena sudah punya riwayat.';
+        }
+
+        return back()->with('status', $message);
+    }
+
+    /**
+     * @return array{deleted: int, deactivated: int}
+     */
+    private function deleteOrDetachPackageQuestions(QuestionPackage $package): array
+    {
+        $stats = ['deleted' => 0, 'deactivated' => 0];
+
+        $package->questions()
+            ->withCount('answers')
+            ->chunkById(100, function ($questions) use (&$stats): void {
+                foreach ($questions as $question) {
+                    if ($question->answers_count > 0) {
+                        $question->update([
+                            'question_package_id' => null,
+                            'is_active' => false,
+                        ]);
+                        $stats['deactivated']++;
+
+                        ActivityLog::log('question_deactivate', 'Menonaktifkan soal #'.$question->id.' karena paket dihapus', Question::class, $question->id);
+
+                        continue;
+                    }
+
+                    ActivityLog::log('question_delete', 'Menghapus soal #'.$question->id.' karena paket dihapus', Question::class, $question->id);
+                    $question->delete();
+                    $stats['deleted']++;
+                }
+            });
+
+        return $stats;
     }
 
     private function ensureLevelMatchesType(string $type, ?string $level): void
