@@ -6,8 +6,7 @@ import { initAdminCharts } from './charts';
 window.Alpine = Alpine;
 window.initAdminCharts = initAdminCharts;
 
-document.addEventListener('alpine:init', () => {
-    Alpine.data('appPopups', (initialMessages = []) => ({
+const appPopups = (initialMessages = []) => ({
         toasts: [],
         dialog: {
             open: false,
@@ -222,7 +221,9 @@ document.addEventListener('alpine:init', () => {
 
             form.submit();
         },
-    }));
-});
+    });
+
+window.appPopups = appPopups;
+Alpine.data('appPopups', appPopups);
 
 Alpine.start();
