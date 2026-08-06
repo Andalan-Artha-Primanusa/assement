@@ -14,22 +14,27 @@
         .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         .info-table td { padding: 6px 10px; border: 1px solid #e5e7eb; }
         .info-table td:first-child { font-weight: 600; background: #f9fafb; width: 140px; }
-        .answers-table { width: 100%; border-collapse: collapse; }
+        .answers-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
         .answers-table th { background: #f3f4f6; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; border: 1px solid #e5e7eb; }
-        .answers-table td { padding: 6px 10px; border: 1px solid #e5e7eb; font-size: 11px; }
+        .answers-table td { padding: 6px 10px; border: 1px solid #e5e7eb; font-size: 11px; vertical-align: top; }
         .correct { color: #16a34a; font-weight: bold; }
         .wrong { color: #dc2626; font-weight: bold; }
+        .pending { color: #d97706; font-weight: bold; }
+        .answer-text { white-space: pre-wrap; color: #374151; }
+        .answer-block { margin-top: 3px; }
+        .answer-block .label { font-size: 10px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+        .answer-block .content { background: #f9fafb; padding: 4px 8px; border-radius: 3px; margin-top: 2px; }
         .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Screening Mechanic</h1>
+        <h1>{{ $assessment->questionPackage?->name ?? 'Assessment' }}</h1>
         <p>Hasil Assessment</p>
     </div>
 
     <div class="score-box">
-        <div class="score">{{ $assessment->isPendingReview() ? 'Review SHE' : number_format($assessment->score ?? 0, 2) }}</div>
+        <div class="score">{{ $assessment->isPendingReview() ? 'Menunggu Review' : number_format($assessment->score ?? 0, 2) }}</div>
         <div class="label">Nilai Akhir</div>
     </div>
 
@@ -44,32 +49,65 @@
 
     @if ($assessment->answers->isNotEmpty())
         <h3 style="margin-bottom: 8px;">Detail Jawaban</h3>
-        <table class="answers-table">
-            <thead>
-                <tr>
-                    <th style="width:30px">#</th>
-                    <th>Soal</th>
-                    <th style="width:50px">Jawab</th>
-                    <th style="width:50px">Benar</th>
-                    <th style="width:40px">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($assessment->answers as $answer)
+        @foreach ($assessment->answers as $answer)
+            @php($question = $answer->question)
+            @if (!$question) @continue @endif
+            <table class="answers-table">
+                <thead>
+                    <tr>
+                        <th style="width:30px">#</th>
+                        <th>Soal</th>
+                        @if ($question->isMultipleChoice())
+                            <th style="width:50px">Jawab</th>
+                            <th style="width:50px">Benar</th>
+                            <th style="width:40px">Status</th>
+                        @else
+                            <th style="width:70px">Skor</th>
+                            <th style="width:60px">Status</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody>
                     <tr>
                         <td>{{ $answer->position }}</td>
-                        <td>{{ $answer->question->text }}</td>
-                        <td>{{ $answer->selected_option ? strtoupper($answer->selected_option) : '-' }}</td>
-                        <td>{{ strtoupper($answer->question->correct_option) }}</td>
-                        <td class="{{ $answer->is_correct ? 'correct' : 'wrong' }}">{{ $answer->is_correct ? '✓' : '✗' }}</td>
+                        <td>
+                            <strong>{{ $question->text }}</strong>
+                            @if ($question->isEssay())
+                                <div class="answer-block">
+                                    <p class="label">Jawaban Essay</p>
+                                    <p class="answer-text content">{{ $answer->answer_text ?: '-' }}</p>
+                                    @if ($answer->review_notes)
+                                        <p class="label" style="margin-top:4px;">Catatan Reviewer</p>
+                                        <p class="answer-text content">{{ $answer->review_notes }}</p>
+                                    @endif
+                                </div>
+                            @elseif ($question->isUpload())
+                                <div class="answer-block">
+                                    <p class="label">File Upload</p>
+                                    <p class="content">{{ $answer->file_path ? basename($answer->file_path) : '-' }}</p>
+                                    @if ($answer->review_notes)
+                                        <p class="label" style="margin-top:4px;">Catatan Reviewer</p>
+                                        <p class="answer-text content">{{ $answer->review_notes }}</p>
+                                    @endif
+                                </div>
+                            @endif
+                        </td>
+                        @if ($question->isMultipleChoice())
+                            <td>{{ $answer->selected_option ? strtoupper($answer->selected_option) : '-' }}</td>
+                            <td>{{ strtoupper($question->correct_option) }}</td>
+                            <td class="{{ $answer->is_correct ? 'correct' : 'wrong' }}">{{ $answer->is_correct ? '✓' : '✗' }}</td>
+                        @else
+                            <td>{{ $answer->score !== null ? number_format($answer->score, 2) : '-' }}</td>
+                            <td class="{{ $answer->score !== null ? 'correct' : 'pending' }}">{{ $answer->score !== null ? 'Dinilai' : 'Menunggu' }}</td>
+                        @endif
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        @endforeach
     @endif
 
     <div class="footer">
-        Dicetak pada {{ now()->format('d M Y H:i') }} | Screening Mechanic
+        Dicetak pada {{ now()->format('d M Y H:i') }} | {{ $assessment->questionPackage?->name ?? 'Assessment' }}
     </div>
 </body>
 </html>
