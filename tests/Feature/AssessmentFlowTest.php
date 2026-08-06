@@ -164,7 +164,7 @@ class AssessmentFlowTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame(1, Assessment::count());
-        $this->assertSame((int) config('assessment.question_limit'), AssessmentAnswer::count());
+        $this->assertSame(12, AssessmentAnswer::count());
 
         $this->actingAs($user)
             ->get(route('assessment.show', Assessment::first()))
@@ -174,11 +174,6 @@ class AssessmentFlowTest extends TestCase
 
     public function test_hr_assessment_uses_all_active_questions_by_default(): void
     {
-        config([
-            'assessment.question_limit' => 12,
-            'assessment.hr_question_limit' => 0,
-        ]);
-
         $package = QuestionPackage::create([
             'name' => 'Screening HR Test',
             'type' => QuestionPackage::TYPE_HR,
@@ -495,8 +490,6 @@ class AssessmentFlowTest extends TestCase
 
     public function test_user_assessment_uses_assigned_question_package(): void
     {
-        config(['assessment.question_limit' => 4]);
-
         $assignedPackage = QuestionPackage::create([
             'name' => 'Paket Assigned',
             'is_active' => true,
@@ -545,7 +538,7 @@ class AssessmentFlowTest extends TestCase
         $assessment = Assessment::first();
 
         $this->assertSame($assignedPackage->id, $assessment->question_package_id);
-        $this->assertSame(4, $assessment->answers()->count());
+        $this->assertSame(6, $assessment->answers()->count());
 
         $assessment->load('answers.question');
 
