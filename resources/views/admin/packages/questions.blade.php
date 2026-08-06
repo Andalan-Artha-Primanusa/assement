@@ -97,8 +97,9 @@
                     </table>
                 </div>
 
-                <div class="border-t border-gray-100 px-6 py-4">
-                    {{ $questions->links() }}
+                <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4">
+                    <p class="text-sm text-gray-500">Total: <strong>{{ $questions->count() }}</strong> soal</p>
+                    <a href="{{ route('admin.questions.create', ['question_package_id' => $package->id]) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">+ Tambah Soal</a>
                 </div>
             </div>
         </div>

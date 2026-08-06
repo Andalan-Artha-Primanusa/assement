@@ -43,8 +43,7 @@ class QuestionController extends Controller
                 $query->where('is_active', $request->string('status')->toString() === 'active');
             })
             ->latest()
-            ->paginate(12)
-            ->withQueryString();
+            ->get();
 
         $categories = Question::query()->select('category')->distinct()->orderBy('category')->pluck('category');
         $packages = QuestionPackage::whereIn('type', $visibleTypes)->orderBy('name')->get();

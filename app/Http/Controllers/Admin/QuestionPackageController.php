@@ -150,8 +150,7 @@ class QuestionPackageController extends Controller
                 $query->where('is_active', $request->string('status')->toString() === 'active');
             })
             ->latest()
-            ->paginate(25)
-            ->withQueryString();
+            ->get();
 
         $categories = $package->questions()->select('category')->distinct()->orderBy('category')->pluck('category');
 
