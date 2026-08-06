@@ -12,6 +12,13 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            @if ($errors->has('import'))
+                <div class="mb-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                    <p class="font-semibold">Beberapa baris gagal diimport:</p>
+                    <div class="mt-1 text-xs leading-relaxed">{!! $errors->first('import') !!}</div>
+                </div>
+            @endif
+
             <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-5">
                 <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari soal" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <select name="package" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">

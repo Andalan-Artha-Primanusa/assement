@@ -237,13 +237,16 @@ class QuestionImportController extends Controller
         ActivityLog::log('questions_import', "Import {$imported} soal dari Excel", Question::class);
 
         $message = "Berhasil mengimpor {$imported} soal.";
-        if ($errors) {
-            $message .= ' '.implode('; ', array_slice($errors, 0, 5));
-        }
 
         $redirect = $packageId
             ? redirect()->route('admin.packages.questions', $packageId)
             : redirect()->route('admin.questions.index');
+
+        if ($errors) {
+            $allErrors = implode('<br>', array_slice($errors, 0, 20));
+            $extraCount = count($errors) > 20 ? '<br>... dan '. (count($errors) - 20) .' baris lainnya.' : '';
+            return $redirect->withErrors(['import' => $allErrors . $extraCount])->with('status', $message);
+        }
 
         return $redirect->with('status', $message);
     }
