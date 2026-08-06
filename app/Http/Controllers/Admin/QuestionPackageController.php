@@ -68,7 +68,7 @@ class QuestionPackageController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
         $data['has_segments'] = $data['type'] === QuestionPackage::TYPE_SHE || $request->boolean('has_segments');
-        $data['level'] = $data['type'] === QuestionPackage::TYPE_OPERATOR ? null : ($data['level'] ?: null);
+        $data['level'] = $data['level'] ?: null;
         $this->ensureLevelMatchesType($data['type'], $data['level']);
         $data['created_by'] = $adminUser->id;
 
@@ -121,7 +121,7 @@ class QuestionPackageController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
         $data['has_segments'] = $data['type'] === QuestionPackage::TYPE_SHE || $request->boolean('has_segments');
-        $data['level'] = $data['type'] === QuestionPackage::TYPE_OPERATOR ? null : ($data['level'] ?: null);
+        $data['level'] = $data['level'] ?: null;
         $this->ensureLevelMatchesType($data['type'], $data['level']);
 
         $package->update($data);

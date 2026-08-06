@@ -195,14 +195,8 @@ document.addEventListener('DOMContentLoaded', function () {
             option.disabled = !visible;
         });
 
-        if (type === 'operator') {
+        if (selectedOption && selectedOption.dataset.packageType && selectedOption.dataset.packageType !== type) {
             levelSelect.value = '';
-            levelSelect.disabled = true;
-        } else {
-            levelSelect.disabled = false;
-            if (selectedOption && selectedOption.dataset.packageType && selectedOption.dataset.packageType !== type) {
-                levelSelect.value = '';
-            }
         }
 
         if (type === 'she') {
