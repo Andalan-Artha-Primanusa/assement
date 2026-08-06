@@ -2,8 +2,6 @@
 
 return [
     'max_security_blocks' => env('ASSESSMENT_MAX_SECURITY_BLOCKS', 2),
-    'question_limit' => env('ASSESSMENT_QUESTION_LIMIT', 12),
-    'hr_question_limit' => env('ASSESSMENT_HR_QUESTION_LIMIT', 0),
     'default_access_days' => env('ASSESSMENT_DEFAULT_ACCESS_DAYS', 7),
     'default_duration_minutes' => env('ASSESSMENT_DEFAULT_DURATION_MINUTES', 120),
     'max_attempts' => env('ASSESSMENT_MAX_ATTEMPTS', 1),

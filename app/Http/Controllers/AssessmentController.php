@@ -200,14 +200,13 @@ class AssessmentController extends Controller
             return $this->startSegmentedAssessment($request, $package, $questionQuery, $segmentConfig);
         }
 
-        $limit = $this->questionLimitFor($package, $activeQuestionCount);
         $durationMinutes = $user->assessmentDurationMinutes();
 
-        $assessment = DB::transaction(function () use ($request, $limit, $durationMinutes, $package, $questionQuery) {
+        $assessment = DB::transaction(function () use ($request, $durationMinutes, $package, $questionQuery, $activeQuestionCount) {
             $assessment = Assessment::create([
                 'user_id' => $request->user()->id,
                 'question_package_id' => $package?->id,
-                'total_questions' => $limit,
+                'total_questions' => $activeQuestionCount,
                 'started_at' => now(),
                 'duration_minutes' => $durationMinutes,
                 'ends_at' => now()->addMinutes($durationMinutes),
@@ -215,7 +214,6 @@ class AssessmentController extends Controller
 
             (clone $questionQuery)
                 ->inRandomOrder()
-                ->limit($limit)
                 ->get()
                 ->each(function (Question $question, int $index) use ($assessment): void {
                     AssessmentAnswer::create([
@@ -231,19 +229,6 @@ class AssessmentController extends Controller
         ActivityLog::log('assessment_start', 'Memulai assessment', Assessment::class, $assessment->id);
 
         return redirect()->route('assessment.show', $assessment);
-    }
-
-    private function questionLimitFor(?QuestionPackage $package, int $activeQuestionCount): int
-    {
-        if ($package?->type === QuestionPackage::TYPE_HR) {
-            $configuredLimit = (int) config('assessment.hr_question_limit', 0);
-
-            return $configuredLimit > 0 ? min($activeQuestionCount, $configuredLimit) : $activeQuestionCount;
-        }
-
-        $configuredLimit = (int) config('assessment.question_limit', $activeQuestionCount);
-
-        return $configuredLimit > 0 ? min($activeQuestionCount, $configuredLimit) : $activeQuestionCount;
     }
 
     /**
