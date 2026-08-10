@@ -8,6 +8,7 @@ use App\Models\Assessment;
 use App\Models\AssessmentAnswer;
 use App\Models\Question;
 use App\Models\QuestionPackage;
+use App\Support\SheScore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -79,7 +80,6 @@ class SheReviewController extends Controller
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
         });
 
-        $manualScoreTotal = 0;
         $manualCount = 0;
 
         foreach ($essayUploadAnswers as $answer) {
@@ -91,7 +91,6 @@ class SheReviewController extends Controller
                     'reviewed_at' => now(),
                 ]);
 
-                $manualScoreTotal += (float) $validated['scores'][$answer->id];
                 $manualCount++;
             }
         }
@@ -102,15 +101,7 @@ class SheReviewController extends Controller
                 ->withInput();
         }
 
-        $mcAnswers = $assessment->answers->filter(function ($answer) {
-            return $answer->question && $answer->question->isMultipleChoice();
-        });
-
-        $mcScoreTotal = $mcAnswers->sum(fn ($answer): int => $answer->is_correct ? 100 : 0);
-        $totalCount = $mcAnswers->count() + $manualCount;
-        $finalScore = $totalCount > 0
-            ? round(($mcScoreTotal + $manualScoreTotal) / $totalCount, 2)
-            : 0;
+        $finalScore = SheScore::calculate($assessment->answers->fresh('question'))['final'];
 
         $assessment->update([
             'score' => $finalScore,

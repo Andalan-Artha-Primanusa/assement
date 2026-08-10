@@ -27,6 +27,10 @@
                 ? round(($mcCorrectPoints / $mcTotalPoints) * 100, 2)
                 : round($mcAnswers->where('is_correct', true)->count() / $mcAnswers->count() * 100, 2))
             : null;
+        $sheScores = $isSheAssessment ? \App\Support\SheScore::calculate($allAnswers) : null;
+        if ($sheScores) {
+            $mcScore = $sheScores['pg'];
+        }
         $correctSummaryLabel = $isSheAssessment ? 'PG Benar' : 'Jawaban Benar';
         $correctSummaryTotal = $isSheAssessment ? $mcAnswers->count() : $assessment->total_questions;
 
@@ -35,10 +39,10 @@
         $hasNonMc = $nonMcAnswers->isNotEmpty();
 
         $essayGraded = $hasEssay && $essayAnswers->every(fn($a) => $a->score !== null);
-        $essayScore = $essayGraded ? round($essayAnswers->avg('score'), 2) : null;
+        $essayScore = $sheScores ? $sheScores['essay'] : ($essayGraded ? round($essayAnswers->avg('score'), 2) : null);
 
         $uploadGraded = $hasUpload && $uploadAnswers->every(fn($a) => $a->score !== null);
-        $uploadScore = $uploadGraded ? round($uploadAnswers->avg('score'), 2) : null;
+        $uploadScore = $sheScores ? $sheScores['upload'] : ($uploadGraded ? round($uploadAnswers->avg('score'), 2) : null);
 
         $nonMcGraded = $hasNonMc && $nonMcAnswers->every(fn($a) => $a->score !== null);
         $nonMcScore = $nonMcGraded ? round($nonMcAnswers->avg('score'), 2) : null;

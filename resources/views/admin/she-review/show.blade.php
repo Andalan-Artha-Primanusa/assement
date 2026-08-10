@@ -52,7 +52,7 @@
             @if ($selectedType === 'she')
                 {{-- SHE: Grading form --}}
                 <div class="mb-4 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
-                    Rumus nilai SHE: PG benar bernilai 100, PG salah bernilai 0, sedangkan Essay dan Portfolio dinilai manual 0-100. Nilai akhir adalah rata-rata semua soal.
+                    Rumus nilai SHE: PG dihitung sebagai persentase jawaban benar, Essay dinilai manual 0-100, dan Portfolio dinilai manual 0-100. Nilai akhir adalah rata-rata komponen PG, Essay, dan Portfolio yang tersedia.
                 </div>
                 <form method="POST" action="{{ route('admin.she-review.grade', $assessment) }}" class="space-y-6" data-confirm
                       data-confirm-title="Simpan nilai assessment?"

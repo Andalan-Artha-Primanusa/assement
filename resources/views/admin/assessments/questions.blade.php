@@ -23,13 +23,17 @@
                 ? round(($mcCorrectPoints / $mcTotalPoints) * 100, 2)
                 : round($mcAnswers->where('is_correct', true)->count() / $mcAnswers->count() * 100, 2))
             : null;
+        $sheScores = $isSheAssessment ? \App\Support\SheScore::calculate($assessment->answers) : null;
+        if ($sheScores) {
+            $mcScore = $sheScores['pg'];
+        }
         $mcCorrect = $mcAnswers->where('is_correct', true)->count();
 
         $essayGraded = $essayAnswers->isNotEmpty() && $essayAnswers->every(fn($a) => $a->score !== null);
-        $essayScore = $essayGraded ? round($essayAnswers->avg('score'), 2) : null;
+        $essayScore = $sheScores ? $sheScores['essay'] : ($essayGraded ? round($essayAnswers->avg('score'), 2) : null);
 
         $uploadGraded = $uploadAnswers->isNotEmpty() && $uploadAnswers->every(fn($a) => $a->score !== null);
-        $uploadScore = $uploadGraded ? round($uploadAnswers->avg('score'), 2) : null;
+        $uploadScore = $sheScores ? $sheScores['upload'] : ($uploadGraded ? round($uploadAnswers->avg('score'), 2) : null);
 
         $needsReview = $assessment->answers->filter(fn($a) => $a->question && in_array($a->question->type, ['essay', 'upload']) && $a->score === null)->count();
     @endphp

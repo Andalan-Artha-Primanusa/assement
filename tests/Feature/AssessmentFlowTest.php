@@ -488,6 +488,127 @@ class AssessmentFlowTest extends TestCase
             ->assertHeader('content-disposition');
     }
 
+    public function test_file_route_can_read_storage_prefixed_question_images(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('question-images/sample.png', 'image-bytes');
+
+        $this->get(route('files.show', ['path' => 'storage/question-images/sample.png']))
+            ->assertOk();
+    }
+
+    public function test_she_review_calculates_final_score_from_segment_averages(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_SHE,
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Segment Score',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_PENDING_REVIEW,
+            'total_questions' => 4,
+            'correct_answers' => 1,
+            'score' => 50,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $correctQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'PG benar',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $wrongQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'PG salah',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $essayQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_ESSAY,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'Essay SHE',
+            'is_active' => true,
+        ]);
+        $uploadQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_UPLOAD,
+            'category' => 'SHE',
+            'difficulty' => 'basic',
+            'text' => 'Portfolio SHE',
+            'is_active' => true,
+        ]);
+
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $correctQuestion->id,
+            'position' => 1,
+            'selected_option' => 'a',
+            'is_correct' => true,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $wrongQuestion->id,
+            'position' => 2,
+            'selected_option' => 'b',
+            'is_correct' => false,
+        ]);
+        $essayAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $essayQuestion->id,
+            'position' => 3,
+            'answer_text' => 'Jawaban essay',
+        ]);
+        $uploadAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $uploadQuestion->id,
+            'position' => 4,
+            'file_path' => 'assessment-uploads/sample.pdf',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.she-review.grade', $assessment), [
+                'scores' => [
+                    $essayAnswer->id => 80,
+                    $uploadAnswer->id => 70,
+                ],
+                'notes' => [],
+            ])
+            ->assertRedirect(route('admin.she-review.index', ['type' => QuestionPackage::TYPE_SHE]));
+
+        $assessment->refresh();
+
+        $this->assertTrue($assessment->isGraded());
+        $this->assertEquals(66.67, (float) $assessment->score);
+    }
+
     public function test_user_assessment_uses_assigned_question_package(): void
     {
         $assignedPackage = QuestionPackage::create([
