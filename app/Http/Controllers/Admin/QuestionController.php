@@ -161,7 +161,12 @@ class QuestionController extends Controller
                     $query->whereIn('type', $request->user()->visiblePackageTypes());
                 }),
             ],
-            'type' => ['required', 'in:multiple_choice,essay,upload'],
+            'type' => ['required', Rule::in([
+                Question::TYPE_MULTIPLE_CHOICE,
+                Question::TYPE_TRUE_FALSE,
+                Question::TYPE_ESSAY,
+                Question::TYPE_UPLOAD,
+            ])],
             'category' => ['required', 'string', 'max:100'],
             'difficulty' => ['required', 'in:basic,intermediate,advanced'],
             'text' => ['required', 'string'],
@@ -201,7 +206,15 @@ class QuestionController extends Controller
 
         unset($data['remove_image']);
 
-        if ($data['type'] === Question::TYPE_MULTIPLE_CHOICE) {
+        if ($data['type'] === Question::TYPE_TRUE_FALSE) {
+            $data['option_a'] = 'Benar';
+            $data['option_b'] = 'Salah';
+            $data['option_c'] = null;
+            $data['option_d'] = null;
+            $data['correct_option'] = in_array($data['correct_option'] ?? null, ['a', 'b'], true)
+                ? $data['correct_option']
+                : 'a';
+        } elseif ($data['type'] === Question::TYPE_MULTIPLE_CHOICE) {
             $data['option_a'] = $data['option_a'] ?? '';
             $data['option_b'] = $data['option_b'] ?? '';
             $data['option_c'] = $data['option_c'] ?? '';
@@ -225,18 +238,25 @@ class QuestionController extends Controller
      */
     private function ensureTypeAllowedForPackage(Request $request, array $data): void
     {
-        if (($data['type'] ?? null) === Question::TYPE_MULTIPLE_CHOICE) {
-            return;
+        $package = $this->packageForData($request, $data);
+        $type = $data['type'] ?? null;
+
+        if ($type === Question::TYPE_TRUE_FALSE && $package?->type === QuestionPackage::TYPE_SHE) {
+            throw ValidationException::withMessages([
+                'type' => 'Benar/Salah dipakai untuk paket Mekanik, Operator, atau HR. Paket SHE tetap memakai PG, Essay, dan Portfolio.',
+            ]);
         }
 
-        $package = $this->packageForData($request, $data);
+        if (in_array($type, [Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_TRUE_FALSE], true)) {
+            return;
+        }
 
         if ($package?->type === QuestionPackage::TYPE_SHE) {
             return;
         }
 
         throw ValidationException::withMessages([
-            'type' => 'Essay dan Upload File khusus untuk paket SHE. Paket Mekanik, Operator, dan HR hanya menggunakan Multiple Choice.',
+            'type' => 'Essay dan Upload File khusus untuk paket SHE. Paket Mekanik, Operator, dan HR hanya menggunakan PG atau Benar/Salah.',
         ]);
     }
 

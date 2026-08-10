@@ -172,6 +172,62 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Assessment Mechanic');
     }
 
+    public function test_mechanic_true_false_question_is_auto_scored(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Mekanik Benar Salah',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.questions.store'), [
+                'question_package_id' => $package->id,
+                'type' => Question::TYPE_TRUE_FALSE,
+                'category' => 'Engine',
+                'difficulty' => 'basic',
+                'text' => 'Filter udara tersumbat dapat menurunkan performa engine.',
+                'correct_option' => 'a',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.packages.questions', $package->id));
+
+        $question = Question::where('question_package_id', $package->id)->firstOrFail();
+        $this->assertSame(Question::TYPE_TRUE_FALSE, $question->type);
+        $this->assertSame('Benar', $question->option_a);
+        $this->assertSame('Salah', $question->option_b);
+        $this->assertNull($question->option_c);
+        $this->assertNull($question->option_d);
+
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertRedirect();
+
+        $assessment = Assessment::firstOrFail();
+        $answer = $assessment->answers()->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('assessment.submit', $assessment), [
+                'answers' => [
+                    $answer->id => 'a',
+                ],
+            ])
+            ->assertRedirect(route('assessment.result', $assessment));
+
+        $assessment->refresh();
+        $answer->refresh();
+
+        $this->assertTrue($answer->is_correct);
+        $this->assertSame(1, $assessment->correct_answers);
+        $this->assertEquals(100.0, (float) $assessment->score);
+    }
+
     public function test_hr_assessment_uses_all_active_questions_by_default(): void
     {
         $package = QuestionPackage::create([

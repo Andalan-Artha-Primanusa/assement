@@ -104,9 +104,9 @@
                                     </div>
                                 @endif
 
-                                @if ($question->isMultipleChoice())
+                                @if ($question->isAutoScored())
                                     <div class="mt-5 grid gap-3">
-                                        @foreach (['a', 'b', 'c', 'd'] as $option)
+                                        @foreach ($question->answerOptions() as $option)
                                             <label class="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 p-3 sm:p-4 hover:border-indigo-300 hover:bg-indigo-50 min-h-[44px]">
                                                 <input type="radio" name="answers[{{ $answer->id }}]" value="{{ $option }}" class="mt-0.5 sm:mt-1 shrink-0 border-gray-300 text-indigo-600 focus:ring-indigo-500" required @checked($answer->selected_option === $option)>
                                                 <span class="text-sm sm:text-base">

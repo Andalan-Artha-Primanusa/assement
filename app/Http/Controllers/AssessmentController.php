@@ -460,7 +460,7 @@ class AssessmentController extends Controller
             } elseif ($answer->question->isUpload()) {
                 $validationRules['answers.'.$answer->id] = ['nullable', 'file', 'max:10240'];
             } else {
-                $validationRules['answers.'.$answer->id] = ['nullable', 'in:a,b,c,d'];
+                $validationRules['answers.'.$answer->id] = ['nullable', 'in:'.implode(',', $answer->question->answerOptions())];
             }
         }
 
@@ -514,7 +514,7 @@ class AssessmentController extends Controller
                 }
             } else {
                 $value = $request->input('answers.'.$answer->id);
-                if ($value !== null && in_array($value, ['a', 'b', 'c', 'd'])) {
+                if ($value !== null && in_array($value, $answer->question->answerOptions(), true)) {
                     $answer->update([
                         'selected_option' => $value,
                         'is_correct' => $value === $answer->question->correct_option,
@@ -666,6 +666,7 @@ class AssessmentController extends Controller
     {
         return match ($type) {
             Question::TYPE_MULTIPLE_CHOICE => 'PG',
+            Question::TYPE_TRUE_FALSE => 'Benar/Salah',
             Question::TYPE_ESSAY => 'Essay',
             Question::TYPE_UPLOAD => 'Portfolio',
             default => $type,

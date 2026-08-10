@@ -169,7 +169,7 @@
                                 </div>
                                 <div class="w-full min-w-0">
                                     <div class="flex flex-wrap items-center gap-2 mb-2">
-                                        @if ($question->isMultipleChoice())
+                                        @if ($question->isAutoScored())
                                             <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">PG</span>
                                         @elseif ($question->isEssay())
                                             <span class="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">Essay</span>
@@ -189,9 +189,9 @@
                                         </div>
                                     @endif
 
-                                    @if ($question->isMultipleChoice())
+                                    @if ($question->isAutoScored())
                                         <div class="mt-3 space-y-1">
-                                            @foreach (['a', 'b', 'c', 'd'] as $opt)
+                                                @foreach ($question->answerOptions() as $opt)
                                                 @php
                                                     $optText = $question->optionText($opt);
                                                 @endphp

@@ -83,9 +83,9 @@
                                         <img src="{{ $answer->question->imageUrl() }}" alt="Gambar soal" class="mt-3 max-h-64 rounded-md border border-gray-200 object-contain">
                                     @endif
 
-                                    @if ($answer->question->isMultipleChoice())
+                                    @if ($answer->question->isAutoScored())
                                         <div class="mt-4 space-y-2">
-                                            @foreach (['a', 'b', 'c', 'd'] as $opt)
+                                            @foreach ($answer->question->answerOptions() as $opt)
                                                 @if ($answer->question->{'option_'.$opt})
                                                     <label class="flex items-center gap-3 rounded-md border border-gray-200 p-3 cursor-pointer hover:bg-gray-50 has-[:checked]:border-indigo-400 has-[:checked]:bg-indigo-50 transition">
                                                         <input type="radio" name="answers[{{ $answer->id }}]" value="{{ $opt }}" class="text-indigo-600 focus:ring-indigo-500" @checked(old('answers.'.$answer->id, $answer->selected_option) === $opt)>

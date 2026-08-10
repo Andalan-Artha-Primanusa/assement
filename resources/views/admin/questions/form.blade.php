@@ -21,7 +21,7 @@
         <div>
             <x-input-label for="type" value="Tipe Soal" />
             <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                @foreach (['multiple_choice' => 'Multiple Choice', 'essay' => 'Essay', 'upload' => 'Upload File'] as $value => $label)
+                @foreach (['multiple_choice' => 'Multiple Choice', 'true_false' => 'Benar / Salah', 'essay' => 'Essay', 'upload' => 'Upload File'] as $value => $label)
                     <option value="{{ $value }}" data-manual-review="{{ in_array($value, ['essay', 'upload'], true) ? 'true' : 'false' }}" @selected(old('type', $question->type) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
@@ -83,10 +83,10 @@
         <x-input-error :messages="$errors->get('image')" class="mt-2" />
     </div>
 
-    <div id="mc-fields" class="{{ $question->type !== 'multiple_choice' ? 'hidden' : '' }}">
+    <div id="mc-fields" class="{{ ! in_array($question->type, ['multiple_choice', 'true_false'], true) ? 'hidden' : '' }}">
         <div class="grid gap-4 md:grid-cols-2">
             @foreach (['a', 'b', 'c', 'd'] as $option)
-                <div>
+                <div data-option-field="{{ $option }}">
                     <x-input-label :for="'option_'.$option" :value="'Pilihan '.strtoupper($option)" />
                     <textarea id="option_{{ $option }}" name="option_{{ $option }}" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('option_'.$option, $question->{'option_'.$option}) }}</textarea>
                     <x-input-error :messages="$errors->get('option_'.$option)" class="mt-2" />
@@ -98,7 +98,7 @@
             <x-input-label for="correct_option" value="Kunci Jawaban" />
             <select id="correct_option" name="correct_option" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 @foreach (['a', 'b', 'c', 'd'] as $option)
-                    <option value="{{ $option }}" @selected(old('correct_option', $question->correct_option) === $option)>Pilihan {{ strtoupper($option) }}</option>
+                    <option value="{{ $option }}" data-correct-option="{{ $option }}" @selected(old('correct_option', $question->correct_option) === $option)>Pilihan {{ strtoupper($option) }}</option>
                 @endforeach
             </select>
             <x-input-error :messages="$errors->get('correct_option')" class="mt-2" />
@@ -137,6 +137,10 @@
         const manualTypeNote = document.getElementById('manual-type-note');
         const pointsField = document.getElementById('points-field');
         const pointsInput = document.getElementById('points');
+        const optionA = document.getElementById('option_a');
+        const optionB = document.getElementById('option_b');
+        const optionFields = document.querySelectorAll('[data-option-field]');
+        const correctOptions = document.querySelectorAll('[data-correct-option]');
 
         function selectedPackageType() {
             const selectedOption = packageSelect?.options[packageSelect.selectedIndex];
@@ -149,7 +153,7 @@
             essayInfo.classList.add('hidden');
             uploadInfo.classList.add('hidden');
 
-            if (typeSelect.value === 'multiple_choice') {
+            if (['multiple_choice', 'true_false'].includes(typeSelect.value)) {
                 mcFields.classList.remove('hidden');
             } else if (typeSelect.value === 'essay') {
                 essayInfo.classList.remove('hidden');
@@ -168,7 +172,15 @@
                 option.hidden = ! isShePackage;
             });
 
+            const trueFalseOption = typeSelect.querySelector('option[value="true_false"]');
+            trueFalseOption.disabled = isShePackage;
+            trueFalseOption.hidden = isShePackage;
+
             if (! isShePackage && ['essay', 'upload'].includes(typeSelect.value)) {
+                typeSelect.value = 'multiple_choice';
+            }
+
+            if (isShePackage && typeSelect.value === 'true_false') {
                 typeSelect.value = 'multiple_choice';
             }
 
@@ -181,9 +193,40 @@
             }
 
             syncVisibleFields();
+            syncTrueFalseFields();
         }
 
-        typeSelect.addEventListener('change', syncVisibleFields);
+        function syncTrueFalseFields() {
+            const isTrueFalse = typeSelect.value === 'true_false';
+
+            optionFields.forEach((field) => {
+                const option = field.dataset.optionField;
+                field.classList.toggle('hidden', isTrueFalse && ! ['a', 'b'].includes(option));
+            });
+
+            correctOptions.forEach((option) => {
+                const value = option.dataset.correctOption;
+                option.hidden = isTrueFalse && ! ['a', 'b'].includes(value);
+                option.disabled = isTrueFalse && ! ['a', 'b'].includes(value);
+                option.textContent = isTrueFalse
+                    ? (value === 'a' ? 'Benar' : (value === 'b' ? 'Salah' : option.textContent))
+                    : `Pilihan ${value.toUpperCase()}`;
+            });
+
+            if (isTrueFalse) {
+                optionA.value = 'Benar';
+                optionB.value = 'Salah';
+
+                if (! ['a', 'b'].includes(document.getElementById('correct_option').value)) {
+                    document.getElementById('correct_option').value = 'a';
+                }
+            }
+        }
+
+        typeSelect.addEventListener('change', () => {
+            syncVisibleFields();
+            syncTrueFalseFields();
+        });
         packageSelect.addEventListener('change', syncAllowedTypes);
         syncAllowedTypes();
     })();

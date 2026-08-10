@@ -12,6 +12,7 @@ class Question extends Model
     use HasFactory;
 
     public const TYPE_MULTIPLE_CHOICE = 'multiple_choice';
+    public const TYPE_TRUE_FALSE = 'true_false';
     public const TYPE_ESSAY = 'essay';
     public const TYPE_UPLOAD = 'upload';
 
@@ -52,6 +53,24 @@ class Question extends Model
     public function isMultipleChoice(): bool
     {
         return $this->type === self::TYPE_MULTIPLE_CHOICE;
+    }
+
+    public function isTrueFalse(): bool
+    {
+        return $this->type === self::TYPE_TRUE_FALSE;
+    }
+
+    public function isAutoScored(): bool
+    {
+        return $this->isMultipleChoice() || $this->isTrueFalse();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function answerOptions(): array
+    {
+        return $this->isTrueFalse() ? ['a', 'b'] : ['a', 'b', 'c', 'd'];
     }
 
     public function isEssay(): bool

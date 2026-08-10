@@ -15,7 +15,7 @@
         $showCertificate = $package && $package->is_certificate && $grade && in_array($grade, ['Lolos', 'Dipertimbangkan']);
 
         $allAnswers = $assessment->answers;
-        $mcAnswers = $allAnswers->filter(fn($a) => $a->question && $a->question->isMultipleChoice());
+        $mcAnswers = $allAnswers->filter(fn($a) => $a->question && $a->question->isAutoScored());
         $essayAnswers = $allAnswers->filter(fn($a) => $a->question && $a->question->isEssay());
         $uploadAnswers = $allAnswers->filter(fn($a) => $a->question && $a->question->isUpload());
         $nonMcAnswers = $allAnswers->filter(fn($a) => $a->question && in_array($a->question->type, ['essay', 'upload']));
@@ -566,7 +566,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex flex-wrap items-center gap-2 mb-1">
-                                                @if ($question->isMultipleChoice())
+                                                @if ($question->isAutoScored())
                                                     <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">PG</span>
                                                     @if ($isHrAssessment)
                                                         <span class="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">Nilai HR: {{ number_format($question->pointValue(), 2) }}</span>
@@ -577,7 +577,7 @@
                                                     <span class="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">Upload</span>
                                                 @endif
 
-                                                @if ($question->isMultipleChoice())
+                                                @if ($question->isAutoScored())
                                                     @if ($answer->is_correct)
                                                         <span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
                                                             <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -602,9 +602,9 @@
                                                 <img src="{{ $question->imageUrl() }}" alt="Gambar soal" class="mt-2 max-h-40 rounded-xl border border-gray-200 object-contain">
                                             @endif
 
-                                            @if ($question->isMultipleChoice())
+                                            @if ($question->isAutoScored())
                                                 <div class="mt-2 space-y-0.5">
-                                                    @foreach (['a', 'b', 'c', 'd'] as $opt)
+                                                    @foreach ($question->answerOptions() as $opt)
                                                         @php($optText = $question->optionText($opt))
                                                         @if ($optText)
                                                             @php($isCorrect = $question->correct_option === $opt)

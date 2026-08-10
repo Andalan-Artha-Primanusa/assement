@@ -12,7 +12,7 @@ class SheScore
      */
     public static function calculate(Collection $answers): array
     {
-        $mcAnswers = $answers->filter(fn ($answer) => $answer->question && $answer->question->isMultipleChoice());
+        $mcAnswers = $answers->filter(fn ($answer) => $answer->question && $answer->question->isAutoScored());
         $essayAnswers = $answers->filter(fn ($answer) => $answer->question && $answer->question->isEssay());
         $uploadAnswers = $answers->filter(fn ($answer) => $answer->question && $answer->question->isUpload());
 

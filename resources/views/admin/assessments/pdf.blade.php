@@ -57,7 +57,7 @@
                     <tr>
                         <th style="width:30px">#</th>
                         <th>Soal</th>
-                        @if ($question->isMultipleChoice())
+                        @if ($question->isAutoScored())
                             <th style="width:50px">Jawab</th>
                             <th style="width:50px">Benar</th>
                             <th style="width:40px">Status</th>
@@ -92,7 +92,7 @@
                                 </div>
                             @endif
                         </td>
-                        @if ($question->isMultipleChoice())
+                        @if ($question->isAutoScored())
                             <td>{{ $answer->selected_option ? strtoupper($answer->selected_option) : '-' }}</td>
                             <td>{{ strtoupper($question->correct_option) }}</td>
                             <td class="{{ $answer->is_correct ? 'correct' : 'wrong' }}">{{ $answer->is_correct ? '✓' : '✗' }}</td>

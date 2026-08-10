@@ -71,6 +71,12 @@ class QuestionImportController extends Controller
                 'Menyebarkan informasi ke grup kerja',
                 'b', 'Employee Relation', 'advanced', '8',
             ]),
+            Row::fromValues([
+                'true_false',
+                'Data karyawan boleh dibagikan ke pihak luar tanpa persetujuan.',
+                '', '', '', '',
+                'b', 'Kerahasiaan Data', 'basic', '3',
+            ]),
         ] : [
             Row::fromValues([
                 'multiple_choice',
@@ -100,6 +106,12 @@ class QuestionImportController extends Controller
                 'Crankshaft',
                 'Camshaft',
                 'Flywheel',
+                'a', 'Engine', 'basic', '1',
+            ]),
+            Row::fromValues([
+                'true_false',
+                'Filter udara yang tersumbat dapat menurunkan performa engine.',
+                '', '', '', '',
                 'a', 'Engine', 'basic', '1',
             ]),
         ];
@@ -172,12 +184,17 @@ class QuestionImportController extends Controller
                 }
 
                 $type = strtolower(trim($cellValues[0] ?? 'multiple_choice'));
-                if (! in_array($type, ['multiple_choice', 'essay', 'upload'])) {
+                if (! in_array($type, ['multiple_choice', 'true_false', 'essay', 'upload'])) {
                     $type = 'multiple_choice';
                 }
 
-                if ($type !== Question::TYPE_MULTIPLE_CHOICE && $package?->type !== QuestionPackage::TYPE_SHE) {
-                    $errors[] = "Baris ke-{$rowNumber}: Essay/Upload khusus untuk paket SHE. Paket lain wajib menggunakan multiple_choice.";
+                if (! in_array($type, [Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_TRUE_FALSE], true) && $package?->type !== QuestionPackage::TYPE_SHE) {
+                    $errors[] = "Baris ke-{$rowNumber}: Essay/Upload khusus untuk paket SHE. Paket lain wajib menggunakan multiple_choice atau true_false.";
+                    continue;
+                }
+
+                if ($type === Question::TYPE_TRUE_FALSE && $package?->type === QuestionPackage::TYPE_SHE) {
+                    $errors[] = "Baris ke-{$rowNumber}: true_false dipakai untuk Mekanik, Operator, atau HR. Paket SHE tetap memakai multiple_choice, essay, dan upload.";
                     continue;
                 }
 
@@ -198,11 +215,23 @@ class QuestionImportController extends Controller
                     continue;
                 }
 
+                if ($type === 'true_false' && ! in_array($correct, ['a', 'b'])) {
+                    $errors[] = "Baris ke-{$rowNumber}: correct_option Benar/Salah harus a atau b, got '{$correct}'";
+                    continue;
+                }
+
                 if ($type === 'multiple_choice') {
                     if (empty($optionA) || empty($optionB) || empty($optionC) || empty($optionD)) {
                         $errors[] = "Baris ke-{$rowNumber}: MC wajib punya 4 pilihan (A/B/C/D)";
                         continue;
                     }
+                }
+
+                if ($type === 'true_false') {
+                    $optionA = 'Benar';
+                    $optionB = 'Salah';
+                    $optionC = null;
+                    $optionD = null;
                 }
 
                 if ($package?->type === QuestionPackage::TYPE_HR && $points === null) {
@@ -217,11 +246,11 @@ class QuestionImportController extends Controller
                         'category' => $cellValues[7] ?? $defaultCategory,
                         'difficulty' => $cellValues[8] ?? $defaultDifficulty,
                         'text' => $text,
-                        'option_a' => $type === 'multiple_choice' ? $optionA : null,
-                        'option_b' => $type === 'multiple_choice' ? $optionB : null,
+                        'option_a' => in_array($type, ['multiple_choice', 'true_false'], true) ? $optionA : null,
+                        'option_b' => in_array($type, ['multiple_choice', 'true_false'], true) ? $optionB : null,
                         'option_c' => $type === 'multiple_choice' ? $optionC : null,
                         'option_d' => $type === 'multiple_choice' ? $optionD : null,
-                        'correct_option' => $type === 'multiple_choice' ? $correct : null,
+                        'correct_option' => in_array($type, ['multiple_choice', 'true_false'], true) ? $correct : null,
                         'points' => $package?->type === QuestionPackage::TYPE_HR ? $points : 1,
                         'is_active' => true,
                     ]);

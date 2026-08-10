@@ -34,7 +34,7 @@
                             <div class="rounded-md border border-gray-200 bg-gray-50/60 p-4">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">{{ $question->category }}</span>
-                                    @if ($question->isMultipleChoice())
+                                    @if ($question->isAutoScored())
                                         <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Kunci {{ strtoupper($question->correct_option) }}</span>
                                         @if ($package->type === \App\Models\QuestionPackage::TYPE_HR)
                                             <span class="rounded-full bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">Nilai {{ number_format($question->pointValue(), 2) }}</span>

@@ -75,11 +75,13 @@
                                         @php
                                             $typeColors = [
                                                 'multiple_choice' => 'bg-gray-100 text-gray-700',
+                                                'true_false' => 'bg-emerald-50 text-emerald-700',
                                                 'essay' => 'bg-blue-50 text-blue-700',
                                                 'upload' => 'bg-purple-50 text-purple-700',
                                             ];
                                             $typeLabels = [
                                                 'multiple_choice' => 'MC',
+                                                'true_false' => 'Benar/Salah',
                                                 'essay' => 'Essay',
                                                 'upload' => 'Upload',
                                             ];

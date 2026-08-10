@@ -62,7 +62,7 @@ class AssessmentSecurity
         $weightedTotalPoints = 0.0;
 
         foreach ($assessment->answers as $answer) {
-            if ($answer->question && $answer->question->isMultipleChoice()) {
+            if ($answer->question && $answer->question->isAutoScored()) {
                 $multipleChoiceCount++;
                 $points = $answer->question->pointValue();
                 $weightedTotalPoints += $points;
@@ -119,7 +119,7 @@ class AssessmentSecurity
 
         foreach ($assessment->answers as $answer) {
             if (array_key_exists($answer->id, $submittedAnswers)) {
-                if ($answer->question && $answer->question->isMultipleChoice()) {
+                if ($answer->question && $answer->question->isAutoScored()) {
                     $answer->update([
                         'selected_option' => $submittedAnswers[$answer->id],
                     ]);

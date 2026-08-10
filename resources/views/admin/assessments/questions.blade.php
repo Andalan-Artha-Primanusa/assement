@@ -12,7 +12,7 @@
         $isHrAssessment = $package?->type === \App\Models\QuestionPackage::TYPE_HR;
         $grade = $package ? $package->getGrade((float) $assessment->score) : null;
 
-        $mcAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isMultipleChoice());
+        $mcAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isAutoScored());
         $essayAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isEssay());
         $uploadAnswers = $assessment->answers->filter(fn($a) => $a->question && $a->question->isUpload());
 
@@ -242,15 +242,15 @@
                                     <div class="flex flex-wrap items-center gap-2 mb-1">
                                         <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $question->category }}</span>
                                         @php
-                                            $typeColors = ['multiple_choice' => 'bg-blue-50 text-blue-700', 'essay' => 'bg-amber-50 text-amber-700', 'upload' => 'bg-purple-50 text-purple-700'];
-                                            $typeLabels = ['multiple_choice' => 'MC', 'essay' => 'Essay', 'upload' => 'Upload'];
+                                            $typeColors = ['multiple_choice' => 'bg-blue-50 text-blue-700', 'true_false' => 'bg-emerald-50 text-emerald-700', 'essay' => 'bg-amber-50 text-amber-700', 'upload' => 'bg-purple-50 text-purple-700'];
+                                            $typeLabels = ['multiple_choice' => 'MC', 'true_false' => 'Benar/Salah', 'essay' => 'Essay', 'upload' => 'Upload'];
                                         @endphp
                                         <span class="rounded-full px-2 py-0.5 text-xs font-semibold {{ $typeColors[$question->type] ?? '' }}">{{ $typeLabels[$question->type] ?? $question->type }}</span>
-                                        @if ($isHrAssessment && $question->isMultipleChoice())
+                                        @if ($isHrAssessment && $question->isAutoScored())
                                             <span class="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">Nilai: {{ number_format($question->pointValue(), 2) }}</span>
                                         @endif
 
-                                        @if ($question->isMultipleChoice() && $answer->is_correct !== null)
+                                        @if ($question->isAutoScored() && $answer->is_correct !== null)
                                             @if ($answer->is_correct)
                                                 <span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
                                                     <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -277,9 +277,9 @@
                                         <img src="{{ $question->imageUrl() }}" alt="Gambar soal" class="mt-2 max-h-40 rounded-xl border border-gray-200 object-contain">
                                     @endif
 
-                                    @if ($question->isMultipleChoice())
+                                    @if ($question->isAutoScored())
                                         <div class="mt-3 grid gap-1.5">
-                                            @foreach (['a', 'b', 'c', 'd'] as $option)
+                                            @foreach ($question->answerOptions() as $option)
                                                 @php
                                                     $optText = $question->optionText($option);
                                                     $isSelected = $answer->selected_option === $option;
