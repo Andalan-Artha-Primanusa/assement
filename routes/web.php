@@ -59,6 +59,7 @@ Route::middleware(['auth', 'admin'])
         Route::post('assessments/{assessment}/set-duration', [AssessmentController::class, 'setDuration'])->name('assessments.set-duration');
         Route::resource('packages', QuestionPackageController::class)->except('show');
         Route::get('packages/{package}/questions', [QuestionPackageController::class, 'questions'])->name('packages.questions');
+        Route::get('packages/{package}/preview', [QuestionPackageController::class, 'preview'])->name('packages.preview');
         Route::get('questions/import', [QuestionImportController::class, 'create'])->name('questions.import');
         Route::get('questions/import/template', [QuestionImportController::class, 'template'])->name('questions.import.template');
         Route::post('questions/import', [QuestionImportController::class, 'store'])->name('questions.import.store');

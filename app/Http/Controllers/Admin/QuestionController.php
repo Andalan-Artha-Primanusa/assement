@@ -84,7 +84,7 @@ class QuestionController extends Controller
         ActivityLog::log('question_create', 'Membuat soal #'.$question->id, Question::class, $question->id);
 
         if ($data['question_package_id']) {
-            return redirect()->route('admin.packages.questions', $data['question_package_id'])->with('status', 'Soal berhasil ditambahkan.');
+            return redirect()->route('admin.packages.preview', $data['question_package_id'])->with('status', 'Soal berhasil ditambahkan. Silakan preview semua soal di paket ini.');
         }
 
         return redirect()->route('admin.questions.index')->with('status', 'Soal berhasil ditambahkan.');
@@ -123,7 +123,7 @@ class QuestionController extends Controller
         ActivityLog::log('question_update', 'Mengupdate soal #'.$question->id, Question::class, $question->id);
 
         if ($data['question_package_id']) {
-            return redirect()->route('admin.packages.questions', $data['question_package_id'])->with('status', 'Soal berhasil diperbarui.');
+            return redirect()->route('admin.packages.preview', $data['question_package_id'])->with('status', 'Soal berhasil diperbarui. Silakan preview semua soal di paket ini.');
         }
 
         return redirect()->route('admin.questions.index')->with('status', 'Soal berhasil diperbarui.');

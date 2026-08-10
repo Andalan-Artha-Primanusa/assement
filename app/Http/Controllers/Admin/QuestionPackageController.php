@@ -157,6 +157,21 @@ class QuestionPackageController extends Controller
         return view('admin.packages.questions', compact('package', 'questions', 'categories'));
     }
 
+    public function preview(Request $request, QuestionPackage $package): View
+    {
+        $adminUser = $request->user();
+
+        if (! $adminUser->canManageType($package->type)) {
+            abort(403, 'Anda tidak memiliki akses ke paket ini.');
+        }
+
+        $questions = $package->questions()
+            ->latest()
+            ->get();
+
+        return view('admin.packages.preview', compact('package', 'questions'));
+    }
+
     public function destroy(Request $request, QuestionPackage $package): RedirectResponse
     {
         $adminUser = $request->user();

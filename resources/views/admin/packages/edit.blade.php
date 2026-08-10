@@ -5,7 +5,10 @@
                 <h2 class="text-2xl font-semibold text-gray-950">{{ __('Edit Paket Soal') }}</h2>
                 <p class="mt-1 text-sm text-gray-500">{{ $package->name }} - {{ \App\Models\QuestionPackage::typeLabel($package->type) }}</p>
             </div>
-            <a href="{{ route('admin.packages.index') }}" class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Kembali</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.packages.preview', $package) }}" class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">Preview Paket</a>
+                <a href="{{ route('admin.packages.index') }}" class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Kembali</a>
+            </div>
         </div>
     </x-slot>
 

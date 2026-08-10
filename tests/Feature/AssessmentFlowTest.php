@@ -191,7 +191,7 @@ class AssessmentFlowTest extends TestCase
                 'correct_option' => 'a',
                 'is_active' => '1',
             ])
-            ->assertRedirect(route('admin.packages.questions', $package->id));
+            ->assertRedirect(route('admin.packages.preview', $package->id));
 
         $question = Question::where('question_package_id', $package->id)->firstOrFail();
         $this->assertSame(Question::TYPE_TRUE_FALSE, $question->type);
@@ -226,6 +226,55 @@ class AssessmentFlowTest extends TestCase
         $this->assertTrue($answer->is_correct);
         $this->assertSame(1, $assessment->correct_answers);
         $this->assertEquals(100.0, (float) $assessment->score);
+    }
+
+    public function test_admin_can_preview_all_questions_in_package(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('question-images/preview.png', 'image-bytes');
+
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Mekanik Preview',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Engine',
+            'difficulty' => 'basic',
+            'text' => 'Apa fungsi oli mesin?',
+            'image' => 'question-images/preview.png',
+            'option_a' => 'Melumasi komponen',
+            'option_b' => 'Mengecat body',
+            'option_c' => 'Mengisi ban',
+            'option_d' => 'Mengganti filter',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_TRUE_FALSE,
+            'category' => 'Engine',
+            'difficulty' => 'basic',
+            'text' => 'Filter udara tersumbat dapat menurunkan performa engine.',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.packages.preview', $package))
+            ->assertOk()
+            ->assertSee('Preview Soal: Paket Mekanik Preview')
+            ->assertSee('Apa fungsi oli mesin?')
+            ->assertSee('Filter udara tersumbat dapat menurunkan performa engine.')
+            ->assertSee('Benar/Salah')
+            ->assertSee('Kunci jawaban:')
+            ->assertSee('question-images/preview.png', false);
     }
 
     public function test_hr_assessment_uses_all_active_questions_by_default(): void
@@ -854,7 +903,7 @@ class AssessmentFlowTest extends TestCase
                 'text' => 'Essay SHE boleh',
                 'is_active' => '1',
             ])
-            ->assertRedirect(route('admin.packages.questions', $package->id));
+            ->assertRedirect(route('admin.packages.preview', $package->id));
 
         $this->assertDatabaseHas('questions', [
             'question_package_id' => $package->id,
@@ -1278,7 +1327,7 @@ class AssessmentFlowTest extends TestCase
                 'points' => 7.5,
                 'is_active' => '1',
             ])
-            ->assertRedirect(route('admin.packages.questions', $package->id));
+            ->assertRedirect(route('admin.packages.preview', $package->id));
 
         $this->assertDatabaseHas('questions', [
             'question_package_id' => $package->id,
