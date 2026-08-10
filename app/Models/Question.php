@@ -79,4 +79,16 @@ class Question extends Model
     {
         return max(0.01, (float) ($this->points ?? 1));
     }
+
+    public function imageUrl(): ?string
+    {
+        if (! $this->image) {
+            return null;
+        }
+
+        return route('files.show', [
+            'path' => $this->image,
+            'v' => $this->updated_at?->timestamp ?? time(),
+        ]);
+    }
 }

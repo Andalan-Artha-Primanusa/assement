@@ -599,7 +599,7 @@
                                             <p class="whitespace-pre-line text-sm font-medium text-gray-900">{{ $question->text }}</p>
 
                                             @if ($question->image)
-                                                <img src="{{ route('files.show', $question->image) }}" alt="Gambar soal" class="mt-2 max-h-40 rounded-xl border border-gray-200 object-contain">
+                                                <img src="{{ $question->imageUrl() }}" alt="Gambar soal" class="mt-2 max-h-40 rounded-xl border border-gray-200 object-contain">
                                             @endif
 
                                             @if ($question->isMultipleChoice())

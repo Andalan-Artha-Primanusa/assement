@@ -73,7 +73,7 @@
         @if ($question->image)
             <div class="mt-2">
                 <p class="text-xs text-gray-500 mb-1">Gambar saat ini:</p>
-                <img src="{{ route('files.show', $question->image) }}" alt="Gambar soal" class="h-24 rounded-md border border-gray-200 object-contain">
+                <img src="{{ $question->imageUrl() }}" alt="Gambar soal" class="h-24 rounded-md border border-gray-200 object-contain">
                 <label class="mt-1 inline-flex items-center gap-1.5 text-xs text-red-600">
                     <input type="checkbox" name="remove_image" value="1" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
                     Hapus gambar

@@ -80,7 +80,7 @@
                                 <div class="flex-1">
                                     <p class="font-medium text-gray-900">{{ $answer->question->text }}</p>
                                     @if ($answer->question->image)
-                                        <img src="{{ route('files.show', $answer->question->image) }}" alt="Gambar soal" class="mt-3 max-h-64 rounded-md border border-gray-200 object-contain">
+                                        <img src="{{ $answer->question->imageUrl() }}" alt="Gambar soal" class="mt-3 max-h-64 rounded-md border border-gray-200 object-contain">
                                     @endif
 
                                     @if ($answer->question->isMultipleChoice())

@@ -100,7 +100,7 @@
 
                                 @if ($question->image)
                                     <div class="mt-3">
-                                        <img src="{{ route('files.show', $question->image) }}" alt="Gambar soal" class="max-h-64 rounded-md border border-gray-200 object-contain">
+                                        <img src="{{ $question->imageUrl() }}" alt="Gambar soal" class="max-h-64 rounded-md border border-gray-200 object-contain">
                                     </div>
                                 @endif
 

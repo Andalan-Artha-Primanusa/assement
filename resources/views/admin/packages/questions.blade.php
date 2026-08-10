@@ -57,7 +57,7 @@
                                     <td class="max-w-xl px-6 py-4 text-gray-900">
                                         <div class="flex items-start gap-2">
                                             @if ($question->image)
-                                                <img src="{{ route('files.show', $question->image) }}" alt="" class="h-10 w-10 shrink-0 rounded object-cover">
+                                                <img src="{{ $question->imageUrl() }}" alt="" class="h-10 w-10 shrink-0 rounded object-cover">
                                             @endif
                                             <p class="line-clamp-2">{{ $question->text }}</p>
                                         </div>
