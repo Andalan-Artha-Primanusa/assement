@@ -1452,6 +1452,22 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_operator_invite_form_shows_operator_category_field(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_operation']);
+        OperatorAssessmentCategory::create([
+            'name' => 'New Hire',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.invite'))
+            ->assertOk()
+            ->assertSee('Kategori Operator')
+            ->assertSee('New Hire');
+    }
+
     public function test_hr_assessment_uses_question_points_for_final_score(): void
     {
         $package = QuestionPackage::create([

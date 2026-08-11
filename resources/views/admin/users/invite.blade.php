@@ -1,4 +1,11 @@
 <x-app-layout>
+    @php
+        $inviteTypes = $visibleTypes ?? \App\Models\QuestionPackage::TYPES;
+        $defaultInviteType = count($inviteTypes) === 1 ? $inviteTypes[0] : null;
+        $selectedBulkType = old('bulk_type', $defaultInviteType);
+        $selectedSingleType = old('type', $defaultInviteType);
+    @endphp
+
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -45,8 +52,8 @@
                             <label for="bulk_invite_type" class="block text-sm font-medium text-gray-700">Tipe Peserta</label>
                             <select id="bulk_invite_type" name="bulk_type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">Pilih tipe</option>
-                                @foreach (($visibleTypes ?? \App\Models\QuestionPackage::TYPES) as $type)
-                                    <option value="{{ $type }}" @selected(old('bulk_type') === $type)>{{ \App\Models\QuestionPackage::typeLabel($type) }}</option>
+                                @foreach ($inviteTypes as $type)
+                                    <option value="{{ $type }}" @selected($selectedBulkType === $type)>{{ \App\Models\QuestionPackage::typeLabel($type) }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('bulk_type')" class="mt-1" />
@@ -112,8 +119,8 @@
                             <label for="invite_type" class="block text-sm font-medium text-gray-700">Tipe Peserta</label>
                             <select id="invite_type" name="type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">Pilih tipe</option>
-                                @foreach (($visibleTypes ?? \App\Models\QuestionPackage::TYPES) as $type)
-                                    <option value="{{ $type }}" @selected(old('type') === $type)>{{ \App\Models\QuestionPackage::typeLabel($type) }}</option>
+                                @foreach ($inviteTypes as $type)
+                                    <option value="{{ $type }}" @selected($selectedSingleType === $type)>{{ \App\Models\QuestionPackage::typeLabel($type) }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('type')" class="mt-1" />
