@@ -92,7 +92,9 @@ class UserController extends Controller
 
         $adminUser = $request->user();
         $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())->get()->keyBy('name');
+        $processed = 0;
         $created = 0;
+        $sent = 0;
         $errors = [];
 
         while (($row = fgetcsv($handle)) !== false) {
@@ -101,11 +103,6 @@ class UserController extends Controller
             }
 
             $email = strtolower(trim($row[$emailIndex]));
-
-            if (User::where('email', $email)->exists()) {
-                $errors[] = "Email {$email} sudah terdaftar.";
-                continue;
-            }
 
             $name = $nameIndex !== false && isset($row[$nameIndex])
                 ? trim($row[$nameIndex])
@@ -137,30 +134,36 @@ class UserController extends Controller
             $accessDays = (int) config('assessment.default_access_days', 7);
             $durationMinutes = (int) config('assessment.default_duration_minutes', 120);
 
-            User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => $password,
-                'role' => 'user',
-                'question_package_id' => $packageId,
-                'assessment_access_expires_at' => now()->addDays($accessDays),
-                'assessment_duration_minutes' => $durationMinutes,
-                'segment_config' => AssessmentSegmentConfig::forPackage($package),
-            ]);
+            try {
+                [$user, $wasCreated] = $this->createOrRefreshInvitedUser(
+                    $email,
+                    $name,
+                    $packageId,
+                    $package,
+                    $password,
+                    $accessDays,
+                    $durationMinutes,
+                );
+            } catch (ValidationException) {
+                $errors[] = "Email {$email} sudah dipakai akun admin, tidak direset.";
+                continue;
+            }
 
             try {
-                $user = User::where('email', $email)->first();
                 $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
+                $sent++;
             } catch (\Throwable $e) {
                 $errors[] = "Gagal kirim email ke {$email}.";
             }
 
-            $created++;
+            ActivityLog::log($wasCreated ? 'user_invite_bulk' : 'user_reinvite_bulk', 'Mengundang user '.$email, User::class, $user->id);
+            $processed++;
+            $created += $wasCreated ? 1 : 0;
         }
 
         fclose($handle);
 
-        $message = "Berhasil mengundang {$created} peserta.";
+        $message = "Berhasil memproses {$processed} peserta ({$created} akun baru) dan mengirim {$sent} email undangan.";
         if ($errors) {
             $message .= ' '.implode(', ', array_slice($errors, 0, 5));
         }
@@ -193,7 +196,7 @@ class UserController extends Controller
 
         $data = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'type' => ['required', 'string', 'in:'.implode(',', $visibleTypes)],
             'question_package_id' => [
                 'nullable',
@@ -220,26 +223,25 @@ class UserController extends Controller
             ? QuestionPackage::find($data['question_package_id'])
             : null;
 
-        $user = User::create([
-            'name' => $name,
-            'email' => $data['email'],
-            'password' => $password,
-            'role' => 'user',
-            'question_package_id' => $data['question_package_id'] ?? null,
-            'assessment_access_expires_at' => now()->addDays($accessDays),
-            'assessment_duration_minutes' => $durationMinutes,
-            'segment_config' => AssessmentSegmentConfig::forPackage($package),
-        ]);
+        [$user, $wasCreated] = $this->createOrRefreshInvitedUser(
+            $data['email'],
+            $name,
+            $data['question_package_id'] ?? null,
+            $package,
+            $password,
+            $accessDays,
+            $durationMinutes,
+        );
 
         $user->load('questionPackage');
 
         $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
 
-        ActivityLog::log('user_invite', 'Mengundang user '.$data['email'], User::class, $user->id);
+        ActivityLog::log($wasCreated ? 'user_invite' : 'user_reinvite', 'Mengundang user '.$data['email'], User::class, $user->id);
 
         return redirect()
             ->route('admin.invite')
-            ->with('status', "Undangan peserta dibuat dan dikirim. Nama: {$name}");
+            ->with('status', ($wasCreated ? 'Undangan peserta dibuat dan dikirim.' : 'Undangan peserta dikirim ulang dengan password baru.')." Nama: {$user->name}");
     }
 
     public function inviteMany(Request $request): RedirectResponse
@@ -284,7 +286,6 @@ class UserController extends Controller
         $created = 0;
         $sent = 0;
         $errors = [];
-        $seen = [];
 
         if ($invalidRows) {
             $errors[] = count($invalidRows).' baris email tidak valid: '.implode(', ', array_slice($invalidRows, 0, 3));
@@ -293,43 +294,36 @@ class UserController extends Controller
         foreach ($parsedEmails as $item) {
             $email = $item['email'];
 
-            if (isset($seen[$email])) {
-                $errors[] = "Email {$email} duplikat di daftar.";
-                continue;
-            }
-            $seen[$email] = true;
-
-            if (User::where('email', $email)->exists()) {
-                $errors[] = "Email {$email} sudah terdaftar.";
-                continue;
-            }
-
             $password = Str::upper(Str::random(4));
             $name = $item['name'] ?: $this->nameFromEmail($email);
 
-            $user = User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => $password,
-                'role' => User::ROLE_USER,
-                'question_package_id' => $packageId,
-                'assessment_access_expires_at' => now()->addDays($accessDays),
-                'assessment_duration_minutes' => $durationMinutes,
-                'segment_config' => AssessmentSegmentConfig::forPackage($package),
-            ]);
+            try {
+                [$user, $wasCreated] = $this->createOrRefreshInvitedUser(
+                    $email,
+                    $name,
+                    $packageId,
+                    $package,
+                    $password,
+                    $accessDays,
+                    $durationMinutes,
+                );
+            } catch (ValidationException) {
+                $errors[] = "Email {$email} sudah dipakai akun admin, tidak direset.";
+                continue;
+            }
 
             try {
                 $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
                 $sent++;
             } catch (\Throwable $e) {
-                $errors[] = "Akun {$email} dibuat, tapi email gagal dikirim.";
+                $errors[] = "Akun {$email} diproses, tapi email gagal dikirim.";
             }
 
-            ActivityLog::log('user_invite_bulk', 'Mengundang user '.$email, User::class, $user->id);
-            $created++;
+            ActivityLog::log($wasCreated ? 'user_invite_bulk' : 'user_reinvite_bulk', 'Mengundang user '.$email, User::class, $user->id);
+            $created += $wasCreated ? 1 : 0;
         }
 
-        $message = "Berhasil membuat {$created} akun peserta dan mengirim {$sent} email undangan.";
+        $message = "Berhasil membuat {$created} akun baru dan mengirim {$sent} email undangan.";
         if ($errors) {
             $message .= ' Catatan: '.implode(', ', array_slice($errors, 0, 5));
         }
@@ -566,6 +560,46 @@ class UserController extends Controller
             ->toString();
 
         return $name !== '' ? $name : 'Peserta '.Str::upper(Str::random(6));
+    }
+
+    /**
+     * @return array{0: User, 1: bool}
+     */
+    private function createOrRefreshInvitedUser(
+        string $email,
+        ?string $name,
+        ?int $packageId,
+        ?QuestionPackage $package,
+        string $password,
+        int $accessDays,
+        int $durationMinutes,
+    ): array {
+        $user = User::where('email', $email)->first();
+
+        if ($user && $user->role !== User::ROLE_USER) {
+            throw ValidationException::withMessages([
+                'email' => 'Email sudah dipakai akun admin.',
+            ]);
+        }
+
+        $attributes = [
+            'name' => filled($name) ? $name : ($user?->name ?? $this->nameFromEmail($email)),
+            'email' => $email,
+            'password' => $password,
+            'role' => User::ROLE_USER,
+            'question_package_id' => $packageId,
+            'assessment_access_expires_at' => now()->addDays($accessDays),
+            'assessment_duration_minutes' => $durationMinutes,
+            'segment_config' => AssessmentSegmentConfig::forPackage($package),
+        ];
+
+        if ($user) {
+            $user->update($attributes);
+
+            return [$user->fresh('questionPackage'), false];
+        }
+
+        return [User::create($attributes)->load('questionPackage'), true];
     }
 
     private function sendAssessmentInvite(User $user, string $password, int $accessDays, int $durationMinutes): void

@@ -10,6 +10,7 @@ use App\Models\QuestionPackage;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -1581,6 +1582,75 @@ class AssessmentFlowTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'beta@example.com',
             'name' => 'Beta User',
+        ]);
+    }
+
+    public function test_admin_can_resend_invite_to_existing_participant_email(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Reinvite',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'name' => 'Nama Lama',
+            'email' => 'repeat@example.com',
+            'role' => User::ROLE_USER,
+            'password' => 'OLDPASS',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite'), [
+                'name' => 'Nama Baru',
+                'email' => 'repeat@example.com',
+                'type' => QuestionPackage::TYPE_MEKANIK,
+                'question_package_id' => $package->id,
+                'access_days' => 5,
+                'duration_hours' => 1,
+            ])
+            ->assertRedirect(route('admin.invite'));
+
+        $user->refresh();
+
+        $this->assertSame('Nama Baru', $user->name);
+        $this->assertSame($package->id, $user->question_package_id);
+        $this->assertSame(60, $user->assessment_duration_minutes);
+        $this->assertFalse(Hash::check('OLDPASS', $user->password));
+        $this->assertSame(1, User::where('email', 'repeat@example.com')->count());
+    }
+
+    public function test_bulk_invite_sends_duplicate_existing_emails_without_duplicate_error(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Reinvite Many',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        User::factory()->create([
+            'email' => 'same@example.com',
+            'role' => User::ROLE_USER,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite-many'), [
+                'bulk_emails' => "same@example.com\nsame@example.com",
+                'bulk_type' => QuestionPackage::TYPE_MEKANIK,
+                'bulk_question_package_id' => $package->id,
+                'bulk_access_days' => 7,
+                'bulk_duration_hours' => 2,
+            ])
+            ->assertRedirect(route('admin.invite'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, User::where('email', 'same@example.com')->count());
+        $this->assertDatabaseHas('users', [
+            'email' => 'same@example.com',
+            'question_package_id' => $package->id,
+            'assessment_duration_minutes' => 120,
         ]);
     }
 
