@@ -79,7 +79,7 @@
                                         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 16px;">
                                             <tr>
                                                 <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af; width: 40%;">Paket Soal</td>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->questionPackage?->name ?? 'Semua paket aktif' }}{{ $user->questionPackage?->level ? ' ('.$user->questionPackage->level.')' : '' }}</td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #111827; font-weight: 600;">{{ $user->questionPackage?->name ?? 'Semua paket aktif' }}{{ $user->questionPackage?->level ? ' ('.$user->questionPackage->level.')' : '' }}{{ $user->questionPackage?->operatorAssessmentCategory ? ' - '.$user->questionPackage->operatorAssessmentCategory->name : '' }}</td>
                                             </tr>
                                             <tr>
                                                 <td style="padding: 10px 0; border-bottom: 1px solid #c7d9f0; font-size: 14px; color: #1e40af;">Masa Aktif Akun</td>

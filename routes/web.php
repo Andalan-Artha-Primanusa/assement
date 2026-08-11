@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AssessmentExportController;
+use App\Http\Controllers\Admin\OperatorAssessmentCategoryController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuestionImportController;
 use App\Http\Controllers\Admin\QuestionPackageController;
@@ -57,6 +58,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('assessments/{assessment}/pdf', [AssessmentExportController::class, 'pdf'])->name('assessments.pdf');
         Route::post('assessments/{assessment}/unblock', [AssessmentController::class, 'unblock'])->name('assessments.unblock');
         Route::post('assessments/{assessment}/set-duration', [AssessmentController::class, 'setDuration'])->name('assessments.set-duration');
+        Route::resource('operator-categories', OperatorAssessmentCategoryController::class)->except('show');
         Route::resource('packages', QuestionPackageController::class)->except('show');
         Route::get('packages/{package}/questions', [QuestionPackageController::class, 'questions'])->name('packages.questions');
         Route::get('packages/{package}/preview', [QuestionPackageController::class, 'preview'])->name('packages.preview');

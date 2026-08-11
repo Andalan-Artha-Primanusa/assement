@@ -46,7 +46,10 @@ class QuestionController extends Controller
             ->get();
 
         $categories = Question::query()->select('category')->distinct()->orderBy('category')->pluck('category');
-        $packages = QuestionPackage::whereIn('type', $visibleTypes)->orderBy('name')->get();
+        $packages = QuestionPackage::whereIn('type', $visibleTypes)
+            ->with('operatorAssessmentCategory')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.questions.index', compact('questions', 'categories', 'packages'));
     }
@@ -68,7 +71,10 @@ class QuestionController extends Controller
             'is_active' => true,
         ]);
 
-        $packages = QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())->orderBy('name')->get();
+        $packages = QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
+            ->with('operatorAssessmentCategory')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.questions.create', compact('question', 'packages'));
     }
@@ -105,7 +111,10 @@ class QuestionController extends Controller
     {
         $this->authorizeQuestionPackage(request(), $question);
 
-        $packages = QuestionPackage::whereIn('type', request()->user()->visiblePackageTypes())->orderBy('name')->get();
+        $packages = QuestionPackage::whereIn('type', request()->user()->visiblePackageTypes())
+            ->with('operatorAssessmentCategory')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.questions.edit', compact('question', 'packages'));
     }

@@ -139,6 +139,12 @@
                 {{ __('Invite Peserta') }}
             </x-nav-link>
 
+            @if (in_array(\App\Models\QuestionPackage::TYPE_OPERATOR, $visibleTypes, true))
+                <x-nav-link :href="route('admin.operator-categories.index')" :active="request()->routeIs('admin.operator-categories.*')">
+                    {{ __('Kategori Operator') }}
+                </x-nav-link>
+            @endif
+
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __('Log Aktivitas') }}
             </x-nav-link>
@@ -166,6 +172,11 @@
             <x-nav-link :href="route('admin.packages.index')" :active="request()->routeIs('admin.packages.*')">
                 {{ __($menuLabels['packages']) }}
             </x-nav-link>
+            @if ($adminType === \App\Models\QuestionPackage::TYPE_OPERATOR)
+                <x-nav-link :href="route('admin.operator-categories.index')" :active="request()->routeIs('admin.operator-categories.*')">
+                    {{ __('Kategori Operator') }}
+                </x-nav-link>
+            @endif
             @if ($adminType === \App\Models\QuestionPackage::TYPE_SHE)
                 <x-nav-link :href="route('admin.she-review.index')" :active="request()->routeIs('admin.she-review.*')">
                     {{ __('Review SHE') }}

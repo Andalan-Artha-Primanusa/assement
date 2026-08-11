@@ -56,7 +56,7 @@
                             <select id="bulk_invite_question_package_id" name="bulk_question_package_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Semua paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('bulk_question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
+                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('bulk_question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}{{ $package->operatorAssessmentCategory ? ' - '.$package->operatorAssessmentCategory->name : '' }})</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('bulk_question_package_id')" class="mt-1" />
@@ -113,7 +113,7 @@
                             <select id="invite_question_package_id" name="question_package_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Semua paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
+                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}{{ $package->operatorAssessmentCategory ? ' - '.$package->operatorAssessmentCategory->name : '' }})</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('question_package_id')" class="mt-1" />

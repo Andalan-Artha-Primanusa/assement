@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Assessment;
 use App\Models\AssessmentAnswer;
 use App\Models\AssessmentSegment;
+use App\Models\OperatorAssessmentCategory;
 use App\Models\Question;
 use App\Models\QuestionPackage;
 use App\Models\User;
@@ -1381,6 +1382,66 @@ class AssessmentFlowTest extends TestCase
             'id' => $question->id,
             'text' => 'Soal operator berbobot',
             'points' => 6.5,
+        ]);
+    }
+
+    public function test_admin_operator_can_manage_operator_assessment_category(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_operation']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.operator-categories.store'), [
+                'name' => 'New Hire',
+                'description' => 'Assessment untuk operator baru',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.operator-categories.index'));
+
+        $this->assertDatabaseHas('operator_assessment_categories', [
+            'name' => 'New Hire',
+            'is_active' => true,
+        ]);
+
+        $category = OperatorAssessmentCategory::where('name', 'New Hire')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->put(route('admin.operator-categories.update', $category), [
+                'name' => 'New Hire Operator',
+                'description' => 'Assessment operator baru',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.operator-categories.index'));
+
+        $this->assertDatabaseHas('operator_assessment_categories', [
+            'id' => $category->id,
+            'name' => 'New Hire Operator',
+        ]);
+    }
+
+    public function test_operator_package_can_use_custom_operator_category(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_operation']);
+        $category = OperatorAssessmentCategory::create([
+            'name' => 'New Hire',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.packages.store'), [
+                'name' => 'Operator Dump Truck New Hire',
+                'type' => QuestionPackage::TYPE_OPERATOR,
+                'operator_assessment_category_id' => $category->id,
+                'is_active' => '1',
+                'min_score_pertimbangan' => 65,
+                'min_score_lolos' => 70,
+            ])
+            ->assertRedirect(route('admin.packages.index'));
+
+        $this->assertDatabaseHas('question_packages', [
+            'name' => 'Operator Dump Truck New Hire',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'operator_assessment_category_id' => $category->id,
         ]);
     }
 

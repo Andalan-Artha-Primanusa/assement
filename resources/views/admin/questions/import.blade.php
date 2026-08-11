@@ -58,7 +58,7 @@
                             <select id="question_package_id" name="question_package_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Tanpa paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-package-type="{{ $package->type }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
+                                    <option value="{{ $package->id }}" data-package-type="{{ $package->type }}" @selected(($selectedPackageId ?? null) == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}{{ $package->operatorAssessmentCategory ? ' - '.$package->operatorAssessmentCategory->name : '' }})</option>
                                 @endforeach
                             </select>
                         </div>

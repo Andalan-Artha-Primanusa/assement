@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\OperatorAssessmentCategory;
 use App\Models\Question;
 use App\Models\QuestionPackage;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,7 @@ class QuestionPackageController extends Controller
         }
 
         $packages = QuestionPackage::withCount(['questions', 'users'])
-            ->with('creator')
+            ->with('creator', 'operatorAssessmentCategory')
             ->whereIn('type', $visibleTypes)
             ->latest()
             ->paginate(12);
@@ -44,8 +45,9 @@ class QuestionPackageController extends Controller
         };
 
         $package = new QuestionPackage(['is_active' => true, 'type' => $defaultType]);
+        $operatorCategories = OperatorAssessmentCategory::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.packages.create', compact('package'));
+        return view('admin.packages.create', compact('package', 'operatorCategories'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -57,6 +59,7 @@ class QuestionPackageController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', Rule::in($visibleTypes)],
             'level' => ['nullable', 'string', Rule::in(array_keys(QuestionPackage::levelOptions()))],
+            'operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_certificate' => ['nullable', 'boolean'],
@@ -68,7 +71,10 @@ class QuestionPackageController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
         $data['has_segments'] = $data['type'] === QuestionPackage::TYPE_SHE || $request->boolean('has_segments');
-        $data['level'] = $data['level'] ?: null;
+        $data['level'] = $data['level'] ?? null;
+        $data['operator_assessment_category_id'] = $data['type'] === QuestionPackage::TYPE_OPERATOR
+            ? ($data['operator_assessment_category_id'] ?? null)
+            : null;
         $this->ensureLevelMatchesType($data['type'], $data['level']);
         $data['created_by'] = $adminUser->id;
 
@@ -90,10 +96,12 @@ class QuestionPackageController extends Controller
         $package->load([
             'questions' => fn ($query) => $query->latest()->limit(8),
             'users' => fn ($query) => $query->where('role', 'user')->latest()->limit(8),
+            'operatorAssessmentCategory',
         ]);
         $package->loadCount(['questions', 'users']);
+        $operatorCategories = OperatorAssessmentCategory::orderBy('name')->get();
 
-        return view('admin.packages.edit', compact('package'));
+        return view('admin.packages.edit', compact('package', 'operatorCategories'));
     }
 
     public function update(Request $request, QuestionPackage $package): RedirectResponse
@@ -110,6 +118,7 @@ class QuestionPackageController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', Rule::in($visibleTypes)],
             'level' => ['nullable', 'string', Rule::in(array_keys(QuestionPackage::levelOptions()))],
+            'operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_certificate' => ['nullable', 'boolean'],
@@ -121,7 +130,10 @@ class QuestionPackageController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_certificate'] = $request->boolean('is_certificate');
         $data['has_segments'] = $data['type'] === QuestionPackage::TYPE_SHE || $request->boolean('has_segments');
-        $data['level'] = $data['level'] ?: null;
+        $data['level'] = $data['level'] ?? null;
+        $data['operator_assessment_category_id'] = $data['type'] === QuestionPackage::TYPE_OPERATOR
+            ? ($data['operator_assessment_category_id'] ?? null)
+            : null;
         $this->ensureLevelMatchesType($data['type'], $data['level']);
 
         $package->update($data);

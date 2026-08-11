@@ -2,6 +2,7 @@
     $visibleTypes = Auth::user()->visiblePackageTypes();
     $selectedType = old('type', $package->type ?: ($visibleTypes[0] ?? \App\Models\QuestionPackage::TYPE_OPERATOR));
     $selectedLevel = old('level', $package->level);
+    $selectedOperatorCategoryId = old('operator_assessment_category_id', $package->operator_assessment_category_id);
     $levelGroups = collect(\App\Models\QuestionPackage::LEVELS_BY_TYPE)
         ->only($visibleTypes)
         ->filter(fn (array $levels): bool => count($levels) > 0);
@@ -95,6 +96,20 @@
                     <x-input-error :messages="$errors->get('level')" class="mt-2" />
                 </div>
 
+                <div id="operator-category-field">
+                    <x-input-label for="operator_assessment_category_id" value="Kategori Operator" />
+                    <select id="operator_assessment_category_id" name="operator_assessment_category_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Tanpa kategori</option>
+                        @foreach (($operatorCategories ?? collect()) as $category)
+                            <option value="{{ $category->id }}" @selected((string) $selectedOperatorCategoryId === (string) $category->id)>
+                                {{ $category->name }}{{ $category->is_active ? '' : ' (Nonaktif)' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Contoh: New Hire, Experienced, Refreshment. Dipakai khusus paket Operator.</p>
+                    <x-input-error :messages="$errors->get('operator_assessment_category_id')" class="mt-2" />
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <x-input-label for="min_score_pertimbangan" value="Min. Dipertimbangkan" />
@@ -175,6 +190,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const typeInputs = Array.from(form.querySelectorAll('input[name="type"]'));
     const levelSelect = form.querySelector('#level');
+    const operatorCategoryField = form.querySelector('#operator-category-field');
+    const operatorCategorySelect = form.querySelector('#operator_assessment_category_id');
     const segmentCheckbox = form.querySelector('#has_segments');
     const segmentNote = form.querySelector('#she-segment-note');
 
@@ -206,6 +223,15 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             segmentCheckbox.disabled = false;
             segmentNote.classList.add('hidden');
+        }
+
+        if (operatorCategoryField && operatorCategorySelect) {
+            const isOperator = type === 'operator';
+            operatorCategoryField.classList.toggle('hidden', !isOperator);
+            operatorCategorySelect.disabled = !isOperator;
+            if (!isOperator) {
+                operatorCategorySelect.value = '';
+            }
         }
     }
 

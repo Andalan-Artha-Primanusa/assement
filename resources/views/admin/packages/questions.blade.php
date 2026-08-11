@@ -2,6 +2,9 @@
     <x-slot name="header">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Soal: {{ $package->name }}</h2>
+            @if ($package->operatorAssessmentCategory)
+                <p class="text-sm font-semibold text-amber-700">Kategori Operator: {{ $package->operatorAssessmentCategory->name }}</p>
+            @endif
             <div class="flex gap-2">
                 <a href="{{ route('admin.questions.create', ['question_package_id' => $package->id]) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 inline-flex items-center min-h-[44px]">Tambah Soal</a>
                 <a href="{{ route('admin.questions.import', ['question_package_id' => $package->id]) }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 inline-flex items-center min-h-[44px]">Import Excel</a>

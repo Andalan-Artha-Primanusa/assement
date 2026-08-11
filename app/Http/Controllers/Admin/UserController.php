@@ -91,7 +91,10 @@ class UserController extends Controller
         $typeIndex = array_search(strtolower('tipe'), array_map('strtolower', $header ?: []));
 
         $adminUser = $request->user();
-        $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())->get()->keyBy('name');
+        $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())
+            ->with('operatorAssessmentCategory')
+            ->get()
+            ->keyBy('name');
         $processed = 0;
         $created = 0;
         $sent = 0;
@@ -177,6 +180,7 @@ class UserController extends Controller
         $visibleTypes = $adminUser->visiblePackageTypes();
 
         $packages = QuestionPackage::where('is_active', true)
+            ->with('operatorAssessmentCategory')
             ->whereIn('type', $visibleTypes)
             ->orderBy('name')
             ->get();
@@ -220,7 +224,7 @@ class UserController extends Controller
         $durationMinutes = (int) round(((float) $data['duration_hours']) * 60);
 
         $package = isset($data['question_package_id'])
-            ? QuestionPackage::find($data['question_package_id'])
+            ? QuestionPackage::with('operatorAssessmentCategory')->find($data['question_package_id'])
             : null;
 
         [$user, $wasCreated] = $this->createOrRefreshInvitedUser(
@@ -233,7 +237,7 @@ class UserController extends Controller
             $durationMinutes,
         );
 
-        $user->load('questionPackage');
+        $user->load('questionPackage.operatorAssessmentCategory');
 
         $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
 
@@ -282,7 +286,7 @@ class UserController extends Controller
         $accessDays = (int) $data['bulk_access_days'];
         $durationMinutes = (int) round(((float) $data['bulk_duration_hours']) * 60);
         $packageId = $data['bulk_question_package_id'] ?? null;
-        $package = $packageId ? QuestionPackage::find($packageId) : null;
+        $package = $packageId ? QuestionPackage::with('operatorAssessmentCategory')->find($packageId) : null;
         $created = 0;
         $sent = 0;
         $errors = [];
@@ -596,10 +600,10 @@ class UserController extends Controller
         if ($user) {
             $user->update($attributes);
 
-            return [$user->fresh('questionPackage'), false];
+            return [$user->fresh('questionPackage.operatorAssessmentCategory'), false];
         }
 
-        return [User::create($attributes)->load('questionPackage'), true];
+        return [User::create($attributes)->load('questionPackage.operatorAssessmentCategory'), true];
     }
 
     private function sendAssessmentInvite(User $user, string $password, int $accessDays, int $durationMinutes): void

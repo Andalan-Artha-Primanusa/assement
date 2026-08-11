@@ -90,6 +90,7 @@ class QuestionPackage extends Model
         'name',
         'type',
         'level',
+        'operator_assessment_category_id',
         'description',
         'is_active',
         'is_certificate',
@@ -105,6 +106,7 @@ class QuestionPackage extends Model
             'is_active' => 'boolean',
             'is_certificate' => 'boolean',
             'has_segments' => 'boolean',
+            'operator_assessment_category_id' => 'integer',
             'min_score_pertimbangan' => 'decimal:2',
             'min_score_lolos' => 'decimal:2',
         ];
@@ -171,6 +173,11 @@ class QuestionPackage extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function operatorAssessmentCategory(): BelongsTo
+    {
+        return $this->belongsTo(OperatorAssessmentCategory::class);
     }
 
     public function questions(): HasMany
