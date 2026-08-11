@@ -1336,6 +1336,53 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_operator_can_update_question_points(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_operation']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Operator Nilai',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Operator',
+            'difficulty' => 'basic',
+            'text' => 'Soal operator lama',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'points' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.questions.update', $question), [
+                'question_package_id' => $package->id,
+                'type' => Question::TYPE_MULTIPLE_CHOICE,
+                'category' => 'Operator',
+                'difficulty' => 'intermediate',
+                'text' => 'Soal operator berbobot',
+                'option_a' => 'Benar',
+                'option_b' => 'Salah',
+                'option_c' => 'Salah',
+                'option_d' => 'Salah',
+                'correct_option' => 'a',
+                'points' => 6.5,
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.packages.preview', $package->id));
+
+        $this->assertDatabaseHas('questions', [
+            'id' => $question->id,
+            'text' => 'Soal operator berbobot',
+            'points' => 6.5,
+        ]);
+    }
+
     public function test_hr_assessment_uses_question_points_for_final_score(): void
     {
         $package = QuestionPackage::create([
@@ -1374,6 +1421,75 @@ class AssessmentFlowTest extends TestCase
             'category' => 'HR',
             'difficulty' => 'advanced',
             'text' => 'Soal bobot besar',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'points' => 8,
+            'is_active' => true,
+        ]);
+        $lowAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $lowPointQuestion->id,
+            'position' => 1,
+        ]);
+        $highAnswer = AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $highPointQuestion->id,
+            'position' => 2,
+        ]);
+
+        app(AssessmentSecurity::class)->finishAssessment($assessment, [
+            $lowAnswer->id => 'a',
+            $highAnswer->id => 'b',
+        ]);
+
+        $assessment->refresh();
+
+        $this->assertSame(Assessment::STATUS_GRADED, $assessment->status);
+        $this->assertSame(1, $assessment->correct_answers);
+        $this->assertEquals(20.0, (float) $assessment->score);
+    }
+
+    public function test_operator_assessment_uses_question_points_for_final_score(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket Operator Weighted',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'total_questions' => 2,
+            'started_at' => now(),
+        ]);
+
+        $lowPointQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Operator',
+            'difficulty' => 'basic',
+            'text' => 'Soal operator bobot kecil',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'points' => 2,
+            'is_active' => true,
+        ]);
+        $highPointQuestion = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Operator',
+            'difficulty' => 'advanced',
+            'text' => 'Soal operator bobot besar',
             'option_a' => 'Benar',
             'option_b' => 'Salah',
             'option_c' => 'Salah',

@@ -43,9 +43,9 @@
             <x-input-error :messages="$errors->get('difficulty')" class="mt-2" />
         </div>
         <div id="points-field" class="hidden">
-            <x-input-label for="points" value="Nilai Soal HR" />
+            <x-input-label for="points" value="Nilai Soal" />
             <input id="points" type="number" name="points" value="{{ old('points', $question->points ?? 1) }}" min="0.01" max="1000" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-            <p class="mt-1 text-xs text-gray-500">Dipakai sebagai bobot nilai khusus paket HR.</p>
+            <p class="mt-1 text-xs text-gray-500">Dipakai sebagai bobot nilai khusus paket Operator dan HR.</p>
             <x-input-error :messages="$errors->get('points')" class="mt-2" />
         </div>
     </div>
@@ -165,7 +165,7 @@
         function syncAllowedTypes() {
             const packageType = selectedPackageType();
             const isShePackage = packageType === 'she';
-            const isHrPackage = packageType === 'hr';
+            const usesQuestionPoints = ['operator', 'hr'].includes(packageType);
 
             typeSelect.querySelectorAll('option[data-manual-review="true"]').forEach((option) => {
                 option.disabled = ! isShePackage;
@@ -186,9 +186,9 @@
 
             manualTypeNote.classList.toggle('text-amber-600', ! isShePackage);
             manualTypeNote.classList.toggle('text-gray-500', isShePackage);
-            pointsField.classList.toggle('hidden', ! isHrPackage);
+            pointsField.classList.toggle('hidden', ! usesQuestionPoints);
 
-            if (! isHrPackage) {
+            if (! usesQuestionPoints) {
                 pointsInput.value = '1';
             }
 

@@ -46,7 +46,7 @@
                                 <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ $typeLabels[$question->type] ?? $question->type }}</span>
                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $question->category }}</span>
                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ ucfirst($question->difficulty) }}</span>
-                                @if ($package->type === \App\Models\QuestionPackage::TYPE_HR)
+                                @if (\App\Models\QuestionPackage::usesQuestionPoints($package->type))
                                     <span class="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">Nilai {{ number_format($question->pointValue(), 2) }}</span>
                                 @endif
                             </div>

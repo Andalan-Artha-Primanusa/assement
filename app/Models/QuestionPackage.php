@@ -132,6 +132,11 @@ class QuestionPackage extends Model
         };
     }
 
+    public static function usesQuestionPoints(?string $type): bool
+    {
+        return in_array($type, [self::TYPE_OPERATOR, self::TYPE_HR], true);
+    }
+
     /**
      * @return array<string, string>
      */

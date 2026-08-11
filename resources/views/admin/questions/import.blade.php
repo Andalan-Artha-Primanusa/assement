@@ -20,9 +20,9 @@
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Template Umum/SHE
                         </a>
-                        <a href="{{ route('admin.questions.import.template', ['type' => 'hr']) }}" class="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">
+                        <a href="{{ route('admin.questions.import.template', ['type' => 'operator']) }}" class="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            Template HR
+                            Template Point
                         </a>
                     </div>
                 </div>
@@ -37,7 +37,7 @@
                         <li><strong>essay</strong> - khusus paket SHE, kolom pilihan & correct_option dikosongkan</li>
                         <li><strong>upload</strong> - khusus paket SHE, peserta upload file</li>
                     </ul>
-                    <p class="mt-1">Mekanik, Operator, dan HR memakai multiple_choice atau true_false. Kolom <strong>points</strong> dipakai khusus HR sebagai nilai/bobot per soal.</p>
+                    <p class="mt-1">Mekanik, Operator, dan HR memakai multiple_choice atau true_false. Kolom <strong>points</strong> dipakai khusus Operator dan HR sebagai nilai/bobot per soal.</p>
                 </div>
 
                 <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5" data-confirm
@@ -149,7 +149,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Untuk HR, isi points dengan nilai/bobot soal; contoh essay/upload hanya dipakai saat paket yang dipilih adalah SHE.</p>
+                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Untuk Operator dan HR, isi points dengan nilai/bobot soal; contoh essay/upload hanya dipakai saat paket yang dipilih adalah SHE.</p>
             </div>
         </div>
     </div>

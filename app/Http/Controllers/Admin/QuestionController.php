@@ -186,7 +186,7 @@ class QuestionController extends Controller
 
         $package = $this->packageForData($request, $data);
         $this->ensureTypeAllowedForPackage($request, $data);
-        $data['points'] = $package?->type === QuestionPackage::TYPE_HR
+        $data['points'] = QuestionPackage::usesQuestionPoints($package?->type)
             ? (float) ($data['points'] ?? 1)
             : 1;
 

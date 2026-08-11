@@ -54,7 +54,7 @@ class AssessmentSecurity
 
         $needsManualReview = $assessment->questionPackage?->type === QuestionPackage::TYPE_SHE
             && $hasEssayOrUpload;
-        $usesWeightedScore = $assessment->questionPackage?->type === QuestionPackage::TYPE_HR;
+        $usesWeightedScore = QuestionPackage::usesQuestionPoints($assessment->questionPackage?->type);
 
         $correctAnswers = 0;
         $multipleChoiceCount = 0;

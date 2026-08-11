@@ -44,7 +44,7 @@
                                 <th class="px-6 py-3">Soal</th>
                                 <th class="px-6 py-3">Kategori</th>
                                 <th class="px-6 py-3">Level</th>
-                                @if ($package->type === \App\Models\QuestionPackage::TYPE_HR)
+                                @if (\App\Models\QuestionPackage::usesQuestionPoints($package->type))
                                     <th class="px-6 py-3 text-center">Nilai</th>
                                 @endif
                                 <th class="px-6 py-3 text-center">Kunci</th>
@@ -65,7 +65,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $question->category }}</td>
                                     <td class="px-6 py-4 text-gray-700">{{ ucfirst($question->difficulty) }}</td>
-                                    @if ($package->type === \App\Models\QuestionPackage::TYPE_HR)
+                                    @if (\App\Models\QuestionPackage::usesQuestionPoints($package->type))
                                         <td class="px-6 py-4 text-center font-semibold text-gray-900">{{ number_format($question->pointValue(), 2) }}</td>
                                     @endif
                                     <td class="px-6 py-4 text-center font-semibold uppercase text-gray-900">{{ $question->correct_option }}</td>
@@ -91,7 +91,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $package->type === \App\Models\QuestionPackage::TYPE_HR ? 7 : 6 }}" class="px-6 py-10 text-center text-gray-500">Belum ada soal di paket ini.</td>
+                                    <td colspan="{{ \App\Models\QuestionPackage::usesQuestionPoints($package->type) ? 7 : 6 }}" class="px-6 py-10 text-center text-gray-500">Belum ada soal di paket ini.</td>
                                 </tr>
                             @endforelse
                         </tbody>

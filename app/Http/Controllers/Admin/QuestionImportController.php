@@ -28,8 +28,8 @@ class QuestionImportController extends Controller
 
     public function template(Request $request)
     {
-        $isHrTemplate = $request->string('type')->toString() === QuestionPackage::TYPE_HR;
-        $filename = $isHrTemplate ? 'template-soal-hr.xlsx' : 'template-soal.xlsx';
+        $usesPointTemplate = QuestionPackage::usesQuestionPoints($request->string('type')->toString());
+        $filename = $usesPointTemplate ? 'template-soal-point.xlsx' : 'template-soal.xlsx';
         $tempPath = storage_path('app/temp_'.$filename);
 
         $options = new XLSXOptions();
@@ -43,7 +43,7 @@ class QuestionImportController extends Controller
             'correct_option', 'category', 'difficulty', 'points',
         ]));
 
-        $examples = $isHrTemplate ? [
+        $examples = $usesPointTemplate ? [
             Row::fromValues([
                 'multiple_choice',
                 'Dokumen apa yang digunakan untuk mencatat pengajuan cuti karyawan?',
@@ -234,8 +234,8 @@ class QuestionImportController extends Controller
                     $optionD = null;
                 }
 
-                if ($package?->type === QuestionPackage::TYPE_HR && $points === null) {
-                    $errors[] = "Baris ke-{$rowNumber}: points wajib angka lebih dari 0 untuk paket HR.";
+                if (QuestionPackage::usesQuestionPoints($package?->type) && $points === null) {
+                    $errors[] = "Baris ke-{$rowNumber}: points wajib angka lebih dari 0 untuk paket Operator/HR.";
                     continue;
                 }
 
@@ -251,7 +251,7 @@ class QuestionImportController extends Controller
                         'option_c' => $type === 'multiple_choice' ? $optionC : null,
                         'option_d' => $type === 'multiple_choice' ? $optionD : null,
                         'correct_option' => in_array($type, ['multiple_choice', 'true_false'], true) ? $correct : null,
-                        'points' => $package?->type === QuestionPackage::TYPE_HR ? $points : 1,
+                        'points' => QuestionPackage::usesQuestionPoints($package?->type) ? $points : 1,
                         'is_active' => true,
                     ]);
                     $imported++;
