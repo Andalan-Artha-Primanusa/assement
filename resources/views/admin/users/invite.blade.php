@@ -40,7 +40,7 @@
                         <x-input-error :messages="$errors->get('bulk_emails')" class="mt-1" />
                     </div>
 
-                    <div class="grid gap-4 lg:grid-cols-4">
+                    <div class="grid gap-4 lg:grid-cols-5">
                         <div>
                             <label for="bulk_invite_type" class="block text-sm font-medium text-gray-700">Tipe Peserta</label>
                             <select id="bulk_invite_type" name="bulk_type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
@@ -56,10 +56,20 @@
                             <select id="bulk_invite_question_package_id" name="bulk_question_package_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Semua paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('bulk_question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}{{ $package->operatorAssessmentCategory ? ' - '.$package->operatorAssessmentCategory->name : '' }})</option>
+                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('bulk_question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('bulk_question_package_id')" class="mt-1" />
+                        </div>
+                        <div id="bulk_operator_category_wrap">
+                            <label for="bulk_operator_assessment_category_id" class="block text-sm font-medium text-gray-700">Kategori Operator</label>
+                            <select id="bulk_operator_assessment_category_id" name="bulk_operator_assessment_category_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Tanpa kategori</option>
+                                @foreach ($operatorCategories as $category)
+                                    <option value="{{ $category->id }}" @selected(old('bulk_operator_assessment_category_id') == $category->id)>{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('bulk_operator_assessment_category_id')" class="mt-1" />
                         </div>
                         <div>
                             <label for="bulk_access_days" class="block text-sm font-medium text-gray-700">Hari akses</label>
@@ -113,10 +123,20 @@
                             <select id="invite_question_package_id" name="question_package_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Semua paket</option>
                                 @foreach ($packages as $package)
-                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}{{ $package->operatorAssessmentCategory ? ' - '.$package->operatorAssessmentCategory->name : '' }})</option>
+                                    <option value="{{ $package->id }}" data-type="{{ $package->type }}" @selected(old('question_package_id') == $package->id)>{{ $package->name }} ({{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }})</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('question_package_id')" class="mt-1" />
+                        </div>
+                        <div id="operator_category_wrap">
+                            <label for="operator_assessment_category_id" class="block text-sm font-medium text-gray-700">Kategori Operator</label>
+                            <select id="operator_assessment_category_id" name="operator_assessment_category_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Tanpa kategori</option>
+                                @foreach ($operatorCategories as $category)
+                                    <option value="{{ $category->id }}" @selected(old('operator_assessment_category_id') == $category->id)>{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('operator_assessment_category_id')" class="mt-1" />
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -148,7 +168,7 @@
                         <div>
                             <label for="csv_file" class="block text-sm font-medium text-gray-700">Upload file CSV</label>
                             <input id="csv_file" type="file" name="csv_file" accept=".csv,.txt" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100" required>
-                            <p class="mt-1 text-xs text-gray-500">Kolom: email, nama, paket, tipe (operator/mekanik/she/hr). Tipe & paket opsional.</p>
+                            <p class="mt-1 text-xs text-gray-500">Kolom: email, nama, paket, tipe (operator/mekanik/she/hr), kategori. Tipe, paket, dan kategori opsional.</p>
                             <x-input-error :messages="$errors->get('csv_file')" class="mt-1" />
                         </div>
                         <button class="w-full rounded-md bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-black min-h-[44px]">
@@ -164,6 +184,8 @@
         document.addEventListener('DOMContentLoaded', function () {
             filterPackageSelect('bulk_invite_type', 'bulk_invite_question_package_id');
             filterPackageSelect('invite_type', 'invite_question_package_id');
+            syncOperatorCategory('bulk_invite_type', 'bulk_operator_category_wrap', 'bulk_operator_assessment_category_id');
+            syncOperatorCategory('invite_type', 'operator_category_wrap', 'operator_assessment_category_id');
 
             function filterPackageSelect(typeId, packageId) {
                 const typeSelect = document.getElementById(typeId);
@@ -194,6 +216,26 @@
 
                     if (resetSelected || !currentStillVisible) {
                         packageSelect.value = '';
+                    }
+                }
+            }
+
+            function syncOperatorCategory(typeId, wrapId, selectId) {
+                const typeSelect = document.getElementById(typeId);
+                const wrap = document.getElementById(wrapId);
+                const select = document.getElementById(selectId);
+
+                if (!typeSelect || !wrap || !select) return;
+
+                typeSelect.addEventListener('change', sync);
+                sync();
+
+                function sync() {
+                    const isOperator = typeSelect.value === 'operator';
+                    wrap.classList.toggle('hidden', !isOperator);
+                    select.disabled = !isOperator;
+                    if (!isOperator) {
+                        select.value = '';
                     }
                 }
             }

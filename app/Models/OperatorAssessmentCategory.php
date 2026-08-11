@@ -27,8 +27,8 @@ class OperatorAssessmentCategory extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function packages(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(QuestionPackage::class);
+        return $this->hasMany(User::class);
     }
 }

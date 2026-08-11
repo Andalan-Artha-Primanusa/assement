@@ -35,6 +35,7 @@ class User extends Authenticatable
         'assessment_duration_minutes',
         'max_attempts',
         'question_package_id',
+        'operator_assessment_category_id',
         'segment_config',
     ];
 
@@ -62,6 +63,7 @@ class User extends Authenticatable
             'assessment_duration_minutes' => 'integer',
             'max_attempts' => 'integer',
             'question_package_id' => 'integer',
+            'operator_assessment_category_id' => 'integer',
             'segment_config' => 'array',
         ];
     }
@@ -69,6 +71,11 @@ class User extends Authenticatable
     public function questionPackage(): BelongsTo
     {
         return $this->belongsTo(QuestionPackage::class);
+    }
+
+    public function operatorAssessmentCategory(): BelongsTo
+    {
+        return $this->belongsTo(OperatorAssessmentCategory::class);
     }
 
     public function assessments(): HasMany

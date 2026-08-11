@@ -17,21 +17,10 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::table('question_packages', function (Blueprint $table) {
-            $table->foreignId('operator_assessment_category_id')
-                ->nullable()
-                ->after('level')
-                ->constrained('operator_assessment_categories')
-                ->nullOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('question_packages', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('operator_assessment_category_id');
-        });
-
         Schema::dropIfExists('operator_assessment_categories');
     }
 };

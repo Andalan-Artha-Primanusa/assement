@@ -4,9 +4,6 @@
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Preview Soal: {{ $package->name }}</h2>
                 <p class="mt-1 text-sm text-gray-500">{{ \App\Models\QuestionPackage::typeLabel($package->type) }}{{ $package->level ? ' - '.$package->level : '' }}</p>
-                @if ($package->operatorAssessmentCategory)
-                    <p class="mt-1 text-sm font-semibold text-amber-700">Kategori Operator: {{ $package->operatorAssessmentCategory->name }}</p>
-                @endif
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('admin.questions.create', ['question_package_id' => $package->id]) }}" class="inline-flex min-h-[44px] items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah Soal</a>
@@ -47,9 +44,6 @@
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-sm font-bold text-indigo-700">{{ $loop->iteration }}</span>
                                 <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ $typeLabels[$question->type] ?? $question->type }}</span>
-                                @if ($package->operatorAssessmentCategory)
-                                    <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">{{ $package->operatorAssessmentCategory->name }}</span>
-                                @endif
                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $question->category }}</span>
                                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ ucfirst($question->difficulty) }}</span>
                                 @if (\App\Models\QuestionPackage::usesQuestionPoints($package->type))

@@ -1418,29 +1418,36 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
-    public function test_operator_package_can_use_custom_operator_category(): void
+    public function test_operator_invite_can_track_custom_operator_category(): void
     {
+        Mail::fake();
         $admin = User::factory()->create(['role' => 'admin_operation']);
         $category = OperatorAssessmentCategory::create([
             'name' => 'New Hire',
             'is_active' => true,
             'created_by' => $admin->id,
         ]);
+        $package = QuestionPackage::create([
+            'name' => 'Operator Dump Truck',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
 
         $this->actingAs($admin)
-            ->post(route('admin.packages.store'), [
-                'name' => 'Operator Dump Truck New Hire',
+            ->post(route('admin.users.invite'), [
+                'name' => 'Operator Baru',
+                'email' => 'operator.newhire@example.com',
                 'type' => QuestionPackage::TYPE_OPERATOR,
+                'question_package_id' => $package->id,
                 'operator_assessment_category_id' => $category->id,
-                'is_active' => '1',
-                'min_score_pertimbangan' => 65,
-                'min_score_lolos' => 70,
+                'access_days' => 7,
+                'duration_hours' => 2,
             ])
-            ->assertRedirect(route('admin.packages.index'));
+            ->assertRedirect(route('admin.invite'));
 
-        $this->assertDatabaseHas('question_packages', [
-            'name' => 'Operator Dump Truck New Hire',
-            'type' => QuestionPackage::TYPE_OPERATOR,
+        $this->assertDatabaseHas('users', [
+            'email' => 'operator.newhire@example.com',
+            'question_package_id' => $package->id,
             'operator_assessment_category_id' => $category->id,
         ]);
     }

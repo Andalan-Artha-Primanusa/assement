@@ -56,7 +56,7 @@
                                 @php
                                     $isHrPackage = $assignedPackage?->type === \App\Models\QuestionPackage::TYPE_HR;
                                 @endphp
-                                Sistem akan memilih semua soal aktif{{ $isHrPackage ? ' HR' : '' }}{{ $assignedPackage?->operatorAssessmentCategory ? ' kategori '.$assignedPackage->operatorAssessmentCategory->name : '' }} secara acak saat assessment dimulai.
+                                Sistem akan memilih semua soal aktif{{ $isHrPackage ? ' HR' : '' }}{{ Auth::user()->operatorAssessmentCategory ? ' kategori '.Auth::user()->operatorAssessmentCategory->name : '' }} secara acak saat assessment dimulai.
                             </p>
                             <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                                 <span class="rounded-full bg-sky-50 px-3 py-1 text-sky-700">

@@ -19,7 +19,6 @@ class QuestionImportController extends Controller
     public function create(Request $request): View
     {
         $packages = QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
-            ->with('operatorAssessmentCategory')
             ->orderBy('name')
             ->get();
         $selectedPackageId = $request->integer('question_package_id');

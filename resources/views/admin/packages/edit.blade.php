@@ -4,9 +4,6 @@
             <div>
                 <h2 class="text-2xl font-semibold text-gray-950">{{ __('Edit Paket Soal') }}</h2>
                 <p class="mt-1 text-sm text-gray-500">{{ $package->name }} - {{ \App\Models\QuestionPackage::typeLabel($package->type) }}</p>
-                @if ($package->operatorAssessmentCategory)
-                    <p class="mt-1 text-sm font-semibold text-amber-700">Kategori Operator: {{ $package->operatorAssessmentCategory->name }}</p>
-                @endif
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('admin.packages.preview', $package) }}" class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">Preview Paket</a>
@@ -40,9 +37,6 @@
                             <div class="rounded-md border border-gray-200 bg-gray-50/60 p-4">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">{{ $question->category }}</span>
-                                    @if ($package->operatorAssessmentCategory)
-                                        <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">{{ $package->operatorAssessmentCategory->name }}</span>
-                                    @endif
                                     @if ($question->isAutoScored())
                                         <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Kunci {{ strtoupper($question->correct_option) }}</span>
                                         @if (\App\Models\QuestionPackage::usesQuestionPoints($package->type))

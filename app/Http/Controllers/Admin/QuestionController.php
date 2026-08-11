@@ -47,7 +47,6 @@ class QuestionController extends Controller
 
         $categories = Question::query()->select('category')->distinct()->orderBy('category')->pluck('category');
         $packages = QuestionPackage::whereIn('type', $visibleTypes)
-            ->with('operatorAssessmentCategory')
             ->orderBy('name')
             ->get();
 
@@ -72,7 +71,6 @@ class QuestionController extends Controller
         ]);
 
         $packages = QuestionPackage::whereIn('type', $request->user()->visiblePackageTypes())
-            ->with('operatorAssessmentCategory')
             ->orderBy('name')
             ->get();
 
@@ -112,7 +110,6 @@ class QuestionController extends Controller
         $this->authorizeQuestionPackage(request(), $question);
 
         $packages = QuestionPackage::whereIn('type', request()->user()->visiblePackageTypes())
-            ->with('operatorAssessmentCategory')
             ->orderBy('name')
             ->get();
 

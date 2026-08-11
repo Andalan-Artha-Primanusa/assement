@@ -18,7 +18,7 @@ class OperatorAssessmentCategoryController extends Controller
         $this->authorizeOperator($request);
 
         $categories = OperatorAssessmentCategory::query()
-            ->withCount('packages')
+            ->withCount('users')
             ->latest()
             ->paginate(12);
 
@@ -70,8 +70,8 @@ class OperatorAssessmentCategoryController extends Controller
     {
         $this->authorizeOperator($request);
 
-        if ($operatorCategory->packages()->exists()) {
-            return back()->with('status', 'Kategori masih dipakai paket Operator. Pindahkan paket terlebih dahulu.');
+        if ($operatorCategory->users()->exists()) {
+            return back()->with('status', 'Kategori masih dipakai peserta Operator. Pindahkan peserta terlebih dahulu.');
         }
 
         ActivityLog::log('operator_category_delete', 'Menghapus kategori operator '.$operatorCategory->name, OperatorAssessmentCategory::class, $operatorCategory->id);

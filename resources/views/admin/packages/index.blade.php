@@ -49,9 +49,6 @@
                                 <tr class="hover:bg-gray-50/80">
                                     <td class="px-6 py-4">
                                         <p class="font-semibold text-gray-950">{{ $package->name }}</p>
-                                        @if ($package->operatorAssessmentCategory)
-                                            <p class="mt-1 text-xs font-semibold text-amber-700">Kategori Operator: {{ $package->operatorAssessmentCategory->name }}</p>
-                                        @endif
                                         @if ($package->description)
                                             <p class="mt-1 max-w-md truncate text-xs text-gray-500">{{ $package->description }}</p>
                                         @endif
@@ -64,8 +61,6 @@
                                     <td class="px-6 py-4 text-center">
                                         @if ($package->level)
                                             <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ $package->level }}</span>
-                                        @elseif ($package->operatorAssessmentCategory)
-                                            <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">{{ $package->operatorAssessmentCategory->name }}</span>
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif

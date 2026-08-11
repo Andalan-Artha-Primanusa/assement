@@ -17,7 +17,7 @@
                         <thead class="bg-gray-50">
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-6 py-3">Kategori</th>
-                                <th class="px-6 py-3 text-center">Paket</th>
+                                <th class="px-6 py-3 text-center">Peserta</th>
                                 <th class="px-6 py-3 text-center">Status</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
                             </tr>
@@ -31,7 +31,7 @@
                                             <p class="mt-1 max-w-xl truncate text-xs text-gray-500">{{ $category->description }}</p>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 text-center font-semibold text-gray-800">{{ $category->packages_count }}</td>
+                                    <td class="px-6 py-4 text-center font-semibold text-gray-800">{{ $category->users_count }}</td>
                                     <td class="px-6 py-4 text-center">
                                         <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $category->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
                                             {{ $category->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -42,7 +42,7 @@
                                             <a href="{{ route('admin.operator-categories.edit', $category) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
                                             <form method="POST" action="{{ route('admin.operator-categories.destroy', $category) }}" class="inline" data-confirm
                                                   data-confirm-title="Hapus kategori {{ $category->name }}?"
-                                                  data-confirm-message="Kategori hanya bisa dihapus jika belum dipakai paket Operator."
+                                                  data-confirm-message="Kategori hanya bisa dihapus jika belum dipakai peserta Operator."
                                                   data-confirm-text="Ya, hapus kategori"
                                                   data-confirm-variant="danger">
                                                 @csrf
