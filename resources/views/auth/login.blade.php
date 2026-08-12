@@ -3,23 +3,23 @@
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <!-- Logo -->
-    <div class="flex justify-center mb-6">
-        <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="h-auto w-full max-w-xs">
+    <div class="flex justify-center mb-4">
+        <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="h-auto w-full max-w-[280px]">
     </div>
 
-    <div class="mb-6">
+    <div class="mb-5">
         <p class="text-sm font-semibold text-indigo-600 uppercase">Login peserta dan admin</p>
-        <h1 class="mt-2 text-3xl font-semibold text-gray-900">Masuk ke assessment</h1>
-        <p class="mt-2 text-sm text-gray-600">Gunakan akun yang sudah dibuat oleh admin.</p>
+        <h1 class="mt-1 text-3xl font-semibold text-gray-900">Masuk ke assessment</h1>
+        <p class="mt-1 text-sm text-gray-600">Gunakan akun yang sudah dibuat oleh admin.</p>
     </div>
 
-    <form method="POST" action="{{ route('login') }}" class="space-y-4">
+    <form method="POST" action="{{ route('login') }}" class="space-y-3">
         @csrf
 
         <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block w-full px-4 py-3 mt-2" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+            <x-text-input id="email" class="block w-full px-4 py-2.5 mt-1.5" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
@@ -27,7 +27,7 @@
         <div>
             <x-input-label for="password" :value="__('Password')" />
 
-            <x-text-input id="password" class="block w-full px-4 py-3 mt-2"
+            <x-text-input id="password" class="block w-full px-4 py-2.5 mt-1.5"
                             type="password"
                             name="password"
                             required autocomplete="current-password" />
@@ -44,15 +44,15 @@
         </div>
 
         <div>
-            <x-primary-button class="justify-center w-full py-3">
+            <x-primary-button class="justify-center w-full py-2.5">
                 {{ __('Masuk') }}
             </x-primary-button>
         </div>
     </form>
 
-    <div class="pt-4 mt-5 border-t border-gray-200 text-center">
+    <div class="pt-3 mt-4 border-t border-gray-200 text-center">
         <p class="text-xs font-semibold uppercase text-gray-400">Assessment powered by</p>
-        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="mx-auto mt-2 h-auto w-28">
+        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="mx-auto mt-1.5 h-auto w-24">
     </div>
 
 </x-guest-layout>

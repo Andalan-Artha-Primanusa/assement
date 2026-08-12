@@ -19,7 +19,7 @@
     </head>
     <body class="h-screen overflow-hidden font-sans antialiased text-gray-900">
         <div class="h-screen overflow-hidden bg-white lg:grid lg:grid-cols-[minmax(420px,46%)_1fr]">
-            <main class="flex h-screen items-center overflow-hidden px-6 py-6 sm:px-10 lg:px-16 xl:px-20">
+            <main class="flex h-screen items-center overflow-hidden px-6 py-4 sm:px-10 lg:px-16 xl:px-20">
                 <div class="w-full max-w-md">
 
 
