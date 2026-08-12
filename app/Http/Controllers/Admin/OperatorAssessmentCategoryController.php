@@ -43,9 +43,9 @@ class OperatorAssessmentCategoryController extends Controller
 
         $category = OperatorAssessmentCategory::create($data);
 
-        ActivityLog::log('operator_category_create', 'Membuat kategori operator '.$category->name, OperatorAssessmentCategory::class, $category->id);
+        ActivityLog::log('operator_category_create', 'Membuat kategori invite '.$category->name, OperatorAssessmentCategory::class, $category->id);
 
-        return redirect()->route('admin.operator-categories.index')->with('status', 'Kategori Operator berhasil ditambahkan.');
+        return redirect()->route('admin.operator-categories.index')->with('status', 'Kategori Invite berhasil ditambahkan.');
     }
 
     public function edit(Request $request, OperatorAssessmentCategory $operatorCategory): View
@@ -61,9 +61,9 @@ class OperatorAssessmentCategoryController extends Controller
 
         $operatorCategory->update($this->validated($request, $operatorCategory));
 
-        ActivityLog::log('operator_category_update', 'Mengupdate kategori operator '.$operatorCategory->name, OperatorAssessmentCategory::class, $operatorCategory->id);
+        ActivityLog::log('operator_category_update', 'Mengupdate kategori invite '.$operatorCategory->name, OperatorAssessmentCategory::class, $operatorCategory->id);
 
-        return redirect()->route('admin.operator-categories.index')->with('status', 'Kategori Operator berhasil diperbarui.');
+        return redirect()->route('admin.operator-categories.index')->with('status', 'Kategori Invite berhasil diperbarui.');
     }
 
     public function destroy(Request $request, OperatorAssessmentCategory $operatorCategory): RedirectResponse
@@ -71,14 +71,14 @@ class OperatorAssessmentCategoryController extends Controller
         $this->authorizeOperator($request);
 
         if ($operatorCategory->users()->exists()) {
-            return back()->with('status', 'Kategori masih dipakai peserta Operator. Pindahkan peserta terlebih dahulu.');
+            return back()->with('status', 'Kategori masih dipakai peserta. Pindahkan peserta terlebih dahulu.');
         }
 
-        ActivityLog::log('operator_category_delete', 'Menghapus kategori operator '.$operatorCategory->name, OperatorAssessmentCategory::class, $operatorCategory->id);
+        ActivityLog::log('operator_category_delete', 'Menghapus kategori invite '.$operatorCategory->name, OperatorAssessmentCategory::class, $operatorCategory->id);
 
         $operatorCategory->delete();
 
-        return back()->with('status', 'Kategori Operator berhasil dihapus.');
+        return back()->with('status', 'Kategori Invite berhasil dihapus.');
     }
 
     private function validated(Request $request, ?OperatorAssessmentCategory $category = null): array
@@ -101,6 +101,10 @@ class OperatorAssessmentCategoryController extends Controller
 
     private function authorizeOperator(Request $request): void
     {
-        abort_unless($request->user()->canManageType(QuestionPackage::TYPE_OPERATOR), 403);
+        abort_unless(
+            $request->user()->canManageType(QuestionPackage::TYPE_MEKANIK)
+                || $request->user()->canManageType(QuestionPackage::TYPE_OPERATOR),
+            403
+        );
     }
 }

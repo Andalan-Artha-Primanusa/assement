@@ -1418,6 +1418,24 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_mechanic_can_manage_invite_assessment_category(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.operator-categories.store'), [
+                'name' => 'Experienced',
+                'description' => 'Assessment untuk mekanik berpengalaman',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.operator-categories.index'));
+
+        $this->assertDatabaseHas('operator_assessment_categories', [
+            'name' => 'Experienced',
+            'is_active' => true,
+        ]);
+    }
+
     public function test_operator_invite_can_track_custom_operator_category(): void
     {
         Mail::fake();
@@ -1452,6 +1470,40 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_mechanic_invite_can_track_custom_invite_category(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        $category = OperatorAssessmentCategory::create([
+            'name' => 'Refreshment',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Mekanik Unit A',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite'), [
+                'name' => 'Mekanik Refreshment',
+                'email' => 'mechanic.refreshment@example.com',
+                'type' => QuestionPackage::TYPE_MEKANIK,
+                'question_package_id' => $package->id,
+                'operator_assessment_category_id' => $category->id,
+                'access_days' => 7,
+                'duration_hours' => 2,
+            ])
+            ->assertRedirect(route('admin.invite'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'mechanic.refreshment@example.com',
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $category->id,
+        ]);
+    }
+
     public function test_operator_invite_form_shows_operator_category_field(): void
     {
         $admin = User::factory()->create(['role' => 'admin_operation']);
@@ -1464,8 +1516,77 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.invite'))
             ->assertOk()
-            ->assertSee('Kategori Operator')
+            ->assertSee('Kategori Invite')
             ->assertSee('New Hire');
+    }
+
+    public function test_mechanic_invite_form_shows_invite_category_field(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        OperatorAssessmentCategory::create([
+            'name' => 'New Hire',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.invite'))
+            ->assertOk()
+            ->assertSee('Kategori Invite')
+            ->assertSee('New Hire');
+    }
+
+    public function test_blocked_assessment_is_detected_after_reinvite_changes_user_package_type(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        $oldPackage = QuestionPackage::create([
+            'name' => 'Operator Lama',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $newPackage = QuestionPackage::create([
+            'name' => 'Mekanik Baru',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'email' => 'blocked.reinvite@example.com',
+            'question_package_id' => $oldPackage->id,
+        ]);
+
+        Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $oldPackage->id,
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'total_questions' => 1,
+            'started_at' => now(),
+            'blocked_at' => now(),
+            'block_reason' => 'Tab switch',
+            'security_violations' => 1,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite'), [
+                'name' => 'Blocked Reinvite',
+                'email' => 'blocked.reinvite@example.com',
+                'type' => QuestionPackage::TYPE_MEKANIK,
+                'question_package_id' => $newPackage->id,
+                'access_days' => 7,
+                'duration_hours' => 2,
+            ])
+            ->assertRedirect(route('admin.invite'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'blocked.reinvite@example.com',
+            'question_package_id' => $newPackage->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertViewHas('stats', fn (array $stats): bool => $stats['blocked_assessments'] === 1);
     }
 
     public function test_hr_assessment_uses_question_points_for_final_score(): void

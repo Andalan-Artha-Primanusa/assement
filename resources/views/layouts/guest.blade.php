@@ -29,16 +29,9 @@
                 </div>
             </main>
 
-            <aside class="relative hidden min-h-screen overflow-hidden lg:block">
-                <img src="{{ asset('images/login-mechanic.png') }}" alt="Mechanic assessment" class="absolute inset-0 object-cover w-full h-full">
-                <div class="absolute inset-0 bg-gradient-to-br from-gray-950/35 via-gray-950/10 to-gray-950/60"></div>
-                <div class="absolute bottom-0 left-0 right-0 p-12 text-white">
-                    <p class="max-w-xl text-3xl font-semibold leading-tight">Assessment mechanic yang tertib, fokus, dan mudah dipantau admin.</p>
-                    <div class="flex gap-3 mt-6 text-sm font-medium">
-                        <span class="px-3 py-2 rounded-md bg-white/15 backdrop-blur">Random soal</span>
-                        <span class="px-3 py-2 rounded-md bg-white/15 backdrop-blur">CMS admin</span>
-                        <span class="px-3 py-2 rounded-md bg-white/15 backdrop-blur">Secure test</span>
-                    </div>
+            <aside class="relative hidden min-h-screen overflow-hidden bg-gray-50 lg:flex lg:items-center lg:justify-center">
+                <div class="mx-auto w-full max-w-2xl px-12">
+                    <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="h-auto w-full">
                 </div>
             </aside>
         </div>

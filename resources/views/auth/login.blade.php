@@ -4,7 +4,7 @@
 
     <!-- Logo -->
     <div class="flex justify-center mb-8">
-        <img src="{{ asset('images/amologo.png') }}" alt="AMO Assessment" class="w-auto h-40">
+        <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="h-auto w-full max-w-sm">
     </div>
 
     <div class="mb-8">
@@ -50,8 +50,4 @@
         </div>
     </form>
 
-    <div class="pt-6 mt-7 border-t border-gray-200 text-center">
-        <p class="text-xs font-semibold uppercase text-gray-400">Assessment powered by</p>
-        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="mx-auto mt-2 h-auto w-32">
-    </div>
 </x-guest-layout>

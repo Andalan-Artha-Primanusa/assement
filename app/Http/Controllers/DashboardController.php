@@ -36,11 +36,8 @@ class DashboardController extends Controller
                 $query->where(function ($query) use ($visibleTypes): void {
                     $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
                         $q->whereIn('type', $visibleTypes);
-                    })->orWhere(function ($query) use ($visibleTypes): void {
-                        $query->whereDoesntHave('questionPackage')
-                            ->whereHas('user.questionPackage', function ($q) use ($visibleTypes): void {
-                                $q->whereIn('type', $visibleTypes);
-                            });
+                    })->orWhereHas('user.questionPackage', function ($q) use ($visibleTypes): void {
+                        $q->whereIn('type', $visibleTypes);
                     });
                 });
             })
@@ -48,11 +45,8 @@ class DashboardController extends Controller
                 $query->where(function ($query) use ($selectedType): void {
                     $query->whereHas('questionPackage', function ($q) use ($selectedType): void {
                         $q->where('type', $selectedType);
-                    })->orWhere(function ($query) use ($selectedType): void {
-                        $query->whereDoesntHave('questionPackage')
-                            ->whereHas('user.questionPackage', function ($q) use ($selectedType): void {
-                                $q->where('type', $selectedType);
-                            });
+                    })->orWhereHas('user.questionPackage', function ($q) use ($selectedType): void {
+                        $q->where('type', $selectedType);
                     });
                 });
             });

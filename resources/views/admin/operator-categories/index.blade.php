@@ -42,7 +42,7 @@
                                             <a href="{{ route('admin.operator-categories.edit', $category) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
                                             <form method="POST" action="{{ route('admin.operator-categories.destroy', $category) }}" class="inline" data-confirm
                                                   data-confirm-title="Hapus kategori {{ $category->name }}?"
-                                                  data-confirm-message="Kategori hanya bisa dihapus jika belum dipakai peserta Operator."
+                                                  data-confirm-message="Kategori hanya bisa dihapus jika belum dipakai peserta."
                                                   data-confirm-text="Ya, hapus kategori"
                                                   data-confirm-variant="danger">
                                                 @csrf
