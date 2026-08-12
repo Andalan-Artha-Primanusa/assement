@@ -534,8 +534,9 @@ class AssessmentController extends Controller
         }
 
         $assessment->load('user', 'questionPackage', 'segments', 'answers.question');
+        $canViewAnswerDetails = $request->user()->isAdmin();
 
-        return view('assessment.result', compact('assessment'));
+        return view('assessment.result', compact('assessment', 'canViewAnswerDetails'));
     }
 
     public function certificate(Request $request, Assessment $assessment): View

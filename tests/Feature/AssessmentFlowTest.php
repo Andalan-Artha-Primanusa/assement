@@ -530,6 +530,107 @@ class AssessmentFlowTest extends TestCase
             ->assertDontSee('1<span class="text-sm font-medium text-gray-400">/4</span>', false);
     }
 
+    public function test_participant_result_does_not_show_answer_details(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket Hasil Peserta',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Safety',
+            'difficulty' => 'basic',
+            'text' => 'Soal rahasia detail peserta',
+            'option_a' => 'Opsi benar rahasia',
+            'option_b' => 'Opsi salah rahasia',
+            'option_c' => 'Distraktor C',
+            'option_d' => 'Distraktor D',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 1,
+            'correct_answers' => 1,
+            'score' => 100,
+            'started_at' => now(),
+            'submitted_at' => now(),
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $question->id,
+            'position' => 1,
+            'selected_option' => 'a',
+            'is_correct' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('assessment.result', $assessment))
+            ->assertOk()
+            ->assertDontSee('Detail Jawaban')
+            ->assertDontSee('Soal rahasia detail peserta')
+            ->assertDontSee('Opsi benar rahasia');
+    }
+
+    public function test_admin_result_can_still_show_answer_details(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Hasil Admin',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Safety',
+            'difficulty' => 'basic',
+            'text' => 'Soal detail untuk admin',
+            'option_a' => 'Opsi benar admin',
+            'option_b' => 'Opsi salah admin',
+            'option_c' => 'Distraktor C',
+            'option_d' => 'Distraktor D',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 1,
+            'correct_answers' => 1,
+            'score' => 100,
+            'started_at' => now(),
+            'submitted_at' => now(),
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $question->id,
+            'position' => 1,
+            'selected_option' => 'a',
+            'is_correct' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('assessment.result', $assessment))
+            ->assertOk()
+            ->assertSee('Detail Jawaban')
+            ->assertSee('Soal detail untuk admin')
+            ->assertSee('Opsi benar admin');
+    }
+
     public function test_admin_she_review_can_see_uploaded_portfolio_file(): void
     {
         Storage::fake('public');

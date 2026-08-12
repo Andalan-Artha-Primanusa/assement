@@ -8,6 +8,7 @@
 
     @php
         $package = $assessment->questionPackage;
+        $canViewAnswerDetails = $canViewAnswerDetails ?? false;
         $isSheAssessment = $package?->type === \App\Models\QuestionPackage::TYPE_SHE;
         $usesQuestionPoints = \App\Models\QuestionPackage::usesQuestionPoints($package?->type);
         $hasFinalScore = $assessment->isSubmitted() && ! $assessment->isPendingReview();
@@ -546,7 +547,7 @@
             @endif
 
             {{-- Detail Jawaban --}}
-            @if ($assessment->answers->count() > 0)
+            @if ($canViewAnswerDetails && $assessment->answers->count() > 0)
                 <div class="score-card mb-6 overflow-hidden p-0">
                     <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')"
                         class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">

@@ -180,7 +180,7 @@
                                             @endif
                                         </td>
                                         <td class="py-3 pl-2 sm:pl-4 text-right whitespace-nowrap">
-                                            <a href="{{ route('assessment.result', $assessment) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Detail</a>
+                                            <a href="{{ route('assessment.result', $assessment) }}" class="font-medium text-indigo-600 hover:text-indigo-800">Lihat Hasil</a>
                                         </td>
                                     </tr>
                                 @empty
