@@ -406,6 +406,76 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_completed_attempt_on_same_package_but_previous_invite_category_does_not_block_current_test(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'SOAL TRAINING LOTO',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $preTestCategory = OperatorAssessmentCategory::create([
+            'name' => 'Pre Test Training',
+            'is_active' => true,
+        ]);
+        $postTestCategory = OperatorAssessmentCategory::create([
+            'name' => 'Post Test Training',
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $postTestCategory->id,
+            'max_attempts' => 1,
+        ]);
+
+        Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTestCategory->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 25,
+            'correct_answers' => 11,
+            'score' => 44,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Post Test Training',
+            'difficulty' => 'basic',
+            'text' => 'Soal post test dari paket sama',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('kategori Post Test Training')
+            ->assertSee('Belum ada hasil')
+            ->assertSee('Percobaan: 0/1')
+            ->assertSee('Mulai Assessment')
+            ->assertDontSee('44.00')
+            ->assertDontSee('Batas Percobaan Terpakai')
+            ->assertDontSee('Percobaan Habis');
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('assessments', [
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $postTestCategory->id,
+            'submitted_at' => null,
+        ]);
+    }
+
     public function test_user_dashboard_shows_pending_review_for_she_result(): void
     {
         $package = QuestionPackage::create([

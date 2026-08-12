@@ -151,21 +151,34 @@ class AssessmentController extends Controller
             return back()->with('status', 'Masa akses assessment untuk akun ini sudah habis. Hubungi admin.');
         }
 
-        $package = $request->user()->questionPackage;
-        $maxAttempts = $request->user()->max_attempts ?? (int) config('assessment.max_attempts', 1);
-        $completedCount = $request->user()
+        $user = $request->user();
+        $package = $user->questionPackage;
+        $inviteCategoryId = $user->operator_assessment_category_id;
+        $maxAttempts = $user->max_attempts ?? (int) config('assessment.max_attempts', 1);
+        $completedCount = $user
             ->assessments()
             ->whereNotNull('submitted_at')
             ->when($package, fn ($query) => $query->where('question_package_id', $package->id))
+            ->when(
+                $inviteCategoryId,
+                fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
+                fn ($query) => $query->whereNull('operator_assessment_category_id')
+            )
             ->count();
 
         if ($completedCount >= $maxAttempts) {
             return back()->with('status', 'Batas maksimal percobaan assessment ('.$maxAttempts.' kali) sudah terpakai semua. Hubungi admin.');
         }
 
-        $openAssessment = $request->user()
+        $openAssessment = $user
             ->assessments()
             ->whereNull('submitted_at')
+            ->when($package, fn ($query) => $query->where('question_package_id', $package->id))
+            ->when(
+                $inviteCategoryId,
+                fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
+                fn ($query) => $query->whereNull('operator_assessment_category_id')
+            )
             ->latest()
             ->first();
 
@@ -193,7 +206,6 @@ class AssessmentController extends Controller
             return back()->with('status', $message);
         }
 
-        $user = $request->user();
         $segmentConfig = $this->segmentConfigFor($user, $package);
         $hasSegments = $package
             && ($package->has_segments || $package->type === QuestionPackage::TYPE_SHE)
@@ -205,10 +217,11 @@ class AssessmentController extends Controller
 
         $durationMinutes = $user->assessmentDurationMinutes();
 
-        $assessment = DB::transaction(function () use ($request, $durationMinutes, $package, $questionQuery, $activeQuestionCount) {
+        $assessment = DB::transaction(function () use ($request, $durationMinutes, $package, $questionQuery, $activeQuestionCount, $inviteCategoryId) {
             $assessment = Assessment::create([
                 'user_id' => $request->user()->id,
                 'question_package_id' => $package?->id,
+                'operator_assessment_category_id' => $inviteCategoryId,
                 'total_questions' => $activeQuestionCount,
                 'started_at' => now(),
                 'duration_minutes' => $durationMinutes,
@@ -282,6 +295,7 @@ class AssessmentController extends Controller
             $assessment = Assessment::create([
                 'user_id' => $request->user()->id,
                 'question_package_id' => $package->id,
+                'operator_assessment_category_id' => $request->user()->operator_assessment_category_id,
                 'total_questions' => $totalQuestions,
                 'started_at' => now(),
                 'duration_minutes' => $totalDuration,

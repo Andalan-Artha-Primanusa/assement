@@ -199,6 +199,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $assignedPackage = $user->questionPackage;
+        $inviteCategoryId = $user->operator_assessment_category_id;
         $activeQuestionQuery = Question::query()->where('is_active', true);
 
         if ($assignedPackage && $assignedPackage->is_active) {
@@ -211,18 +212,35 @@ class DashboardController extends Controller
         $openAssessment = $user->assessments()
             ->with('questionPackage')
             ->whereNull('submitted_at')
+            ->when($assignedPackage, fn ($query) => $query->where('question_package_id', $assignedPackage->id))
+            ->when(
+                $inviteCategoryId,
+                fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
+                fn ($query) => $query->whereNull('operator_assessment_category_id')
+            )
             ->latest()
             ->first();
         $maxAttempts = $user->max_attempts ?? (int) config('assessment.max_attempts', 1);
         $completedCount = $user->assessments()
             ->whereNotNull('submitted_at')
             ->when($assignedPackage, fn ($query) => $query->where('question_package_id', $assignedPackage->id))
+            ->when(
+                $inviteCategoryId,
+                fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
+                fn ($query) => $query->whereNull('operator_assessment_category_id')
+            )
             ->count();
         $remainingAttempts = max(0, $maxAttempts - $completedCount);
         $attemptLimitReached = $remainingAttempts <= 0;
         $assessments = $user->assessments()
             ->with('questionPackage')
             ->whereNotNull('submitted_at')
+            ->when($assignedPackage, fn ($query) => $query->where('question_package_id', $assignedPackage->id))
+            ->when(
+                $inviteCategoryId,
+                fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
+                fn ($query) => $query->whereNull('operator_assessment_category_id')
+            )
             ->latest('submitted_at')
             ->paginate(10);
 

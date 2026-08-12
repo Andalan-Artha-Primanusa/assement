@@ -15,6 +15,7 @@ class Assessment extends Model
     protected $fillable = [
         'user_id',
         'question_package_id',
+        'operator_assessment_category_id',
         'status',
         'total_questions',
         'correct_answers',
@@ -35,6 +36,7 @@ class Assessment extends Model
         return [
             'score' => 'decimal:2',
             'question_package_id' => 'integer',
+            'operator_assessment_category_id' => 'integer',
             'started_at' => 'datetime',
             'duration_minutes' => 'integer',
             'ends_at' => 'datetime',
@@ -54,6 +56,11 @@ class Assessment extends Model
     public function questionPackage(): BelongsTo
     {
         return $this->belongsTo(QuestionPackage::class);
+    }
+
+    public function operatorAssessmentCategory(): BelongsTo
+    {
+        return $this->belongsTo(OperatorAssessmentCategory::class);
     }
 
     public function answers(): HasMany
