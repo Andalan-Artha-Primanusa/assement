@@ -1,6 +1,6 @@
 <form method="POST" action="{{ $action }}" class="space-y-6" data-confirm
-      data-confirm-title="{{ ($method ?? 'POST') === 'POST' ? 'Tambah kategori Operator?' : 'Simpan kategori Operator?' }}"
-      data-confirm-message="Kategori ini akan dipakai untuk memisahkan paket dan soal Operator."
+      data-confirm-title="{{ ($method ?? 'POST') === 'POST' ? 'Tambah kategori invite?' : 'Simpan kategori invite?' }}"
+      data-confirm-message="Kategori ini akan dipakai untuk tracking invite peserta Mekanik dan Operator."
       data-confirm-text="{{ ($method ?? 'POST') === 'POST' ? 'Ya, tambah kategori' : 'Ya, simpan kategori' }}">
     @csrf
     @if (isset($method) && $method !== 'POST')

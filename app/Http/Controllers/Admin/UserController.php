@@ -75,7 +75,7 @@ class UserController extends Controller
             ->whereIn('type', $visibleTypes)
             ->orderBy('name')
             ->get();
-        $operatorCategories = in_array(QuestionPackage::TYPE_OPERATOR, $visibleTypes, true)
+        $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::orderBy('name')->get()
             : collect();
 
@@ -145,7 +145,7 @@ class UserController extends Controller
                 $packageId = $package?->id;
             }
             $operatorCategoryId = null;
-            if ($type === QuestionPackage::TYPE_OPERATOR && $operatorCategoryIndex !== false && isset($row[$operatorCategoryIndex])) {
+            if ($this->supportsInviteCategory($type) && $operatorCategoryIndex !== false && isset($row[$operatorCategoryIndex])) {
                 $categoryName = strtolower(trim($row[$operatorCategoryIndex]));
                 $operatorCategoryId = $operatorCategoriesByName[$categoryName]?->id ?? null;
             }
@@ -201,7 +201,7 @@ class UserController extends Controller
             ->whereIn('type', $visibleTypes)
             ->orderBy('name')
             ->get();
-        $operatorCategories = in_array(QuestionPackage::TYPE_OPERATOR, $visibleTypes, true)
+        $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::where('is_active', true)->orderBy('name')->get()
             : collect();
 
@@ -247,7 +247,7 @@ class UserController extends Controller
         $package = isset($data['question_package_id'])
             ? QuestionPackage::find($data['question_package_id'])
             : null;
-        $operatorCategoryId = $data['type'] === QuestionPackage::TYPE_OPERATOR
+        $operatorCategoryId = $this->supportsInviteCategory($data['type'])
             ? ($data['operator_assessment_category_id'] ?? null)
             : null;
 
@@ -313,7 +313,7 @@ class UserController extends Controller
         $durationMinutes = (int) round(((float) $data['bulk_duration_hours']) * 60);
         $packageId = $data['bulk_question_package_id'] ?? null;
         $package = $packageId ? QuestionPackage::find($packageId) : null;
-        $operatorCategoryId = $data['bulk_type'] === QuestionPackage::TYPE_OPERATOR
+        $operatorCategoryId = $this->supportsInviteCategory($data['bulk_type'])
             ? ($data['bulk_operator_assessment_category_id'] ?? null)
             : null;
         $created = 0;
@@ -381,7 +381,7 @@ class UserController extends Controller
             ->whereIn('type', $visibleTypes)
             ->orderBy('name')
             ->get();
-        $operatorCategories = in_array(QuestionPackage::TYPE_OPERATOR, $visibleTypes, true)
+        $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::where('is_active', true)->orderBy('name')->get()
             : collect();
 
@@ -421,7 +421,7 @@ class UserController extends Controller
         $packages = QuestionPackage::whereIn('type', $visibleTypes)
             ->orderBy('name')
             ->get();
-        $operatorCategories = in_array(QuestionPackage::TYPE_OPERATOR, $visibleTypes, true)
+        $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::orderBy('name')->get()
             : collect();
 
@@ -523,7 +523,7 @@ class UserController extends Controller
         $package = $data['question_package_id']
             ? QuestionPackage::find($data['question_package_id'])
             : null;
-        $data['operator_assessment_category_id'] = $package?->type === QuestionPackage::TYPE_OPERATOR
+        $data['operator_assessment_category_id'] = $this->supportsInviteCategory($package?->type)
             ? ($data['operator_assessment_category_id'] ?? null)
             : null;
         $data['segment_config'] = AssessmentSegmentConfig::forPackage($package, $data['segment_config'] ?? null);
@@ -543,6 +543,19 @@ class UserController extends Controller
                 'question_package_id' => 'Paket soal harus sesuai dengan tipe peserta.',
             ]);
         }
+    }
+
+    /**
+     * @param  string|array<int, string>|null  $type
+     */
+    private function supportsInviteCategory(string|array|null $type): bool
+    {
+        $types = is_array($type) ? $type : [$type];
+
+        return count(array_intersect($types, [
+            QuestionPackage::TYPE_MEKANIK,
+            QuestionPackage::TYPE_OPERATOR,
+        ])) > 0;
     }
 
     /**

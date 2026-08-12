@@ -139,9 +139,9 @@
                 {{ __('Invite Peserta') }}
             </x-nav-link>
 
-            @if (in_array(\App\Models\QuestionPackage::TYPE_OPERATOR, $visibleTypes, true))
+            @if (array_intersect([\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR], $visibleTypes))
                 <x-nav-link :href="route('admin.operator-categories.index')" :active="request()->routeIs('admin.operator-categories.*')">
-                    {{ __('Kategori Operator') }}
+                    {{ __('Kategori Invite') }}
                 </x-nav-link>
             @endif
 
@@ -172,9 +172,9 @@
             <x-nav-link :href="route('admin.packages.index')" :active="request()->routeIs('admin.packages.*')">
                 {{ __($menuLabels['packages']) }}
             </x-nav-link>
-            @if ($adminType === \App\Models\QuestionPackage::TYPE_OPERATOR)
+            @if (in_array($adminType, [\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR], true))
                 <x-nav-link :href="route('admin.operator-categories.index')" :active="request()->routeIs('admin.operator-categories.*')">
-                    {{ __('Kategori Operator') }}
+                    {{ __('Kategori Invite') }}
                 </x-nav-link>
             @endif
             @if ($adminType === \App\Models\QuestionPackage::TYPE_SHE)

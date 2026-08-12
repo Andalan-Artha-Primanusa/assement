@@ -43,14 +43,14 @@
             <x-input-error :messages="$errors->get('question_package_id')" class="mt-2" />
         </div>
         <div id="operator-category-field" class="sm:col-span-3">
-            <x-input-label for="operator_assessment_category_id" value="Kategori Operator" />
+            <x-input-label for="operator_assessment_category_id" value="Kategori Invite" />
             <select id="operator_assessment_category_id" name="operator_assessment_category_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">Tanpa kategori</option>
                 @foreach (($operatorCategories ?? collect()) as $category)
                     <option value="{{ $category->id }}" @selected(old('operator_assessment_category_id', $user->operator_assessment_category_id) == $category->id)>{{ $category->name }}{{ $category->is_active ? '' : ' (Nonaktif)' }}</option>
                 @endforeach
             </select>
-            <p class="mt-1 text-xs text-gray-500">Dipakai untuk tracking peserta Operator seperti New Hire dan sejenisnya.</p>
+            <p class="mt-1 text-xs text-gray-500">Dipakai untuk tracking peserta Mekanik/Operator seperti New Hire dan sejenisnya.</p>
             <x-input-error :messages="$errors->get('operator_assessment_category_id')" class="mt-2" />
         </div>
         <div>
@@ -177,13 +177,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedOption = packageSelect.querySelector('option:checked');
         const packageType = selectedOption ? selectedOption.dataset.type : '';
         const isShe = packageType === 'she';
-        const isOperator = packageType === 'operator';
+        const usesCategory = ['mekanik', 'operator'].includes(packageType);
         const hasSegments = selectedOption && (selectedOption.dataset.hasSegments === '1' || isShe);
 
-        operatorCategoryField?.classList.toggle('hidden', !isOperator);
+        operatorCategoryField?.classList.toggle('hidden', !usesCategory);
         if (operatorCategorySelect) {
-            operatorCategorySelect.disabled = !isOperator;
-            if (!isOperator) {
+            operatorCategorySelect.disabled = !usesCategory;
+            if (!usesCategory) {
                 operatorCategorySelect.value = '';
             }
         }

@@ -69,7 +69,7 @@
                             <x-input-error :messages="$errors->get('bulk_question_package_id')" class="mt-1" />
                         </div>
                         <div id="bulk_operator_category_wrap">
-                            <label for="bulk_operator_assessment_category_id" class="block text-sm font-medium text-gray-700">Kategori Operator</label>
+                            <label for="bulk_operator_assessment_category_id" class="block text-sm font-medium text-gray-700">Kategori Invite</label>
                             <select id="bulk_operator_assessment_category_id" name="bulk_operator_assessment_category_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Tanpa kategori</option>
                                 @foreach ($operatorCategories as $category)
@@ -136,7 +136,7 @@
                             <x-input-error :messages="$errors->get('question_package_id')" class="mt-1" />
                         </div>
                         <div id="operator_category_wrap">
-                            <label for="operator_assessment_category_id" class="block text-sm font-medium text-gray-700">Kategori Operator</label>
+                            <label for="operator_assessment_category_id" class="block text-sm font-medium text-gray-700">Kategori Invite</label>
                             <select id="operator_assessment_category_id" name="operator_assessment_category_id" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Tanpa kategori</option>
                                 @foreach ($operatorCategories as $category)
@@ -238,10 +238,10 @@
                 sync();
 
                 function sync() {
-                    const isOperator = typeSelect.value === 'operator';
-                    wrap.classList.toggle('hidden', !isOperator);
-                    select.disabled = !isOperator;
-                    if (!isOperator) {
+                    const usesCategory = ['mekanik', 'operator'].includes(typeSelect.value);
+                    wrap.classList.toggle('hidden', !usesCategory);
+                    select.disabled = !usesCategory;
+                    if (!usesCategory) {
                         select.value = '';
                     }
                 }

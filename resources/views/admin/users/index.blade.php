@@ -20,7 +20,7 @@
                     @endforeach
                 </select>
                 <select name="operator_category" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="">Semua kategori Operator</option>
+                    <option value="">Semua kategori invite</option>
                     @foreach ($operatorCategories as $category)
                         <option value="{{ $category->id }}" @selected(request('operator_category') == $category->id)>{{ $category->name }}</option>
                     @endforeach
@@ -37,7 +37,7 @@
                                 <th class="px-6 py-3">Email</th>
                                 <th class="px-6 py-3 text-center">Role</th>
                                 <th class="px-6 py-3">Paket</th>
-                                <th class="px-6 py-3">Kategori Operator</th>
+                                <th class="px-6 py-3">Kategori Invite</th>
                                 <th class="px-6 py-3">Segment</th>
                                 <th class="px-6 py-3">Akses Sampai</th>
                                 <th class="px-6 py-3 text-center">Durasi</th>

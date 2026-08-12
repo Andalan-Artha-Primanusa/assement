@@ -33,13 +33,27 @@ class DashboardController extends Controller
 
         $baseQuery = Assessment::query()
             ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
-                $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
-                    $q->whereIn('type', $visibleTypes);
+                $query->where(function ($query) use ($visibleTypes): void {
+                    $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
+                        $q->whereIn('type', $visibleTypes);
+                    })->orWhere(function ($query) use ($visibleTypes): void {
+                        $query->whereDoesntHave('questionPackage')
+                            ->whereHas('user.questionPackage', function ($q) use ($visibleTypes): void {
+                                $q->whereIn('type', $visibleTypes);
+                            });
+                    });
                 });
             })
             ->when($adminUser->isSuperAdmin() && $selectedType, function ($query) use ($selectedType): void {
-                $query->whereHas('questionPackage', function ($q) use ($selectedType): void {
-                    $q->where('type', $selectedType);
+                $query->where(function ($query) use ($selectedType): void {
+                    $query->whereHas('questionPackage', function ($q) use ($selectedType): void {
+                        $q->where('type', $selectedType);
+                    })->orWhere(function ($query) use ($selectedType): void {
+                        $query->whereDoesntHave('questionPackage')
+                            ->whereHas('user.questionPackage', function ($q) use ($selectedType): void {
+                                $q->where('type', $selectedType);
+                            });
+                    });
                 });
             });
 
