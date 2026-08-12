@@ -478,6 +478,74 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_blocked_open_assessment_from_previous_invite_category_does_not_block_current_test(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'SOAL A',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $postTestCategory = OperatorAssessmentCategory::create([
+            'name' => 'Post Test A',
+            'is_active' => true,
+        ]);
+        $preTestCategory = OperatorAssessmentCategory::create([
+            'name' => 'Pre Test A',
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTestCategory->id,
+            'max_attempts' => 1,
+        ]);
+
+        Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $postTestCategory->id,
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'total_questions' => 1,
+            'started_at' => now()->subHour(),
+            'blocked_at' => now()->subMinutes(30),
+            'block_reason' => 'Tab switch post test',
+            'security_violations' => 1,
+        ]);
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Pre Test A',
+            'difficulty' => 'basic',
+            'text' => 'Soal pre test setelah post blocked',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('kategori Pre Test A')
+            ->assertSee('Percobaan: 0/1')
+            ->assertSee('Mulai Assessment')
+            ->assertDontSee('Terblokir');
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('assessments', [
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTestCategory->id,
+            'submitted_at' => null,
+            'blocked_at' => null,
+        ]);
+    }
+
     public function test_user_dashboard_shows_pending_review_for_she_result(): void
     {
         $package = QuestionPackage::create([

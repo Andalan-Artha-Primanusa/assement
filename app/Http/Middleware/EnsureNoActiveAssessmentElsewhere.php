@@ -22,8 +22,16 @@ class EnsureNoActiveAssessmentElsewhere
             return $next($request);
         }
 
+        $packageId = $user->question_package_id;
+        $inviteCategoryId = $user->operator_assessment_category_id;
         $assessment = $user->assessments()
             ->whereNull('submitted_at')
+            ->when($packageId, fn ($query) => $query->where('question_package_id', $packageId))
+            ->when(
+                $inviteCategoryId,
+                fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
+                fn ($query) => $query->whereNull('operator_assessment_category_id')
+            )
             ->latest()
             ->first();
 
