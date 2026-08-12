@@ -3,8 +3,8 @@
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <!-- Logo -->
-    <div class="flex justify-center mb-4">
-        <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="h-auto w-full max-w-[280px]">
+    <div class="flex justify-center mb-5">
+        <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="h-auto w-full" style="max-width: 260px;">
     </div>
 
     <div class="mb-5">
@@ -52,7 +52,7 @@
 
     <div class="pt-3 mt-4 border-t border-gray-200 text-center">
         <p class="text-xs font-semibold uppercase text-gray-400">Assessment powered by</p>
-        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="mx-auto mt-1.5 h-auto w-24">
+        <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan" class="mx-auto mt-1.5 h-auto" style="width: 88px;">
     </div>
 
 </x-guest-layout>

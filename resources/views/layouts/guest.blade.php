@@ -17,9 +17,9 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="h-screen overflow-hidden font-sans antialiased text-gray-900">
-        <div class="h-screen overflow-hidden bg-white lg:grid lg:grid-cols-[minmax(420px,46%)_1fr]">
-            <main class="flex h-screen items-center overflow-hidden px-6 py-4 sm:px-10 lg:px-16 xl:px-20">
+    <body class="font-sans antialiased text-gray-900" style="height: 100dvh; overflow: hidden;">
+        <div class="overflow-hidden bg-white lg:grid lg:grid-cols-[minmax(420px,46%)_1fr]" style="height: 100dvh;">
+            <main class="flex items-center overflow-hidden px-6 py-4 sm:px-10 lg:px-16 xl:px-20" style="height: 100dvh;">
                 <div class="w-full max-w-md">
 
 
@@ -29,8 +29,8 @@
                 </div>
             </main>
 
-            <aside class="relative hidden h-screen overflow-hidden bg-gray-50 lg:block">
-                <img src="{{ asset('images/login-mechanic.png') }}" alt="Assessment" class="h-full w-full object-cover">
+            <aside class="relative hidden overflow-hidden bg-gray-50 lg:block" style="height: 100dvh;">
+                <img src="{{ asset('images/login-mechanic.png') }}" alt="Assessment" class="absolute inset-0 h-full w-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-br from-gray-950/25 via-transparent to-gray-950/45"></div>
             </aside>
         </div>
