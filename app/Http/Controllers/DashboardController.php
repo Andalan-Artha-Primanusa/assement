@@ -232,15 +232,21 @@ class DashboardController extends Controller
             ->count();
         $remainingAttempts = max(0, $maxAttempts - $completedCount);
         $attemptLimitReached = $remainingAttempts <= 0;
-        $assessments = $user->assessments()
-            ->with('questionPackage')
+        $currentAssessmentsQuery = $user->assessments()
             ->whereNotNull('submitted_at')
             ->when($assignedPackage, fn ($query) => $query->where('question_package_id', $assignedPackage->id))
             ->when(
                 $inviteCategoryId,
                 fn ($query) => $query->where('operator_assessment_category_id', $inviteCategoryId),
                 fn ($query) => $query->whereNull('operator_assessment_category_id')
-            )
+            );
+        $latestAssessment = (clone $currentAssessmentsQuery)
+            ->with('questionPackage', 'operatorAssessmentCategory')
+            ->latest('submitted_at')
+            ->first();
+        $assessments = $user->assessments()
+            ->with('questionPackage', 'operatorAssessmentCategory')
+            ->whereNotNull('submitted_at')
             ->latest('submitted_at')
             ->paginate(10);
 
@@ -249,6 +255,7 @@ class DashboardController extends Controller
         return view('dashboard', compact(
             'activeQuestionCount',
             'openAssessment',
+            'latestAssessment',
             'assessments',
             'assignedPackage',
             'accessExpired',

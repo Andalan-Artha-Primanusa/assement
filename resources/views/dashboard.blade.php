@@ -128,17 +128,16 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <p class="text-sm font-medium text-gray-500">Status terakhir</p>
-                        @if ($assessments->isNotEmpty())
-                            @php($latest = $assessments->first())
-                            @if ($latest->isPendingReview())
+                        @if ($latestAssessment)
+                            @if ($latestAssessment->isPendingReview())
                                 <p class="mt-2 text-2xl font-semibold text-amber-700">Menunggu Review</p>
                                 <p class="mt-2 text-sm text-gray-600">
                                     Essay/Portfolio SHE sedang dinilai admin.
                                 </p>
                             @else
-                                <p class="mt-2 text-4xl font-semibold text-gray-900">{{ number_format($latest->score, 0) }}</p>
+                                <p class="mt-2 text-4xl font-semibold text-gray-900">{{ number_format($latestAssessment->score, 0) }}</p>
                                 <p class="mt-2 text-sm text-gray-600">
-                                    {{ $latest->correct_answers }} benar dari {{ $latest->total_questions }} soal.
+                                    {{ $latestAssessment->correct_answers }} benar dari {{ $latestAssessment->total_questions }} soal.
                                 </p>
                             @endif
                         @else
@@ -160,6 +159,8 @@
                             <thead>
                                 <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                     <th class="py-3 pr-2 sm:pr-4">Tanggal</th>
+                                    <th class="px-2 sm:px-4 py-3">Test</th>
+                                    <th class="px-2 sm:px-4 py-3">Paket</th>
                                     <th class="px-2 sm:px-4 py-3">Benar</th>
                                     <th class="px-2 sm:px-4 py-3">Total</th>
                                     <th class="px-2 sm:px-4 py-3">Nilai</th>
@@ -170,6 +171,8 @@
                                 @forelse ($assessments as $assessment)
                                     <tr>
                                         <td class="py-3 pr-2 sm:pr-4 text-gray-700 whitespace-nowrap">{{ $assessment->submitted_at?->format('d M Y H:i') }}</td>
+                                        <td class="px-2 sm:px-4 py-3 text-gray-700 whitespace-nowrap">{{ $assessment->operatorAssessmentCategory?->name ?? '-' }}</td>
+                                        <td class="px-2 sm:px-4 py-3 text-gray-700">{{ $assessment->questionPackage?->name ?? '-' }}</td>
                                         <td class="px-2 sm:px-4 py-3 text-gray-700">{{ $assessment->correct_answers }}</td>
                                         <td class="px-2 sm:px-4 py-3 text-gray-700">{{ $assessment->total_questions }}</td>
                                         <td class="px-2 sm:px-4 py-3 font-semibold text-gray-900">
@@ -185,7 +188,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="py-6 text-center text-gray-500">Belum ada riwayat.</td>
+                                        <td colspan="7" class="py-6 text-center text-gray-500">Belum ada riwayat.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

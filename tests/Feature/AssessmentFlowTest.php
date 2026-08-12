@@ -458,9 +458,11 @@ class AssessmentFlowTest extends TestCase
             ->assertOk()
             ->assertSee('kategori Post Test Training')
             ->assertSee('Belum ada hasil')
+            ->assertSee('Pre Test Training')
+            ->assertSee('SOAL TRAINING LOTO')
             ->assertSee('Percobaan: 0/1')
             ->assertSee('Mulai Assessment')
-            ->assertDontSee('44.00')
+            ->assertSee('44.00')
             ->assertDontSee('Batas Percobaan Terpakai')
             ->assertDontSee('Percobaan Habis');
 
