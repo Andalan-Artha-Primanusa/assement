@@ -345,6 +345,67 @@ class AssessmentFlowTest extends TestCase
             ->assertDontSee('Mulai Assessment');
     }
 
+    public function test_completed_attempt_on_previous_package_does_not_block_current_post_test_package(): void
+    {
+        $preTestPackage = QuestionPackage::create([
+            'name' => 'Pre Test Training',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $postTestPackage = QuestionPackage::create([
+            'name' => 'Post Test Training',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $postTestPackage->id,
+            'max_attempts' => 1,
+        ]);
+
+        Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $preTestPackage->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 1,
+            'correct_answers' => 1,
+            'score' => 100,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+        Question::create([
+            'question_package_id' => $postTestPackage->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Post Test',
+            'difficulty' => 'basic',
+            'text' => 'Soal post test boleh mulai',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Percobaan: 0/1')
+            ->assertSee('Mulai Assessment')
+            ->assertDontSee('Batas Percobaan Terpakai')
+            ->assertDontSee('Percobaan Habis');
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('assessments', [
+            'user_id' => $user->id,
+            'question_package_id' => $postTestPackage->id,
+            'submitted_at' => null,
+        ]);
+    }
+
     public function test_user_dashboard_shows_pending_review_for_she_result(): void
     {
         $package = QuestionPackage::create([

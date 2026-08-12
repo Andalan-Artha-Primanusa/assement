@@ -214,7 +214,10 @@ class DashboardController extends Controller
             ->latest()
             ->first();
         $maxAttempts = $user->max_attempts ?? (int) config('assessment.max_attempts', 1);
-        $completedCount = $user->assessments()->whereNotNull('submitted_at')->count();
+        $completedCount = $user->assessments()
+            ->whereNotNull('submitted_at')
+            ->when($assignedPackage, fn ($query) => $query->where('question_package_id', $assignedPackage->id))
+            ->count();
         $remainingAttempts = max(0, $maxAttempts - $completedCount);
         $attemptLimitReached = $remainingAttempts <= 0;
         $assessments = $user->assessments()

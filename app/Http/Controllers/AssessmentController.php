@@ -151,8 +151,13 @@ class AssessmentController extends Controller
             return back()->with('status', 'Masa akses assessment untuk akun ini sudah habis. Hubungi admin.');
         }
 
+        $package = $request->user()->questionPackage;
         $maxAttempts = $request->user()->max_attempts ?? (int) config('assessment.max_attempts', 1);
-        $completedCount = $request->user()->assessments()->whereNotNull('submitted_at')->count();
+        $completedCount = $request->user()
+            ->assessments()
+            ->whereNotNull('submitted_at')
+            ->when($package, fn ($query) => $query->where('question_package_id', $package->id))
+            ->count();
 
         if ($completedCount >= $maxAttempts) {
             return back()->with('status', 'Batas maksimal percobaan assessment ('.$maxAttempts.' kali) sudah terpakai semua. Hubungi admin.');
@@ -167,8 +172,6 @@ class AssessmentController extends Controller
         if ($openAssessment) {
             return redirect()->route('assessment.show', $openAssessment);
         }
-
-        $package = $request->user()->questionPackage;
 
         if ($package && ! $package->is_active) {
             return back()->with('status', 'Paket soal untuk akun ini sedang nonaktif. Hubungi admin.');
