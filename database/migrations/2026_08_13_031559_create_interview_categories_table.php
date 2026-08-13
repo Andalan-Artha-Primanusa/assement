@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('interview_categories');
         Schema::create('interview_categories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('interview_template_id')->constrained()->cascadeOnDelete();

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('interview_templates');
         Schema::create('interview_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name'); // e.g. Form Mekanik, Form Operator
