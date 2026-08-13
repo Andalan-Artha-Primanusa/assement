@@ -57,7 +57,8 @@ class InterviewAssessmentController extends Controller
             'interview_template_id' => 'required|exists:interview_templates,id',
             'candidate_name' => 'required|string|max:255',
             'scores' => 'required|array',
-            'scores.*' => 'nullable|integer|min:1|max:5',
+            'scores.*.score' => 'nullable|integer|min:1|max:5',
+            'scores.*.notes' => 'nullable|string|max:500',
         ]);
 
         $template = InterviewTemplate::findOrFail($request->interview_template_id);
