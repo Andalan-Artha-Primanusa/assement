@@ -38,16 +38,26 @@ class UserController extends Controller
             ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
                 $query->where(function ($q) use ($visibleTypes): void {
                     $q->where('role', 'user')
-                        ->whereIn('question_package_id', function ($subQuery) use ($visibleTypes): void {
-                            $subQuery->select('id')->from('question_packages')->whereIn('type', $visibleTypes);
+                        ->where(function ($q2) use ($visibleTypes): void {
+                            $q2->whereIn('question_package_id', function ($subQuery) use ($visibleTypes): void {
+                                $subQuery->select('id')->from('question_packages')->whereIn('type', $visibleTypes);
+                            })
+                            ->orWhereHas('assessments.questionPackage', function ($subQuery) use ($visibleTypes): void {
+                                $subQuery->whereIn('type', $visibleTypes);
+                            });
                         });
                 });
             })
             ->when($adminUser->isSuperAdmin() && $selectedType, function ($query) use ($selectedType): void {
                 $query->where(function ($q) use ($selectedType): void {
                     $q->where('role', 'user')
-                        ->whereIn('question_package_id', function ($subQuery) use ($selectedType): void {
-                            $subQuery->select('id')->from('question_packages')->where('type', $selectedType);
+                        ->where(function ($q2) use ($selectedType): void {
+                            $q2->whereIn('question_package_id', function ($subQuery) use ($selectedType): void {
+                                $subQuery->select('id')->from('question_packages')->where('type', $selectedType);
+                            })
+                            ->orWhereHas('assessments.questionPackage', function ($subQuery) use ($selectedType): void {
+                                $subQuery->where('type', $selectedType);
+                            });
                         });
                 });
             })
@@ -59,7 +69,13 @@ class UserController extends Controller
                 });
             })
             ->when($request->filled('package'), function ($query) use ($request): void {
-                $query->where('question_package_id', $request->integer('package'));
+                $packageId = $request->integer('package');
+                $query->where(function ($q) use ($packageId): void {
+                    $q->where('question_package_id', $packageId)
+                      ->orWhereHas('assessments', function ($subQuery) use ($packageId): void {
+                          $subQuery->where('question_package_id', $packageId);
+                      });
+                });
             })
             ->when($request->filled('operator_category'), function ($query) use ($request): void {
                 $query->where('operator_assessment_category_id', $request->integer('operator_category'));
