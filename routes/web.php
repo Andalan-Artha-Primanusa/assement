@@ -77,6 +77,10 @@ Route::middleware(['auth', 'admin'])
         Route::get('she-review', [SheReviewController::class, 'index'])->name('she-review.index');
         Route::get('she-review/{assessment}', [SheReviewController::class, 'show'])->name('she-review.show');
         Route::post('she-review/{assessment}/grade', [SheReviewController::class, 'grade'])->name('she-review.grade');
+
+        // Interview Assessments
+        Route::resource('interview-templates', \App\Http\Controllers\Admin\InterviewTemplateController::class);
+        Route::resource('interview-assessments', \App\Http\Controllers\Admin\InterviewAssessmentController::class);
     });
 
 require __DIR__.'/auth.php';
