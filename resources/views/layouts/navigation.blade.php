@@ -148,6 +148,16 @@
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __('Log Aktivitas') }}
             </x-nav-link>
+
+            <div class="pt-4 pb-1 border-t border-gray-100 mt-4">
+                <span class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</span>
+            </div>
+            <x-nav-link :href="route('admin.interview-templates.index')" :active="request()->routeIs('admin.interview-templates.*')">
+                {{ __('Template Interview') }}
+            </x-nav-link>
+            <x-nav-link :href="route('admin.interview-assessments.index')" :active="request()->routeIs('admin.interview-assessments.*')">
+                {{ __('Penilaian Interview') }}
+            </x-nav-link>
         @elseif ($authUser?->isAdmin())
             @php
                 $adminType = $visibleTypes[0] ?? null;
@@ -190,6 +200,16 @@
             </x-nav-link>
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __($menuLabels['logs']) }}
+            </x-nav-link>
+
+            <div class="pt-4 pb-1 border-t border-gray-100 mt-4">
+                <span class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</span>
+            </div>
+            <x-nav-link :href="route('admin.interview-templates.index')" :active="request()->routeIs('admin.interview-templates.*')">
+                {{ __('Template Interview') }}
+            </x-nav-link>
+            <x-nav-link :href="route('admin.interview-assessments.index')" :active="request()->routeIs('admin.interview-assessments.*')">
+                {{ __('Penilaian Interview') }}
             </x-nav-link>
         @endif
     </div>
