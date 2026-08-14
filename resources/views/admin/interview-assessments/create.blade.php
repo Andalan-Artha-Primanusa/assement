@@ -135,11 +135,11 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Nama Penilai 1 (HR)</label>
+                                        <label class="block text-sm font-medium text-gray-700">Nama Penilai</label>
                                         <input type="text" name="hr_interviewer_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Nama Penilai 2 (User)</label>
+                                        <label class="block text-sm font-medium text-gray-700">Tanda Tangan (Ketik Nama)</label>
                                         <input type="text" name="user_interviewer_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     </div>
                                 </div>
