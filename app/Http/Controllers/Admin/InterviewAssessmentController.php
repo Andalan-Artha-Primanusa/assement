@@ -131,4 +131,70 @@ class InterviewAssessmentController extends Controller
         $interview_assessment->load(['template.categories.aspects', 'scores']);
         return view('admin.interview-assessments.show', compact('interview_assessment'));
     }
+
+    public function export(Request $request)
+    {
+        $user = auth()->user();
+        
+        $query = InterviewAssessment::with('template', 'creator')->latest();
+        
+        // RBAC filtering
+        if ($user->isAdminMekanik()) {
+            $query->whereHas('template', function($q) {
+                $q->where('type', 'mekanik');
+            });
+        } elseif ($user->isAdminOperation()) {
+            $query->whereHas('template', function($q) {
+                $q->where('type', 'operator');
+            });
+        }
+        
+        $assessments = $query->get();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=data_penilaian_interview.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'ID', 'Template', 'Nama Kandidat', 'Jabatan', 'Jenis Kelamin', 'Departemen', 
+            'Usia', 'Lokasi/Site', 'Domisili', 'Tanggal Join', 'Ekspektasi Gaji', 
+            'Tanggal Interview', 'Total Nilai', 'Nilai Rata-rata', 'Persentase (%)', 
+            'Rekomendasi', 'Nama Penilai', 'Tanggal Dibuat'
+        ];
+
+        $callback = function() use($assessments, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($assessments as $item) {
+                fputcsv($file, [
+                    $item->id,
+                    $item->template->name ?? '-',
+                    $item->candidate_name,
+                    $item->job_title,
+                    $item->gender,
+                    $item->department,
+                    $item->age,
+                    $item->location,
+                    $item->domicile,
+                    $item->join_date ? \Carbon\Carbon::parse($item->join_date)->format('d M Y') : '-',
+                    $item->expected_salary,
+                    $item->interview_date ? \Carbon\Carbon::parse($item->interview_date)->format('d M Y') : '-',
+                    $item->total_score,
+                    $item->average_score,
+                    $item->percentage,
+                    $item->recommendation,
+                    $item->hr_interviewer_name,
+                    $item->created_at->format('d M Y H:i:s')
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

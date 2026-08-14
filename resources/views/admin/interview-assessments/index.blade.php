@@ -3,9 +3,14 @@
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="mb-6 flex items-center justify-between">
                 <h1 class="text-2xl font-bold text-gray-900">Data Penilaian Interview</h1>
-                <a href="{{ route('admin.interview-assessments.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
-                    Tambah Penilaian
-                </a>
+                <div class="flex space-x-3">
+                    <a href="{{ route('admin.interview-assessments.export') }}" class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Export CSV
+                    </a>
+                    <a href="{{ route('admin.interview-assessments.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                        Tambah Penilaian
+                    </a>
+                </div>
             </div>
 
             @if (session('success'))
