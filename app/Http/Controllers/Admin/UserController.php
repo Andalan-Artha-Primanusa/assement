@@ -80,6 +80,9 @@ class UserController extends Controller
             ->when($request->filled('operator_category'), function ($query) use ($request): void {
                 $query->where('operator_assessment_category_id', $request->integer('operator_category'));
             })
+            ->when($request->filled('site'), function ($query) use ($request): void {
+                $query->where('site', $request->string('site')->toString());
+            })
             ->when($request->filled('role'), function ($query) use ($request): void {
                 $query->where('role', $request->string('role'));
             })
@@ -94,8 +97,25 @@ class UserController extends Controller
         $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::orderBy('name')->get()
             : collect();
+        $sites = User::query()
+            ->where('role', User::ROLE_USER)
+            ->whereNotNull('site')
+            ->where('site', '<>', '')
+            ->when(! $adminUser->isSuperAdmin() || $selectedType, function ($query) use ($visibleTypes): void {
+                $query->where(function ($q) use ($visibleTypes): void {
+                    $q->whereIn('question_package_id', function ($subQuery) use ($visibleTypes): void {
+                        $subQuery->select('id')->from('question_packages')->whereIn('type', $visibleTypes);
+                    })
+                    ->orWhereHas('assessments.questionPackage', function ($subQuery) use ($visibleTypes): void {
+                        $subQuery->whereIn('type', $visibleTypes);
+                    });
+                });
+            })
+            ->distinct()
+            ->orderBy('site')
+            ->pluck('site');
 
-        return view('admin.users.index', compact('users', 'packages', 'operatorCategories', 'selectedType'));
+        return view('admin.users.index', compact('users', 'packages', 'operatorCategories', 'sites', 'selectedType'));
     }
 
     public function inviteBulk(Request $request): RedirectResponse
@@ -115,6 +135,9 @@ class UserController extends Controller
         $operatorCategoryIndex = collect($header ?: [])
             ->map(fn ($value) => strtolower(trim((string) $value)))
             ->search(fn ($value) => in_array($value, ['kategori', 'kategori_operator', 'operator_category'], true));
+        $siteIndex = collect($header ?: [])
+            ->map(fn ($value) => strtolower(trim((string) $value)))
+            ->search(fn ($value) => in_array($value, ['site', 'lokasi', 'area'], true));
 
         $adminUser = $request->user();
         $packagesByName = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())
@@ -165,6 +188,10 @@ class UserController extends Controller
                 $categoryName = strtolower(trim($row[$operatorCategoryIndex]));
                 $operatorCategoryId = $operatorCategoriesByName[$categoryName]?->id ?? null;
             }
+            $site = $this->supportsInviteSite($type) && $siteIndex !== false && isset($row[$siteIndex])
+                ? Str::of($row[$siteIndex])->squish()->limit(100, '')->toString()
+                : null;
+            $site = $site !== '' ? $site : null;
 
             $password = strtoupper(Str::random(4));
             $accessDays = (int) config('assessment.default_access_days', 7);
@@ -177,6 +204,7 @@ class UserController extends Controller
                     $packageId,
                     $package,
                     $operatorCategoryId,
+                    $site,
                     $password,
                     $accessDays,
                     $durationMinutes,
@@ -246,6 +274,7 @@ class UserController extends Controller
                 }),
             ],
             'operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
+            'site' => ['nullable', 'string', 'max:100'],
             'access_days' => ['required', 'integer', 'min:1', 'max:365'],
             'duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
         ]);
@@ -266,6 +295,10 @@ class UserController extends Controller
         $operatorCategoryId = $this->supportsInviteCategory($data['type'])
             ? ($data['operator_assessment_category_id'] ?? null)
             : null;
+        $site = $this->supportsInviteSite($data['type'])
+            ? Str::of($data['site'] ?? '')->squish()->toString()
+            : null;
+        $site = $site !== '' ? $site : null;
 
         [$user, $wasCreated] = $this->createOrRefreshInvitedUser(
             $data['email'],
@@ -273,6 +306,7 @@ class UserController extends Controller
             $data['question_package_id'] ?? null,
             $package,
             $operatorCategoryId,
+            $site,
             $password,
             $accessDays,
             $durationMinutes,
@@ -305,6 +339,7 @@ class UserController extends Controller
                 }),
             ],
             'bulk_operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
+            'bulk_site' => ['nullable', 'string', 'max:100'],
             'bulk_access_days' => ['required', 'integer', 'min:1', 'max:365'],
             'bulk_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
         ]);
@@ -332,6 +367,10 @@ class UserController extends Controller
         $operatorCategoryId = $this->supportsInviteCategory($data['bulk_type'])
             ? ($data['bulk_operator_assessment_category_id'] ?? null)
             : null;
+        $site = $this->supportsInviteSite($data['bulk_type'])
+            ? Str::of($data['bulk_site'] ?? '')->squish()->toString()
+            : null;
+        $site = $site !== '' ? $site : null;
         $created = 0;
         $sent = 0;
         $errors = [];
@@ -353,6 +392,7 @@ class UserController extends Controller
                     $packageId,
                     $package,
                     $operatorCategoryId,
+                    $site,
                     $password,
                     $accessDays,
                     $durationMinutes,
@@ -520,6 +560,7 @@ class UserController extends Controller
                 }),
             ],
             'operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
+            'site' => ['nullable', 'string', 'max:100'],
             'assessment_access_expires_at' => ['nullable', 'date'],
             'assessment_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
             'max_attempts' => ['required', 'integer', 'min:1', 'max:100'],
@@ -542,6 +583,10 @@ class UserController extends Controller
         $data['operator_assessment_category_id'] = $this->supportsInviteCategory($package?->type)
             ? ($data['operator_assessment_category_id'] ?? null)
             : null;
+        $data['site'] = $this->supportsInviteSite($package?->type)
+            ? Str::of($data['site'] ?? '')->squish()->toString()
+            : null;
+        $data['site'] = $data['site'] !== '' ? $data['site'] : null;
         $data['segment_config'] = AssessmentSegmentConfig::forPackage($package, $data['segment_config'] ?? null);
 
         return $data;
@@ -571,6 +616,20 @@ class UserController extends Controller
         return count(array_intersect($types, [
             QuestionPackage::TYPE_MEKANIK,
             QuestionPackage::TYPE_OPERATOR,
+        ])) > 0;
+    }
+
+    /**
+     * @param  string|array<int, string>|null  $type
+     */
+    private function supportsInviteSite(string|array|null $type): bool
+    {
+        $types = is_array($type) ? $type : [$type];
+
+        return count(array_intersect($types, [
+            QuestionPackage::TYPE_MEKANIK,
+            QuestionPackage::TYPE_OPERATOR,
+            QuestionPackage::TYPE_HR,
         ])) > 0;
     }
 
@@ -644,6 +703,7 @@ class UserController extends Controller
         ?int $packageId,
         ?QuestionPackage $package,
         ?int $operatorCategoryId,
+        ?string $site,
         string $password,
         int $accessDays,
         int $durationMinutes,
@@ -663,6 +723,7 @@ class UserController extends Controller
             'role' => User::ROLE_USER,
             'question_package_id' => $packageId,
             'operator_assessment_category_id' => $operatorCategoryId,
+            'site' => $site,
             'assessment_access_expires_at' => now()->addDays($accessDays),
             'assessment_duration_minutes' => $durationMinutes,
             'segment_config' => AssessmentSegmentConfig::forPackage($package),

@@ -1950,6 +1950,7 @@ class AssessmentFlowTest extends TestCase
                 'type' => QuestionPackage::TYPE_OPERATOR,
                 'question_package_id' => $package->id,
                 'operator_assessment_category_id' => $category->id,
+                'site' => 'Site Sangatta',
                 'access_days' => 7,
                 'duration_hours' => 2,
             ])
@@ -1959,6 +1960,7 @@ class AssessmentFlowTest extends TestCase
             'email' => 'operator.newhire@example.com',
             'question_package_id' => $package->id,
             'operator_assessment_category_id' => $category->id,
+            'site' => 'Site Sangatta',
         ]);
     }
 
@@ -1984,6 +1986,7 @@ class AssessmentFlowTest extends TestCase
                 'type' => QuestionPackage::TYPE_MEKANIK,
                 'question_package_id' => $package->id,
                 'operator_assessment_category_id' => $category->id,
+                'site' => 'Site Melak',
                 'access_days' => 7,
                 'duration_hours' => 2,
             ])
@@ -1993,6 +1996,37 @@ class AssessmentFlowTest extends TestCase
             'email' => 'mechanic.refreshment@example.com',
             'question_package_id' => $package->id,
             'operator_assessment_category_id' => $category->id,
+            'site' => 'Site Melak',
+        ]);
+    }
+
+    public function test_hr_invite_can_track_site_without_invite_category(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+        $package = QuestionPackage::create([
+            'name' => 'HR Recruitment',
+            'type' => QuestionPackage::TYPE_HR,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite'), [
+                'name' => 'HR Candidate',
+                'email' => 'hr.candidate@example.com',
+                'type' => QuestionPackage::TYPE_HR,
+                'question_package_id' => $package->id,
+                'site' => 'Head Office',
+                'access_days' => 7,
+                'duration_hours' => 2,
+            ])
+            ->assertRedirect(route('admin.invite'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'hr.candidate@example.com',
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => null,
+            'site' => 'Head Office',
         ]);
     }
 
@@ -2009,6 +2043,7 @@ class AssessmentFlowTest extends TestCase
             ->get(route('admin.invite'))
             ->assertOk()
             ->assertSee('Kategori Invite')
+            ->assertSee('Site')
             ->assertSee('New Hire');
     }
 
@@ -2025,7 +2060,18 @@ class AssessmentFlowTest extends TestCase
             ->get(route('admin.invite'))
             ->assertOk()
             ->assertSee('Kategori Invite')
+            ->assertSee('Site')
             ->assertSee('New Hire');
+    }
+
+    public function test_hr_invite_form_shows_site_field(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.invite'))
+            ->assertOk()
+            ->assertSee('Site');
     }
 
     public function test_blocked_assessment_is_detected_after_reinvite_changes_user_package_type(): void

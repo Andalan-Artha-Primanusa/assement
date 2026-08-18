@@ -47,7 +47,7 @@
                         <x-input-error :messages="$errors->get('bulk_emails')" class="mt-1" />
                     </div>
 
-                    <div class="grid gap-4 lg:grid-cols-5">
+                    <div class="grid gap-4 lg:grid-cols-6">
                         <div>
                             <label for="bulk_invite_type" class="block text-sm font-medium text-gray-700">Tipe Peserta</label>
                             <select id="bulk_invite_type" name="bulk_type" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
@@ -77,6 +77,11 @@
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('bulk_operator_assessment_category_id')" class="mt-1" />
+                        </div>
+                        <div id="bulk_site_wrap">
+                            <label for="bulk_site" class="block text-sm font-medium text-gray-700">Site</label>
+                            <input id="bulk_site" type="text" name="bulk_site" value="{{ old('bulk_site') }}" placeholder="Contoh: Site A" maxlength="100" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-input-error :messages="$errors->get('bulk_site')" class="mt-1" />
                         </div>
                         <div>
                             <label for="bulk_access_days" class="block text-sm font-medium text-gray-700">Hari akses</label>
@@ -145,6 +150,11 @@
                             </select>
                             <x-input-error :messages="$errors->get('operator_assessment_category_id')" class="mt-1" />
                         </div>
+                        <div id="site_wrap">
+                            <label for="site" class="block text-sm font-medium text-gray-700">Site</label>
+                            <input id="site" type="text" name="site" value="{{ old('site') }}" placeholder="Contoh: Site A" maxlength="100" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <x-input-error :messages="$errors->get('site')" class="mt-1" />
+                        </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label for="access_days" class="block text-sm font-medium text-gray-700">Hari akses</label>
@@ -175,7 +185,7 @@
                         <div>
                             <label for="csv_file" class="block text-sm font-medium text-gray-700">Upload file CSV</label>
                             <input id="csv_file" type="file" name="csv_file" accept=".csv,.txt" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100" required>
-                            <p class="mt-1 text-xs text-gray-500">Kolom: email, nama, paket, tipe (operator/mekanik/she/hr), kategori. Tipe, paket, dan kategori opsional.</p>
+                            <p class="mt-1 text-xs text-gray-500">Kolom: email, nama, paket, tipe (operator/mekanik/she/hr), kategori, site. Tipe, paket, kategori, dan site opsional.</p>
                             <x-input-error :messages="$errors->get('csv_file')" class="mt-1" />
                         </div>
                         <button class="w-full rounded-md bg-gray-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-black min-h-[44px]">
@@ -193,6 +203,8 @@
             filterPackageSelect('invite_type', 'invite_question_package_id');
             syncOperatorCategory('bulk_invite_type', 'bulk_operator_category_wrap', 'bulk_operator_assessment_category_id');
             syncOperatorCategory('invite_type', 'operator_category_wrap', 'operator_assessment_category_id');
+            syncSite('bulk_invite_type', 'bulk_site_wrap', 'bulk_site');
+            syncSite('invite_type', 'site_wrap', 'site');
 
             function filterPackageSelect(typeId, packageId) {
                 const typeSelect = document.getElementById(typeId);
@@ -243,6 +255,26 @@
                     select.disabled = !usesCategory;
                     if (!usesCategory) {
                         select.value = '';
+                    }
+                }
+            }
+
+            function syncSite(typeId, wrapId, inputId) {
+                const typeSelect = document.getElementById(typeId);
+                const wrap = document.getElementById(wrapId);
+                const input = document.getElementById(inputId);
+
+                if (!typeSelect || !wrap || !input) return;
+
+                typeSelect.addEventListener('change', sync);
+                sync();
+
+                function sync() {
+                    const usesSite = ['mekanik', 'operator', 'hr'].includes(typeSelect.value);
+                    wrap.classList.toggle('hidden', !usesSite);
+                    input.disabled = !usesSite;
+                    if (!usesSite) {
+                        input.value = '';
                     }
                 }
             }

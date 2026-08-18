@@ -36,6 +36,7 @@ class User extends Authenticatable
         'max_attempts',
         'question_package_id',
         'operator_assessment_category_id',
+        'site',
         'segment_config',
     ];
 

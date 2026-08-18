@@ -53,6 +53,12 @@
             <p class="mt-1 text-xs text-gray-500">Dipakai untuk tracking peserta Mekanik/Operator seperti New Hire dan sejenisnya.</p>
             <x-input-error :messages="$errors->get('operator_assessment_category_id')" class="mt-2" />
         </div>
+        <div id="site-field" class="sm:col-span-3">
+            <x-input-label for="site" value="Site" />
+            <x-text-input id="site" name="site" class="mt-1 block w-full" :value="old('site', $user->site)" maxlength="100" placeholder="Contoh: Site A" />
+            <p class="mt-1 text-xs text-gray-500">Dipakai untuk tracking peserta Mekanik, Operator, dan HR saat invite.</p>
+            <x-input-error :messages="$errors->get('site')" class="mt-2" />
+        </div>
         <div>
             <x-input-label for="assessment_access_expires_at" value="Akses Sampai" />
             <input
@@ -156,6 +162,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const packageSelect = document.getElementById('question_package_id');
     const operatorCategoryField = document.getElementById('operator-category-field');
     const operatorCategorySelect = document.getElementById('operator_assessment_category_id');
+    const siteField = document.getElementById('site-field');
+    const siteInput = document.getElementById('site');
     const segmentSection = document.getElementById('segment-config-section');
     const segmentRows = document.getElementById('segment-rows');
     const addBtn = document.getElementById('add-segment-btn');
@@ -178,6 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const packageType = selectedOption ? selectedOption.dataset.type : '';
         const isShe = packageType === 'she';
         const usesCategory = ['mekanik', 'operator'].includes(packageType);
+        const usesSite = ['mekanik', 'operator', 'hr'].includes(packageType);
         const hasSegments = selectedOption && (selectedOption.dataset.hasSegments === '1' || isShe);
 
         operatorCategoryField?.classList.toggle('hidden', !usesCategory);
@@ -185,6 +194,13 @@ document.addEventListener('DOMContentLoaded', function () {
             operatorCategorySelect.disabled = !usesCategory;
             if (!usesCategory) {
                 operatorCategorySelect.value = '';
+            }
+        }
+        siteField?.classList.toggle('hidden', !usesSite);
+        if (siteInput) {
+            siteInput.disabled = !usesSite;
+            if (!usesSite) {
+                siteInput.value = '';
             }
         }
 

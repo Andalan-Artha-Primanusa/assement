@@ -11,7 +11,7 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-[1fr_220px_220px_auto]">
+            <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-[1fr_220px_220px_180px_auto]">
                 <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari nama atau email" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <select name="package" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua paket</option>
@@ -23,6 +23,12 @@
                     <option value="">Semua kategori invite</option>
                     @foreach ($operatorCategories as $category)
                         <option value="{{ $category->id }}" @selected(request('operator_category') == $category->id)>{{ $category->name }}</option>
+                    @endforeach
+                </select>
+                <select name="site" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Semua site</option>
+                    @foreach (($sites ?? collect()) as $site)
+                        <option value="{{ $site }}" @selected(request('site') === $site)>{{ $site }}</option>
                     @endforeach
                 </select>
                 <button class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black">Filter</button>
@@ -38,6 +44,7 @@
                                 <th class="px-6 py-3 text-center">Role</th>
                                 <th class="px-6 py-3">Paket</th>
                                 <th class="px-6 py-3">Kategori Invite</th>
+                                <th class="px-6 py-3">Site</th>
                                 <th class="px-6 py-3">Segment</th>
                                 <th class="px-6 py-3">Akses Sampai</th>
                                 <th class="px-6 py-3 text-center">Durasi</th>
@@ -90,6 +97,7 @@
                                             <span class="text-gray-400">-</span>
                                         @endif
                                     </td>
+                                    <td class="px-6 py-4 text-gray-700">{{ $user->site ?: '-' }}</td>
                                     <td class="px-6 py-4 text-xs">
                                         @if (!empty($user->segment_config) && is_array($user->segment_config))
                                             <div class="flex flex-wrap gap-1">
@@ -127,7 +135,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="px-6 py-10 text-center text-gray-500">Belum ada user.</td>
+                                    <td colspan="11" class="px-6 py-10 text-center text-gray-500">Belum ada user.</td>
                                 </tr>
                             @endforelse
                         </tbody>
