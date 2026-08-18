@@ -33,11 +33,22 @@
 
     <div class="py-12 print:py-0">
         <div class="mx-auto max-w-5xl sm:px-6 lg:px-8 print:px-0 print:max-w-none">
-            <div class="mb-6 flex items-center justify-between print:hidden">
+            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
                 <h1 class="text-2xl font-bold text-gray-900">Detail Penilaian: {{ $interview_assessment->candidate_name }}</h1>
-                <a href="{{ route('admin.interview-assessments.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                    &larr; Kembali ke daftar
-                </a>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('admin.interview-assessments.index') }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">&larr; Kembali</a>
+                    <a href="{{ route('admin.interview-assessments.edit', $interview_assessment) }}" class="rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
+                    <a href="{{ route('admin.interview-assessments.pdf', $interview_assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Download PDF</a>
+                    <form method="POST" action="{{ route('admin.interview-assessments.destroy', $interview_assessment) }}" data-confirm
+                          data-confirm-title="Hapus penilaian interview?"
+                          data-confirm-message="Data penilaian {{ $interview_assessment->candidate_name }} akan dihapus permanen."
+                          data-confirm-text="Ya, hapus"
+                          data-confirm-variant="danger">
+                        @csrf
+                        @method('DELETE')
+                        <button class="rounded-md bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
+                    </form>
+                </div>
             </div>
 
             <div id="print-area" class="overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-8 print:shadow-none print:ring-0 print:p-0">

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Assessment;
 use App\Models\AssessmentAnswer;
 use App\Models\AssessmentSegment;
+use App\Models\InterviewAssessment;
+use App\Models\InterviewTemplate;
 use App\Models\OperatorAssessmentCategory;
 use App\Models\Question;
 use App\Models\QuestionPackage;
@@ -575,6 +577,194 @@ class AssessmentFlowTest extends TestCase
             ->assertOk()
             ->assertSee('Menunggu Review SHE')
             ->assertSee('Essay/Portfolio SHE sedang dinilai admin.');
+    }
+
+    public function test_hr_admin_can_access_interview_assessments_with_site(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+        $template = InterviewTemplate::create([
+            'name' => 'Template Interview HR',
+            'type' => QuestionPackage::TYPE_HR,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+        InterviewAssessment::create([
+            'interview_template_id' => $template->id,
+            'candidate_name' => 'Kandidat HR',
+            'job_title' => 'HR Officer',
+            'location' => 'Site Sangatta',
+            'interview_date' => now()->toDateString(),
+            'total_score' => 10,
+            'average_score' => 4,
+            'percentage' => 80,
+            'recommendation' => 'DIREKOMENDASIKAN',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.interview-assessments.index'))
+            ->assertOk()
+            ->assertSee('Kandidat HR')
+            ->assertSee('Site Sangatta')
+            ->assertSee('Template Interview HR');
+    }
+
+    public function test_interview_templates_are_scoped_to_operator_hr_and_mechanic_roles(): void
+    {
+        $adminHr = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+        InterviewTemplate::create([
+            'name' => 'Template HR',
+            'type' => QuestionPackage::TYPE_HR,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+        InterviewTemplate::create([
+            'name' => 'Template Mekanik',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+        InterviewTemplate::create([
+            'name' => 'Template Operator',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+        InterviewTemplate::create([
+            'name' => 'Template SHE',
+            'type' => QuestionPackage::TYPE_SHE,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($adminHr)
+            ->get(route('admin.interview-templates.index'))
+            ->assertOk()
+            ->assertSee('Template HR')
+            ->assertDontSee('Template Mekanik')
+            ->assertDontSee('Template Operator')
+            ->assertDontSee('Template SHE');
+
+        $this->actingAs($adminHr)
+            ->get(route('admin.interview-templates.create'))
+            ->assertOk()
+            ->assertSee('value="hr"', false)
+            ->assertDontSee('value="mekanik"', false)
+            ->assertDontSee('value="operator"', false)
+            ->assertDontSee('value="she"', false);
+    }
+
+    public function test_she_admin_cannot_access_interview_assessments(): void
+    {
+        $adminShe = User::factory()->create(['role' => User::ROLE_ADMIN_SHE]);
+
+        $this->actingAs($adminShe)
+            ->get(route('admin.interview-assessments.index'))
+            ->assertForbidden();
+    }
+
+    public function test_interview_assessment_can_be_updated_deleted_and_downloaded_as_pdf(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
+        $template = InterviewTemplate::create([
+            'name' => 'Template Update Interview HR',
+            'type' => QuestionPackage::TYPE_HR,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+        $category = $template->categories()->create([
+            'name' => 'Kompetensi HR',
+            'order' => 1,
+        ]);
+        $aspectA = $category->aspects()->create([
+            'name' => 'Komunikasi',
+            'order' => 1,
+        ]);
+        $aspectB = $category->aspects()->create([
+            'name' => 'Analisa',
+            'order' => 2,
+        ]);
+        $assessment = InterviewAssessment::create([
+            'interview_template_id' => $template->id,
+            'candidate_name' => 'Nama Lama',
+            'job_title' => 'HR Officer',
+            'location' => 'Site Lama',
+            'interview_date' => now()->toDateString(),
+            'total_score' => 4,
+            'average_score' => 2,
+            'percentage' => 40,
+            'recommendation' => 'TIDAK DIREKOMENDASIKAN',
+            'created_by' => $admin->id,
+        ]);
+        $assessment->scores()->create([
+            'interview_aspect_id' => $aspectA->id,
+            'score' => 2,
+            'notes' => 'lama',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.interview-assessments.edit', $assessment))
+            ->assertOk()
+            ->assertSee('Nama Lama')
+            ->assertSee('Site Lama');
+
+        $this->actingAs($admin)
+            ->put(route('admin.interview-assessments.update', $assessment), [
+                'interview_template_id' => $template->id,
+                'candidate_name' => 'Nama Baru',
+                'job_title' => 'HR Supervisor',
+                'gender' => 'L',
+                'department' => 'Human Capital',
+                'age' => 31,
+                'location' => 'Site Baru',
+                'domicile' => 'Balikpapan',
+                'expected_salary' => '10000000',
+                'interview_date' => now()->toDateString(),
+                'hr_conclusion' => 'Layak lanjut',
+                'hr_interviewer_name' => 'Penilai HR',
+                'user_interviewer_name' => 'Penilai HR',
+                'scores' => [
+                    $aspectA->id => ['score' => 5, 'notes' => 'bagus'],
+                    $aspectB->id => ['score' => 5, 'notes' => 'tajam'],
+                ],
+            ])
+            ->assertRedirect(route('admin.interview-assessments.show', $assessment));
+
+        $this->assertDatabaseHas('interview_assessments', [
+            'id' => $assessment->id,
+            'candidate_name' => 'Nama Baru',
+            'job_title' => 'HR Supervisor',
+            'location' => 'Site Baru',
+            'total_score' => 10,
+            'recommendation' => 'DIREKOMENDASIKAN',
+        ]);
+        $this->assertDatabaseHas('interview_scores', [
+            'interview_assessment_id' => $assessment->id,
+            'interview_aspect_id' => $aspectB->id,
+            'score' => 5,
+            'notes' => 'tajam',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.interview-assessments.pdf', $assessment))
+            ->assertOk()
+            ->assertSee('Form Penilaian Interview')
+            ->assertSee('Cetak / Save as PDF')
+            ->assertSee('Site Baru');
+
+        $this->actingAs($admin)
+            ->delete(route('admin.interview-assessments.destroy', $assessment))
+            ->assertRedirect(route('admin.interview-assessments.index'));
+
+        $this->assertDatabaseMissing('interview_assessments', [
+            'id' => $assessment->id,
+        ]);
     }
 
     public function test_user_dashboard_shows_positive_access_days_for_future_expiry(): void

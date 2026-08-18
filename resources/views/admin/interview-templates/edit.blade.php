@@ -27,10 +27,9 @@
                             <x-input-label for="type" value="Tipe / Kategori" />
                             <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                 <option value="">-- Pilih Tipe --</option>
-                                <option value="mekanik" @selected($interview_template->type === 'mekanik')>Mekanik</option>
-                                <option value="operator" @selected($interview_template->type === 'operator')>Operator</option>
-                                <option value="hr" @selected($interview_template->type === 'hr')>HR</option>
-                                <option value="she" @selected($interview_template->type === 'she')>SHE</option>
+                                @foreach ($visibleTypes as $type)
+                                    <option value="{{ $type }}" @selected(old('type', $interview_template->type) === $type)>{{ \App\Models\QuestionPackage::typeLabel($type) }}</option>
+                                @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('type')" class="mt-2" />
                         </div>

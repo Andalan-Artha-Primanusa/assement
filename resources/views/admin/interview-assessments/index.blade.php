@@ -36,6 +36,7 @@
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tanggal</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Kandidat</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Jabatan</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Site</th>
                                 <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Template</th>
                                 <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900">Skor</th>
                                 <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900">Rekomendasi</th>
@@ -48,6 +49,7 @@
                                     <td class="px-6 py-4 text-sm text-gray-700">{{ $assessment->interview_date?->format('d M Y') ?? '-' }}</td>
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $assessment->candidate_name }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-700">{{ $assessment->job_title ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-700">{{ $assessment->location ?? '-' }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-700">{{ $assessment->template->name }}</td>
                                     <td class="px-6 py-4 text-center text-sm">
                                         <span class="font-semibold">{{ $assessment->percentage }}%</span>
@@ -66,12 +68,25 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('admin.interview-assessments.show', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <a href="{{ route('admin.interview-assessments.show', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
+                                            <a href="{{ route('admin.interview-assessments.edit', $assessment) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
+                                            <a href="{{ route('admin.interview-assessments.pdf', $assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">PDF</a>
+                                            <form method="POST" action="{{ route('admin.interview-assessments.destroy', $assessment) }}" class="inline" data-confirm
+                                                  data-confirm-title="Hapus penilaian interview?"
+                                                  data-confirm-message="Data penilaian {{ $assessment->candidate_name }} akan dihapus permanen."
+                                                  data-confirm-text="Ya, hapus"
+                                                  data-confirm-variant="danger">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">Belum ada data penilaian interview.</td>
+                                    <td colspan="8" class="px-6 py-10 text-center text-gray-500">Belum ada data penilaian interview.</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -3,117 +3,70 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\InterviewAssessment;
 use App\Models\InterviewTemplate;
 use App\Models\InterviewScore;
+use App\Models\QuestionPackage;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class InterviewAssessmentController extends Controller
 {
     public function index(Request $request)
     {
         $user = auth()->user();
+        $visibleTypes = $this->visibleInterviewTypes($user);
+
+        abort_if($visibleTypes === [], 403);
         
         $query = InterviewAssessment::with('template', 'creator')->latest();
         
-        // RBAC filtering
-        if ($user->isAdminMekanik()) {
-            $query->whereHas('template', function($q) {
-                $q->where('type', 'mekanik');
-            });
-        } elseif ($user->isAdminOperation()) {
-            $query->whereHas('template', function($q) {
-                $q->where('type', 'operator');
-            });
-        }
+        $query->whereHas('template', fn ($q) => $q->whereIn('type', $visibleTypes));
         
         $assessments = $query->paginate(15);
         
         return view('admin.interview-assessments.index', compact('assessments'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $user = auth()->user();
+        $visibleTypes = $this->visibleInterviewTypes($user);
+
+        abort_if($visibleTypes === [], 403);
         
         $query = InterviewTemplate::where('is_active', true)->with(['categories.aspects']);
         
-        // RBAC filtering
-        if ($user->isAdminMekanik()) {
-            $query->where('type', 'mekanik');
-        } elseif ($user->isAdminOperation()) {
-            $query->where('type', 'operator');
-        }
+        $query->whereIn('type', $visibleTypes);
         
         $templates = $query->get();
+
+        if ($request->filled('template_id')) {
+            abort_unless($templates->contains('id', $request->integer('template_id')), 403);
+        }
         
         return view('admin.interview-assessments.create', compact('templates'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'interview_template_id' => 'required|exists:interview_templates,id',
-            'candidate_name' => 'required|string|max:255',
-            'scores' => 'required|array',
-            'scores.*.score' => 'nullable|integer|min:1|max:5',
-            'scores.*.notes' => 'nullable|string|max:500',
-        ]);
+        $data = $this->validated($request);
 
-        $template = InterviewTemplate::findOrFail($request->interview_template_id);
-        
-        // Calculate scores
-        $totalScore = 0;
-        $maxPossibleScore = 0;
-        $countAspects = 0;
-        
-        foreach ($template->categories as $category) {
-            foreach ($category->aspects as $aspect) {
-                $maxPossibleScore += 5; // Assuming max score is 5 per aspect
-                $countAspects++;
-            }
-        }
-        
-        foreach ($request->scores as $aspectId => $scoreData) {
-            if (!empty($scoreData['score'])) {
-                $totalScore += $scoreData['score'];
-            }
-        }
-        
-        $averageScore = $countAspects > 0 ? $totalScore / $countAspects : 0;
-        $percentage = $maxPossibleScore > 0 ? ($totalScore / $maxPossibleScore) * 100 : 0;
-        
-        $recommendation = 'TIDAK DIREKOMENDASIKAN';
-        if ($percentage >= $template->min_recommended_percentage) {
-            $recommendation = 'DIREKOMENDASIKAN';
-        } elseif ($percentage >= $template->min_considered_percentage) {
-            $recommendation = 'DIPERTIMBANGKAN';
-        }
+        $template = InterviewTemplate::with('categories.aspects')->findOrFail($data['interview_template_id']);
+        $calculated = $this->calculateResult($template, $data['scores']);
 
         $assessment = InterviewAssessment::create([
             'interview_template_id' => $template->id,
-            'candidate_name' => $request->candidate_name,
-            'job_title' => $request->job_title,
-            'gender' => $request->gender,
-            'department' => $request->department,
-            'age' => $request->age,
-            'location' => $request->location,
-            'domicile' => $request->domicile,
-            'join_date' => $request->join_date,
-            'expected_salary' => $request->expected_salary,
-            'interview_date' => $request->interview_date,
-            'hr_conclusion' => $request->hr_conclusion,
-            'hr_interviewer_name' => $request->hr_interviewer_name,
-            'user_interviewer_name' => $request->user_interviewer_name,
-            'total_score' => $totalScore,
-            'average_score' => $averageScore,
-            'percentage' => $percentage,
-            'recommendation' => $recommendation,
+            ...$this->assessmentAttributes($data),
+            ...$calculated,
             'created_by' => auth()->id(),
         ]);
 
-        foreach ($request->scores as $aspectId => $scoreData) {
+        foreach ($data['scores'] as $aspectId => $scoreData) {
             InterviewScore::create([
                 'interview_assessment_id' => $assessment->id,
                 'interview_aspect_id' => $aspectId,
@@ -122,32 +75,95 @@ class InterviewAssessmentController extends Controller
             ]);
         }
 
+        ActivityLog::log('interview_assessment_create', 'Membuat penilaian interview '.$assessment->candidate_name, InterviewAssessment::class, $assessment->id);
+
         return redirect()->route('admin.interview-assessments.show', $assessment)
             ->with('success', 'Form penilaian interview berhasil disimpan.');
+    }
+
+    public function edit(InterviewAssessment $interview_assessment)
+    {
+        $interview_assessment->load(['template.categories.aspects', 'scores']);
+        $this->authorizeInterviewType($interview_assessment->template->type);
+
+        $templates = InterviewTemplate::where('is_active', true)
+            ->whereIn('type', $this->visibleInterviewTypes(auth()->user()))
+            ->with(['categories.aspects'])
+            ->get();
+
+        return view('admin.interview-assessments.edit', compact('interview_assessment', 'templates'));
+    }
+
+    public function update(Request $request, InterviewAssessment $interview_assessment): RedirectResponse
+    {
+        $interview_assessment->load('template');
+        $this->authorizeInterviewType($interview_assessment->template->type);
+
+        $data = $this->validated($request);
+        $template = InterviewTemplate::with('categories.aspects')->findOrFail($data['interview_template_id']);
+        $this->authorizeInterviewType($template->type);
+        $calculated = $this->calculateResult($template, $data['scores']);
+
+        $interview_assessment->update([
+            'interview_template_id' => $template->id,
+            ...$this->assessmentAttributes($data),
+            ...$calculated,
+        ]);
+
+        $interview_assessment->scores()->delete();
+        foreach ($data['scores'] as $aspectId => $scoreData) {
+            InterviewScore::create([
+                'interview_assessment_id' => $interview_assessment->id,
+                'interview_aspect_id' => $aspectId,
+                'score' => $scoreData['score'] ?? null,
+                'notes' => $scoreData['notes'] ?? null,
+            ]);
+        }
+
+        ActivityLog::log('interview_assessment_update', 'Mengupdate penilaian interview '.$interview_assessment->candidate_name, InterviewAssessment::class, $interview_assessment->id);
+
+        return redirect()->route('admin.interview-assessments.show', $interview_assessment)
+            ->with('success', 'Form penilaian interview berhasil diperbarui.');
     }
 
     public function show(InterviewAssessment $interview_assessment)
     {
         $interview_assessment->load(['template.categories.aspects', 'scores']);
+        $this->authorizeInterviewType($interview_assessment->template->type);
+
         return view('admin.interview-assessments.show', compact('interview_assessment'));
+    }
+
+    public function pdf(InterviewAssessment $interview_assessment): View
+    {
+        $interview_assessment->load(['template.categories.aspects', 'scores']);
+        $this->authorizeInterviewType($interview_assessment->template->type);
+
+        return view('admin.interview-assessments.pdf', compact('interview_assessment'));
+    }
+
+    public function destroy(InterviewAssessment $interview_assessment): RedirectResponse
+    {
+        $interview_assessment->load('template');
+        $this->authorizeInterviewType($interview_assessment->template->type);
+
+        ActivityLog::log('interview_assessment_delete', 'Menghapus penilaian interview '.$interview_assessment->candidate_name, InterviewAssessment::class, $interview_assessment->id);
+        $interview_assessment->delete();
+
+        return redirect()->route('admin.interview-assessments.index')
+            ->with('success', 'Penilaian interview berhasil dihapus.');
     }
 
     public function export(Request $request)
     {
         $user = auth()->user();
+        $visibleTypes = $this->visibleInterviewTypes($user);
+
+        abort_if($visibleTypes === [], 403);
         
         $query = InterviewAssessment::with('template', 'creator')->latest();
         
-        // RBAC filtering
-        if ($user->isAdminMekanik()) {
-            $query->whereHas('template', function($q) {
-                $q->where('type', 'mekanik');
-            });
-        } elseif ($user->isAdminOperation()) {
-            $query->whereHas('template', function($q) {
-                $q->where('type', 'operator');
-            });
-        }
+        $query->whereHas('template', fn ($q) => $q->whereIn('type', $visibleTypes));
         
         $assessments = $query->get();
 
@@ -196,5 +212,98 @@ class InterviewAssessmentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function visibleInterviewTypes(User $user): array
+    {
+        return array_values(array_intersect($user->visiblePackageTypes(), [
+            QuestionPackage::TYPE_MEKANIK,
+            QuestionPackage::TYPE_OPERATOR,
+            QuestionPackage::TYPE_HR,
+        ]));
+    }
+
+    private function authorizeInterviewType(string $type): void
+    {
+        abort_unless(in_array($type, $this->visibleInterviewTypes(auth()->user()), true), 403);
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'interview_template_id' => [
+                'required',
+                Rule::exists('interview_templates', 'id')->where(fn ($query) => $query->whereIn('type', $this->visibleInterviewTypes(auth()->user()))),
+            ],
+            'candidate_name' => ['required', 'string', 'max:255'],
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'gender' => ['nullable', 'in:L,P'],
+            'department' => ['nullable', 'string', 'max:255'],
+            'age' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'domicile' => ['nullable', 'string', 'max:255'],
+            'join_date' => ['nullable', 'date'],
+            'expected_salary' => ['nullable', 'string', 'max:255'],
+            'interview_date' => ['nullable', 'date'],
+            'hr_conclusion' => ['nullable', 'string'],
+            'hr_interviewer_name' => ['nullable', 'string', 'max:255'],
+            'user_interviewer_name' => ['nullable', 'string', 'max:255'],
+            'scores' => ['required', 'array'],
+            'scores.*.score' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'scores.*.notes' => ['nullable', 'string', 'max:500'],
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function assessmentAttributes(array $data): array
+    {
+        return [
+            'candidate_name' => $data['candidate_name'],
+            'job_title' => $data['job_title'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'department' => $data['department'] ?? null,
+            'age' => $data['age'] ?? null,
+            'location' => $data['location'] ?? null,
+            'domicile' => $data['domicile'] ?? null,
+            'join_date' => $data['join_date'] ?? null,
+            'expected_salary' => $data['expected_salary'] ?? null,
+            'interview_date' => $data['interview_date'] ?? null,
+            'hr_conclusion' => $data['hr_conclusion'] ?? null,
+            'hr_interviewer_name' => $data['hr_interviewer_name'] ?? null,
+            'user_interviewer_name' => $data['user_interviewer_name'] ?? null,
+        ];
+    }
+
+    /**
+     * @param  array<int|string, array{score?: int|string|null, notes?: string|null}>  $scores
+     * @return array{total_score: int, average_score: float, percentage: float, recommendation: string}
+     */
+    private function calculateResult(InterviewTemplate $template, array $scores): array
+    {
+        $countAspects = $template->categories->sum(fn ($category) => $category->aspects->count());
+        $maxPossibleScore = $countAspects * 5;
+        $totalScore = collect($scores)->sum(fn ($scoreData) => (int) ($scoreData['score'] ?? 0));
+        $averageScore = $countAspects > 0 ? $totalScore / $countAspects : 0;
+        $percentage = $maxPossibleScore > 0 ? ($totalScore / $maxPossibleScore) * 100 : 0;
+
+        $recommendation = 'TIDAK DIREKOMENDASIKAN';
+        if ($percentage >= $template->min_recommended_percentage) {
+            $recommendation = 'DIREKOMENDASIKAN';
+        } elseif ($percentage >= $template->min_considered_percentage) {
+            $recommendation = 'DIPERTIMBANGKAN';
+        }
+
+        return [
+            'total_score' => $totalScore,
+            'average_score' => round($averageScore, 2),
+            'percentage' => round($percentage, 2),
+            'recommendation' => $recommendation,
+        ];
     }
 }

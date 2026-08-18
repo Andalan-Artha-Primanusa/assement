@@ -3,6 +3,11 @@
     $visibleTypes = $authUser?->visiblePackageTypes() ?? [];
     $currentType = request('type');
     $typeLabel = fn (?string $type): string => \App\Models\QuestionPackage::typeLabel($type);
+    $hasInterviewAccess = (bool) array_intersect([
+        \App\Models\QuestionPackage::TYPE_MEKANIK,
+        \App\Models\QuestionPackage::TYPE_OPERATOR,
+        \App\Models\QuestionPackage::TYPE_HR,
+    ], $visibleTypes);
     $activeSubLink = 'font-semibold text-indigo-700 bg-indigo-50 border-r-2 border-indigo-400';
     $inactiveSubLink = 'text-gray-500 hover:text-gray-800 hover:bg-gray-50 border-r-2 border-transparent';
     $subLinkBase = 'flex items-center w-full pl-8 pr-3 py-2 text-sm rounded-lg transition duration-150 ease-in-out';
@@ -149,15 +154,17 @@
                 {{ __('Log Aktivitas') }}
             </x-nav-link>
 
-            <div class="pt-4 pb-1 border-t border-gray-100 mt-4">
-                <span class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</span>
-            </div>
-            <x-nav-link :href="route('admin.interview-templates.index')" :active="request()->routeIs('admin.interview-templates.*')">
-                {{ __('Template Interview') }}
-            </x-nav-link>
-            <x-nav-link :href="route('admin.interview-assessments.index')" :active="request()->routeIs('admin.interview-assessments.*')">
-                {{ __('Penilaian Interview') }}
-            </x-nav-link>
+            @if ($hasInterviewAccess)
+                <div class="pt-4 pb-1 border-t border-gray-100 mt-4">
+                    <span class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</span>
+                </div>
+                <x-nav-link :href="route('admin.interview-templates.index')" :active="request()->routeIs('admin.interview-templates.*')">
+                    {{ __('Template Interview') }}
+                </x-nav-link>
+                <x-nav-link :href="route('admin.interview-assessments.index')" :active="request()->routeIs('admin.interview-assessments.*')">
+                    {{ __('Penilaian Interview') }}
+                </x-nav-link>
+            @endif
         @elseif ($authUser?->isAdmin())
             @php
                 $adminType = $visibleTypes[0] ?? null;
@@ -202,15 +209,17 @@
                 {{ __($menuLabels['logs']) }}
             </x-nav-link>
 
-            <div class="pt-4 pb-1 border-t border-gray-100 mt-4">
-                <span class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</span>
-            </div>
-            <x-nav-link :href="route('admin.interview-templates.index')" :active="request()->routeIs('admin.interview-templates.*')">
-                {{ __('Template Interview') }}
-            </x-nav-link>
-            <x-nav-link :href="route('admin.interview-assessments.index')" :active="request()->routeIs('admin.interview-assessments.*')">
-                {{ __('Penilaian Interview') }}
-            </x-nav-link>
+            @if ($hasInterviewAccess)
+                <div class="pt-4 pb-1 border-t border-gray-100 mt-4">
+                    <span class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview</span>
+                </div>
+                <x-nav-link :href="route('admin.interview-templates.index')" :active="request()->routeIs('admin.interview-templates.*')">
+                    {{ __('Template Interview') }}
+                </x-nav-link>
+                <x-nav-link :href="route('admin.interview-assessments.index')" :active="request()->routeIs('admin.interview-assessments.*')">
+                    {{ __('Penilaian Interview') }}
+                </x-nav-link>
+            @endif
         @endif
     </div>
 

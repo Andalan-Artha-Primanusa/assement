@@ -38,7 +38,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-center font-semibold text-gray-800">
                                         <span class="rounded px-2 py-1 text-xs font-medium bg-slate-100 text-slate-800 uppercase">
-                                            {{ $template->type }}
+                                            {{ \App\Models\QuestionPackage::typeLabel($template->type) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center text-gray-700">

@@ -81,6 +81,7 @@ Route::middleware(['auth', 'admin'])
         // Interview Assessments
         Route::resource('interview-templates', \App\Http\Controllers\Admin\InterviewTemplateController::class);
         Route::get('interview-assessments/export', [\App\Http\Controllers\Admin\InterviewAssessmentController::class, 'export'])->name('interview-assessments.export');
+        Route::get('interview-assessments/{interview_assessment}/pdf', [\App\Http\Controllers\Admin\InterviewAssessmentController::class, 'pdf'])->name('interview-assessments.pdf');
         Route::resource('interview-assessments', \App\Http\Controllers\Admin\InterviewAssessmentController::class);
     });
 

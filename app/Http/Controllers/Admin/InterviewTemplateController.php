@@ -7,8 +7,11 @@ use App\Models\InterviewTemplate;
 use App\Models\InterviewCategory;
 use App\Models\InterviewAspect;
 use App\Models\ActivityLog;
+use App\Models\QuestionPackage;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class InterviewTemplateController extends Controller
 {
@@ -16,13 +19,11 @@ class InterviewTemplateController extends Controller
     {
         $user = auth()->user();
         $query = InterviewTemplate::withCount('categories')->latest();
+        $visibleTypes = $this->visibleInterviewTypes($user);
 
-        // RBAC filtering
-        if ($user->isAdminMekanik()) {
-            $query->where('type', 'mekanik');
-        } elseif ($user->isAdminOperation()) {
-            $query->where('type', 'operator');
-        }
+        abort_if($visibleTypes === [], 403);
+
+        $query->whereIn('type', $visibleTypes);
 
         $templates = $query->paginate(15);
 
@@ -31,14 +32,18 @@ class InterviewTemplateController extends Controller
 
     public function create()
     {
-        return view('admin.interview-templates.create');
+        $visibleTypes = $this->visibleInterviewTypes(auth()->user());
+
+        abort_if($visibleTypes === [], 403);
+
+        return view('admin.interview-templates.create', compact('visibleTypes'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|string|max:50',
+            'type' => ['required', 'string', 'max:50', Rule::in($this->visibleInterviewTypes(auth()->user()))],
             'min_recommended_percentage' => 'required|integer|min:0|max:100',
             'min_considered_percentage' => 'required|integer|min:0|max:100',
             'is_active' => 'boolean',
@@ -81,15 +86,19 @@ class InterviewTemplateController extends Controller
 
     public function edit(InterviewTemplate $interview_template)
     {
+        $this->authorizeInterviewType($interview_template->type);
+
         $interview_template->load('categories.aspects');
-        return view('admin.interview-templates.edit', compact('interview_template'));
+        $visibleTypes = $this->visibleInterviewTypes(auth()->user());
+
+        return view('admin.interview-templates.edit', compact('interview_template', 'visibleTypes'));
     }
 
     public function update(Request $request, InterviewTemplate $interview_template)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|string|max:50',
+            'type' => ['required', 'string', 'max:50', Rule::in($this->visibleInterviewTypes(auth()->user()))],
             'min_recommended_percentage' => 'required|integer|min:0|max:100',
             'min_considered_percentage' => 'required|integer|min:0|max:100',
             'is_active' => 'boolean',
@@ -98,6 +107,8 @@ class InterviewTemplateController extends Controller
             'categories.*.aspects' => 'required|array|min:1',
             'categories.*.aspects.*.name' => 'required|string|max:255',
         ]);
+
+        $this->authorizeInterviewType($interview_template->type);
 
         DB::transaction(function () use ($request, $interview_template) {
             $interview_template->update([
@@ -167,11 +178,30 @@ class InterviewTemplateController extends Controller
 
     public function destroy(InterviewTemplate $interview_template)
     {
+        $this->authorizeInterviewType($interview_template->type);
+
         ActivityLog::log('interview_template_delete', 'Menghapus template interview ' . $interview_template->name, InterviewTemplate::class, $interview_template->id);
         
         $interview_template->delete();
 
         return redirect()->route('admin.interview-templates.index')
             ->with('status', 'Template interview berhasil dihapus.');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function visibleInterviewTypes(User $user): array
+    {
+        return array_values(array_intersect($user->visiblePackageTypes(), [
+            QuestionPackage::TYPE_MEKANIK,
+            QuestionPackage::TYPE_OPERATOR,
+            QuestionPackage::TYPE_HR,
+        ]));
+    }
+
+    private function authorizeInterviewType(string $type): void
+    {
+        abort_unless(in_array($type, $this->visibleInterviewTypes(auth()->user()), true), 403);
     }
 }
