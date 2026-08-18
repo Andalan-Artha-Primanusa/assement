@@ -25,6 +25,7 @@ class InterviewAssessment extends Model
         'hr_conclusion',
         'hr_interviewer_name',
         'user_interviewer_name',
+        'signature_path',
         'created_by',
     ];
 

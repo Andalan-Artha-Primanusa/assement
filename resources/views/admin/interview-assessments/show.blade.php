@@ -183,8 +183,8 @@
                         <div class="flex justify-end mt-8 text-center text-sm">
                             <div class="w-1/2">
                                 <p class="mb-4 font-semibold">Penilai</p>
-                                @if($interview_assessment->user_interviewer_name)
-                                    <p class="mb-4 italic text-xl" style="font-family: 'Brush Script MT', cursive;">{{ $interview_assessment->user_interviewer_name }}</p>
+                                @if($interview_assessment->signature_path)
+                                    <img src="{{ route('files.show', $interview_assessment->signature_path) }}" alt="Tanda tangan penilai" class="mx-auto mb-4 h-20 max-w-[240px] object-contain">
                                 @else
                                     <p class="mb-16"></p>
                                 @endif

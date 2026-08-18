@@ -14,7 +14,7 @@
             @endphp
 
             <div class="overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
-                <form action="{{ route('admin.interview-assessments.update', $interview_assessment) }}" method="POST">
+                <form action="{{ route('admin.interview-assessments.update', $interview_assessment) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="interview_template_id" value="{{ $selectedTemplate->id }}">
@@ -130,8 +130,19 @@
                                     <input type="text" name="hr_interviewer_name" value="{{ old('hr_interviewer_name', $interview_assessment->hr_interviewer_name) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Tanda Tangan (Ketik Nama)</label>
-                                    <input type="text" name="user_interviewer_name" value="{{ old('user_interviewer_name', $interview_assessment->user_interviewer_name) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <label class="block text-sm font-medium text-gray-700">Upload Tanda Tangan</label>
+                                    <input type="file" name="signature" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
+                                    <p class="mt-1 text-xs text-gray-500">Upload gambar baru jika ingin mengganti tanda tangan. Maksimal 2MB.</p>
+                                    @if($interview_assessment->signature_path)
+                                        <div class="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+                                            <p class="mb-2 text-xs font-semibold uppercase text-gray-500">Tanda tangan saat ini</p>
+                                            <img src="{{ route('files.show', $interview_assessment->signature_path) }}" alt="Tanda tangan" class="h-16 max-w-[220px] object-contain">
+                                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-gray-700">
+                                                <input type="checkbox" name="remove_signature" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                                Hapus tanda tangan
+                                            </label>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

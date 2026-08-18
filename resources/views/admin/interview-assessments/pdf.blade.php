@@ -25,6 +25,7 @@
         .notes { min-height: 54px; border: 1px solid #d1d5db; padding: 8px; }
         .signature { margin-top: 30px; width: 220px; float: right; text-align: center; }
         .signature-space { height: 42px; }
+        .signature-image { height: 60px; max-width: 200px; object-fit: contain; margin: 8px auto; display: block; }
         .small { font-size: 9px; color: #6b7280; }
         @media print {
             .toolbar { display: none; }
@@ -127,7 +128,11 @@
 
     <div class="signature">
         <div>Penilai</div>
-        <div class="signature-space"></div>
+        @if($interview_assessment->signature_path)
+            <img src="{{ route('files.show', $interview_assessment->signature_path) }}" alt="Tanda tangan penilai" class="signature-image">
+        @else
+            <div class="signature-space"></div>
+        @endif
         <strong>{{ $interview_assessment->hr_interviewer_name ?? '(...................................)' }}</strong>
     </div>
     </div>

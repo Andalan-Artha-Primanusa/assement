@@ -11,6 +11,7 @@ use App\Models\QuestionPackage;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -63,6 +64,7 @@ class InterviewAssessmentController extends Controller
             'interview_template_id' => $template->id,
             ...$this->assessmentAttributes($data),
             ...$calculated,
+            'signature_path' => $this->storeSignature($request),
             'created_by' => auth()->id(),
         ]);
 
@@ -104,11 +106,23 @@ class InterviewAssessmentController extends Controller
         $this->authorizeInterviewType($template->type);
         $calculated = $this->calculateResult($template, $data['scores']);
 
-        $interview_assessment->update([
+        $attributes = [
             'interview_template_id' => $template->id,
             ...$this->assessmentAttributes($data),
             ...$calculated,
-        ]);
+        ];
+
+        if ($request->boolean('remove_signature')) {
+            $this->deleteSignature($interview_assessment);
+            $attributes['signature_path'] = null;
+        }
+
+        if ($request->hasFile('signature')) {
+            $this->deleteSignature($interview_assessment);
+            $attributes['signature_path'] = $this->storeSignature($request);
+        }
+
+        $interview_assessment->update($attributes);
 
         $interview_assessment->scores()->delete();
         foreach ($data['scores'] as $aspectId => $scoreData) {
@@ -148,6 +162,7 @@ class InterviewAssessmentController extends Controller
         $this->authorizeInterviewType($interview_assessment->template->type);
 
         ActivityLog::log('interview_assessment_delete', 'Menghapus penilaian interview '.$interview_assessment->candidate_name, InterviewAssessment::class, $interview_assessment->id);
+        $this->deleteSignature($interview_assessment);
         $interview_assessment->delete();
 
         return redirect()->route('admin.interview-assessments.index')
@@ -250,7 +265,8 @@ class InterviewAssessmentController extends Controller
             'interview_date' => ['nullable', 'date'],
             'hr_conclusion' => ['nullable', 'string'],
             'hr_interviewer_name' => ['nullable', 'string', 'max:255'],
-            'user_interviewer_name' => ['nullable', 'string', 'max:255'],
+            'signature' => ['nullable', 'image', 'max:2048'],
+            'remove_signature' => ['nullable', 'boolean'],
             'scores' => ['required', 'array'],
             'scores.*.score' => ['nullable', 'integer', 'min:1', 'max:5'],
             'scores.*.notes' => ['nullable', 'string', 'max:500'],
@@ -276,8 +292,24 @@ class InterviewAssessmentController extends Controller
             'interview_date' => $data['interview_date'] ?? null,
             'hr_conclusion' => $data['hr_conclusion'] ?? null,
             'hr_interviewer_name' => $data['hr_interviewer_name'] ?? null,
-            'user_interviewer_name' => $data['user_interviewer_name'] ?? null,
+            'user_interviewer_name' => null,
         ];
+    }
+
+    private function storeSignature(Request $request): ?string
+    {
+        if (! $request->hasFile('signature')) {
+            return null;
+        }
+
+        return $request->file('signature')->store('interview-signatures', 'public');
+    }
+
+    private function deleteSignature(InterviewAssessment $assessment): void
+    {
+        if ($assessment->signature_path) {
+            Storage::disk('public')->delete($assessment->signature_path);
+        }
     }
 
     /**

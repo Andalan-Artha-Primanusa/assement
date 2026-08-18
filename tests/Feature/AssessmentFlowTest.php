@@ -13,6 +13,7 @@ use App\Models\QuestionPackage;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -670,6 +671,7 @@ class AssessmentFlowTest extends TestCase
 
     public function test_interview_assessment_can_be_updated_deleted_and_downloaded_as_pdf(): void
     {
+        Storage::fake('public');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_HR]);
         $template = InterviewTemplate::create([
             'name' => 'Template Update Interview HR',
@@ -728,7 +730,7 @@ class AssessmentFlowTest extends TestCase
                 'interview_date' => now()->toDateString(),
                 'hr_conclusion' => 'Layak lanjut',
                 'hr_interviewer_name' => 'Penilai HR',
-                'user_interviewer_name' => 'Penilai HR',
+                'signature' => UploadedFile::fake()->image('signature.png', 240, 90),
                 'scores' => [
                     $aspectA->id => ['score' => 5, 'notes' => 'bagus'],
                     $aspectB->id => ['score' => 5, 'notes' => 'tajam'],
@@ -744,6 +746,9 @@ class AssessmentFlowTest extends TestCase
             'total_score' => 10,
             'recommendation' => 'DIREKOMENDASIKAN',
         ]);
+        $assessment->refresh();
+        $this->assertNotNull($assessment->signature_path);
+        Storage::disk('public')->assertExists($assessment->signature_path);
         $this->assertDatabaseHas('interview_scores', [
             'interview_assessment_id' => $assessment->id,
             'interview_aspect_id' => $aspectB->id,
@@ -756,12 +761,16 @@ class AssessmentFlowTest extends TestCase
             ->assertOk()
             ->assertSee('Form Penilaian Interview')
             ->assertSee('Cetak / Save as PDF')
-            ->assertSee('Site Baru');
+            ->assertSee('Site Baru')
+            ->assertSee($assessment->signature_path);
+
+        $signaturePath = $assessment->signature_path;
 
         $this->actingAs($admin)
             ->delete(route('admin.interview-assessments.destroy', $assessment))
             ->assertRedirect(route('admin.interview-assessments.index'));
 
+        Storage::disk('public')->assertMissing($signaturePath);
         $this->assertDatabaseMissing('interview_assessments', [
             'id' => $assessment->id,
         ]);
@@ -2308,6 +2317,7 @@ class AssessmentFlowTest extends TestCase
                 'bulk_emails' => "alpha@example.com\nBeta User <beta@example.com>\ngamma@example.com, delta@example.com",
                 'bulk_type' => QuestionPackage::TYPE_MEKANIK,
                 'bulk_question_package_id' => $package->id,
+                'bulk_site' => 'Site Bulk',
                 'bulk_access_days' => 7,
                 'bulk_duration_hours' => 2,
             ])
@@ -2318,6 +2328,7 @@ class AssessmentFlowTest extends TestCase
                 'email' => $email,
                 'role' => 'user',
                 'question_package_id' => $package->id,
+                'site' => 'Site Bulk',
                 'assessment_duration_minutes' => 120,
             ]);
         }
