@@ -13,7 +13,7 @@ class AssessmentExportController extends Controller
     {
         abort_unless(auth()->user()->isAdmin(), 403);
 
-        $assessment->load('user', 'questionPackage', 'answers.question');
+        $assessment->load('user', 'questionPackage', 'operatorAssessmentCategory', 'answers.question');
 
         $pdf = Pdf::loadView('admin.assessments.pdf', compact('assessment'));
 

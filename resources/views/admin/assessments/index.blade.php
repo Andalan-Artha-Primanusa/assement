@@ -5,7 +5,7 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-5">
+            <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-6">
                 <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari peserta" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <select name="package" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua paket</option>
@@ -21,7 +21,19 @@
                     <option value="pending" @selected(request('status') === 'pending')>Sedang jalan</option>
                     <option value="blocked" @selected(request('status') === 'blocked')>Terblokir</option>
                 </select>
-                <div class="flex gap-2 md:col-span-2">
+                <select name="operator_category" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Semua kategori invite</option>
+                    @foreach (($operatorCategories ?? collect()) as $category)
+                        <option value="{{ $category->id }}" @selected(request('operator_category') == $category->id)>{{ $category->name }}</option>
+                    @endforeach
+                </select>
+                <select name="site" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Semua site</option>
+                    @foreach (($sites ?? collect()) as $site)
+                        <option value="{{ $site }}" @selected(request('site') === $site)>{{ $site }}</option>
+                    @endforeach
+                </select>
+                <div class="flex gap-2 md:col-span-6">
                     <button class="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black">Filter</button>
                     <a href="{{ route('admin.assessments.index') }}" class="w-full rounded-md border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset</a>
                     <a href="{{ route('admin.assessments.export', request()->query()) }}" class="w-full rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-center text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Export CSV</a>
@@ -35,6 +47,8 @@
                             <tr class="text-left text-xs font-semibold uppercase text-gray-500">
                                 <th class="px-4 sm:px-6 py-3">Peserta</th>
                                 <th class="px-4 sm:px-6 py-3">Paket</th>
+                                <th class="px-4 sm:px-6 py-3">Kategori Invite</th>
+                                <th class="px-4 sm:px-6 py-3">Site</th>
                                 <th class="px-4 sm:px-6 py-3">Segment</th>
                                 <th class="px-4 sm:px-6 py-3">Mulai</th>
                                 <th class="px-4 sm:px-6 py-3">Berakhir</th>
@@ -49,6 +63,14 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 sm:px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ $assessment->user->name }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap">{{ $assessment->questionPackage?->name ?? '-' }}</td>
+                                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                        @if ($assessment->operatorAssessmentCategory)
+                                            <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">{{ $assessment->operatorAssessmentCategory->name }}</span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 sm:px-6 py-4 text-gray-700 whitespace-nowrap">{{ $assessment->site ?: ($assessment->user->site ?: '-') }}</td>
                                     <td class="px-4 sm:px-6 py-4 text-xs whitespace-nowrap">
                                         @if ($assessment->segments()->count() > 0)
                                             @php
@@ -142,7 +164,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-4 sm:px-6 py-10 text-center text-gray-500">Belum ada assessment.</td>
+                                    <td colspan="11" class="px-4 sm:px-6 py-10 text-center text-gray-500">Belum ada assessment.</td>
                                 </tr>
                             @endforelse
                         </tbody>

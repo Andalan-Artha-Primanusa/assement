@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -55,6 +56,24 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return redirect()
                 ->route('login')
+                ->with('warning', $message);
+        });
+
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            $seconds = (int) ($e->getHeaders()['Retry-After'] ?? 60);
+            $message = 'Terlalu banyak request. Tunggu '.$seconds.' detik lalu coba lagi.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'rate_limited' => true,
+                    'message' => $message,
+                    'retry_after' => $seconds,
+                ], 429);
+            }
+
+            return redirect()
+                ->back()
+                ->withInput($request->except('password'))
                 ->with('warning', $message);
         });
     })->create();

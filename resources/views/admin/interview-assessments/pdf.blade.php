@@ -23,9 +23,9 @@
         .summary td { padding: 7px 8px; }
         .recommendation { font-weight: bold; text-align: center; padding: 8px; border: 1px solid #111827; }
         .notes { min-height: 54px; border: 1px solid #d1d5db; padding: 8px; }
-        .signature { margin-top: 30px; width: 220px; float: right; text-align: center; }
-        .signature-space { height: 42px; }
-        .signature-image { height: 60px; max-width: 200px; object-fit: contain; margin: 8px auto; display: block; }
+        .signature { margin-top: 24px; width: 320px; float: right; text-align: center; }
+        .signature-space { height: 95px; }
+        .signature-image { height: 110px; max-width: 300px; object-fit: contain; margin: 6px auto 2px; display: block; }
         .small { font-size: 9px; color: #6b7280; }
         @media print {
             .toolbar { display: none; }

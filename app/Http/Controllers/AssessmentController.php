@@ -6,6 +6,7 @@ use App\Models\Assessment;
 use App\Models\ActivityLog;
 use App\Models\AssessmentAnswer;
 use App\Models\AssessmentSegment;
+use App\Models\OperatorAssessmentCategory;
 use App\Models\Question;
 use App\Models\QuestionPackage;
 use App\Models\User;
@@ -31,7 +32,7 @@ class AssessmentController extends Controller
             $visibleTypes = [$selectedType];
         }
 
-        $assessments = Assessment::with('user', 'questionPackage')
+        $assessments = Assessment::with('user', 'questionPackage', 'operatorAssessmentCategory')
             ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
                 $query->whereHas('questionPackage', function ($q) use ($visibleTypes): void {
                     $q->whereIn('type', $visibleTypes);
@@ -65,6 +66,19 @@ class AssessmentController extends Controller
             ->when($request->filled('package'), function ($query) use ($request): void {
                 $query->where('question_package_id', $request->integer('package'));
             })
+            ->when($request->filled('operator_category'), function ($query) use ($request): void {
+                $query->where('operator_assessment_category_id', $request->integer('operator_category'));
+            })
+            ->when($request->filled('site'), function ($query) use ($request): void {
+                $site = $request->string('site')->toString();
+                $query->where(function ($q) use ($site): void {
+                    $q->where('site', $site)
+                        ->orWhere(function ($subQuery) use ($site): void {
+                            $subQuery->whereNull('site')
+                                ->whereHas('user', fn ($userQuery) => $userQuery->where('site', $site));
+                        });
+                });
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -72,8 +86,30 @@ class AssessmentController extends Controller
         $packages = \App\Models\QuestionPackage::whereIn('type', $visibleTypes)
             ->orderBy('name')
             ->get();
+        $operatorCategories = OperatorAssessmentCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        $sites = Assessment::query()
+            ->whereHas('questionPackage', fn ($query) => $query->whereIn('type', $visibleTypes))
+            ->select('site')
+            ->whereNotNull('site')
+            ->where('site', '<>', '')
+            ->distinct()
+            ->orderBy('site')
+            ->pluck('site')
+            ->merge(
+                User::query()
+                    ->where('role', User::ROLE_USER)
+                    ->whereNotNull('site')
+                    ->where('site', '<>', '')
+                    ->distinct()
+                    ->orderBy('site')
+                    ->pluck('site')
+            )
+            ->unique()
+            ->values();
 
-        return view('admin.assessments.index', compact('assessments', 'packages', 'selectedType'));
+        return view('admin.assessments.index', compact('assessments', 'packages', 'operatorCategories', 'sites', 'selectedType'));
     }
 
     public function export(Request $request): StreamedResponse
@@ -86,7 +122,7 @@ class AssessmentController extends Controller
             $visibleTypes = [$selectedType];
         }
 
-        $assessments = Assessment::with('user', 'questionPackage')
+        $assessments = Assessment::with('user', 'questionPackage', 'operatorAssessmentCategory')
             ->whereHas('questionPackage', function ($query) use ($visibleTypes): void {
                 $query->whereIn('type', $visibleTypes);
             })
@@ -106,6 +142,19 @@ class AssessmentController extends Controller
             ->when($request->filled('package'), function ($query) use ($request): void {
                 $query->where('question_package_id', $request->integer('package'));
             })
+            ->when($request->filled('operator_category'), function ($query) use ($request): void {
+                $query->where('operator_assessment_category_id', $request->integer('operator_category'));
+            })
+            ->when($request->filled('site'), function ($query) use ($request): void {
+                $site = $request->string('site')->toString();
+                $query->where(function ($q) use ($site): void {
+                    $q->where('site', $site)
+                        ->orWhere(function ($subQuery) use ($site): void {
+                            $subQuery->whereNull('site')
+                                ->whereHas('user', fn ($userQuery) => $userQuery->where('site', $site));
+                        });
+                });
+            })
             ->latest()
             ->get();
 
@@ -117,7 +166,7 @@ class AssessmentController extends Controller
         $callback = function () use ($assessments): void {
             $output = fopen('php://output', 'w');
             fputcsv($output, [
-                'Peserta', 'Email', 'Paket', 'Mulai', 'Selesai',
+                'Peserta', 'Email', 'Paket', 'Kategori Invite', 'Site', 'Mulai', 'Selesai',
                 'Benar', 'Total', 'Nilai', 'Status', 'Pelanggaran',
             ]);
 
@@ -129,6 +178,8 @@ class AssessmentController extends Controller
                     $a->user->name,
                     $a->user->email,
                     $a->questionPackage?->name ?? '-',
+                    $a->operatorAssessmentCategory?->name ?? '-',
+                    $a->site ?: ($a->user->site ?: '-'),
                     $a->started_at?->format('d/m/Y H:i'),
                     $a->submitted_at?->format('d/m/Y H:i'),
                     $a->correct_answers ?? 0,
@@ -222,6 +273,7 @@ class AssessmentController extends Controller
                 'user_id' => $request->user()->id,
                 'question_package_id' => $package?->id,
                 'operator_assessment_category_id' => $inviteCategoryId,
+                'site' => $request->user()->site,
                 'total_questions' => $activeQuestionCount,
                 'started_at' => now(),
                 'duration_minutes' => $durationMinutes,
@@ -296,6 +348,7 @@ class AssessmentController extends Controller
                 'user_id' => $request->user()->id,
                 'question_package_id' => $package->id,
                 'operator_assessment_category_id' => $request->user()->operator_assessment_category_id,
+                'site' => $request->user()->site,
                 'total_questions' => $totalQuestions,
                 'started_at' => now(),
                 'duration_minutes' => $totalDuration,

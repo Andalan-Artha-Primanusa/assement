@@ -42,6 +42,8 @@
         <tr><td>Peserta</td><td>{{ $assessment->user->name }}</td></tr>
         <tr><td>Email</td><td>{{ $assessment->user->email }}</td></tr>
         <tr><td>Paket Soal</td><td>{{ $assessment->questionPackage?->name ?? '-' }}</td></tr>
+        <tr><td>Kategori Invite</td><td>{{ $assessment->operatorAssessmentCategory?->name ?? '-' }}</td></tr>
+        <tr><td>Site</td><td>{{ $assessment->site ?: ($assessment->user->site ?: '-') }}</td></tr>
         <tr><td>Tanggal</td><td>{{ $assessment->submitted_at?->format('d M Y H:i') }}</td></tr>
         <tr><td>Benar</td><td>{{ $assessment->correct_answers }} / {{ $assessment->total_questions }}</td></tr>
         <tr><td>Durasi</td><td>{{ $assessment->duration_minutes }} menit</td></tr>

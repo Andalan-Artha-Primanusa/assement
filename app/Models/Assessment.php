@@ -16,6 +16,7 @@ class Assessment extends Model
         'user_id',
         'question_package_id',
         'operator_assessment_category_id',
+        'site',
         'status',
         'total_questions',
         'correct_answers',

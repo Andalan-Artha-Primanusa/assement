@@ -1941,10 +1941,10 @@ class AssessmentFlowTest extends TestCase
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => 'admin_operation']);
-        $category = OperatorAssessmentCategory::create([
+        $category = OperatorAssessmentCategory::firstOrCreate([
             'name' => 'New Hire',
+        ], [
             'is_active' => true,
-            'created_by' => $admin->id,
         ]);
         $package = QuestionPackage::create([
             'name' => 'Operator Dump Truck',
@@ -2042,10 +2042,10 @@ class AssessmentFlowTest extends TestCase
     public function test_operator_invite_form_shows_operator_category_field(): void
     {
         $admin = User::factory()->create(['role' => 'admin_operation']);
-        OperatorAssessmentCategory::create([
+        OperatorAssessmentCategory::firstOrCreate([
             'name' => 'New Hire',
+        ], [
             'is_active' => true,
-            'created_by' => $admin->id,
         ]);
 
         $this->actingAs($admin)
@@ -2059,10 +2059,10 @@ class AssessmentFlowTest extends TestCase
     public function test_mechanic_invite_form_shows_invite_category_field(): void
     {
         $admin = User::factory()->create(['role' => 'admin_mekanik']);
-        OperatorAssessmentCategory::create([
+        OperatorAssessmentCategory::firstOrCreate([
             'name' => 'New Hire',
+        ], [
             'is_active' => true,
-            'created_by' => $admin->id,
         ]);
 
         $this->actingAs($admin)
@@ -2081,6 +2081,58 @@ class AssessmentFlowTest extends TestCase
             ->get(route('admin.invite'))
             ->assertOk()
             ->assertSee('Site');
+    }
+
+    public function test_assessment_report_shows_invite_category_and_site_in_separate_columns(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $category = OperatorAssessmentCategory::firstOrCreate([
+            'name' => 'Post Test',
+        ], [
+            'is_active' => true,
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Report Kolom',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'name' => 'Peserta Report',
+            'email' => 'peserta.report@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $category->id,
+            'site' => 'Site Separah',
+        ]);
+        Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $category->id,
+            'site' => 'Site Separah',
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 10,
+            'correct_answers' => 8,
+            'score' => 80,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Kategori Invite')
+            ->assertSee('Site')
+            ->assertSee('Post Test')
+            ->assertSee('Site Separah');
+
+        $csv = $this->actingAs($admin)
+            ->get(route('admin.assessments.export'))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString('"Kategori Invite",Site', $csv);
+        $this->assertStringContainsString('Post Test', $csv);
+        $this->assertStringContainsString('Site Separah', $csv);
     }
 
     public function test_blocked_assessment_is_detected_after_reinvite_changes_user_package_type(): void
