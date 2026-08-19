@@ -135,6 +135,20 @@
         @endif
         <strong>{{ $interview_assessment->hr_interviewer_name ?? '(...................................)' }}</strong>
     </div>
+
+    @if(!empty($interview_assessment->photos))
+        <div style="page-break-before: always; clear: both; padding-top: 20px;">
+            <div class="section-title" style="text-align: center;">LAMPIRAN FOTO</div>
+            <div style="margin-top: 15px; text-align: center;">
+                @foreach($interview_assessment->photos as $photo)
+                    <div style="margin-bottom: 20px; border: 1px solid #d1d5db; padding: 10px; display: inline-block;">
+                        <img src="{{ route('files.show', $photo) }}" alt="Lampiran Foto" style="max-width: 700px; max-height: 500px; object-fit: contain;">
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     </div>
 </body>
 </html>

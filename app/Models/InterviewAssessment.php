@@ -26,6 +26,7 @@ class InterviewAssessment extends Model
         'hr_interviewer_name',
         'user_interviewer_name',
         'signature_path',
+        'photos',
         'created_by',
     ];
 
@@ -35,6 +36,7 @@ class InterviewAssessment extends Model
         'total_score' => 'decimal:2',
         'average_score' => 'decimal:2',
         'percentage' => 'decimal:2',
+        'photos' => 'array',
     ];
 
     public function template()

@@ -143,6 +143,11 @@
                                         <input type="file" name="signature" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
                                         <p class="mt-1 text-xs text-gray-500">Upload gambar tanda tangan. Maksimal 2MB.</p>
                                     </div>
+                                    <div class="col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700">Lampiran Foto (Bisa lebih dari satu)</label>
+                                        <input type="file" name="photos[]" multiple accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
+                                        <p class="mt-1 text-xs text-gray-500">Upload satu atau lebih foto (Maks. 5MB per foto).</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

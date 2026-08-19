@@ -144,6 +144,27 @@
                                         </div>
                                     @endif
                                 </div>
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700">Lampiran Foto (Bisa lebih dari satu)</label>
+                                    <input type="file" name="photos[]" multiple accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
+                                    <p class="mt-1 text-xs text-gray-500">Upload satu atau lebih foto baru. Maks. 5MB per foto.</p>
+                                    @if(!empty($interview_assessment->photos))
+                                        <div class="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+                                            <p class="mb-2 text-xs font-semibold uppercase text-gray-500">Foto saat ini</p>
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                @foreach($interview_assessment->photos as $photo)
+                                                    <div class="flex flex-col items-center">
+                                                        <img src="{{ route('files.show', $photo) }}" alt="Foto" class="h-24 w-auto object-contain border rounded p-1 bg-white mb-2">
+                                                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                                            <input type="checkbox" name="remove_photos[]" value="{{ $photo }}" class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500">
+                                                            Hapus
+                                                        </label>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>

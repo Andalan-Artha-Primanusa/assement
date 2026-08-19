@@ -65,6 +65,7 @@ class InterviewAssessmentController extends Controller
             ...$this->assessmentAttributes($data),
             ...$calculated,
             'signature_path' => $this->storeSignature($request),
+            'photos' => $this->storePhotos($request),
             'created_by' => auth()->id(),
         ]);
 
@@ -122,6 +123,23 @@ class InterviewAssessmentController extends Controller
             $attributes['signature_path'] = $this->storeSignature($request);
         }
 
+        $existingPhotos = $interview_assessment->photos ?? [];
+        if ($request->has('remove_photos')) {
+            $photosToRemove = $request->input('remove_photos');
+            foreach ($photosToRemove as $photoPath) {
+                if (in_array($photoPath, $existingPhotos)) {
+                    Storage::disk('public')->delete($photoPath);
+                    $existingPhotos = array_values(array_diff($existingPhotos, [$photoPath]));
+                }
+            }
+        }
+
+        $newPhotos = $this->storePhotos($request);
+        if (!empty($newPhotos)) {
+            $existingPhotos = array_merge($existingPhotos, $newPhotos);
+        }
+        $attributes['photos'] = !empty($existingPhotos) ? $existingPhotos : null;
+
         $interview_assessment->update($attributes);
 
         $interview_assessment->scores()->delete();
@@ -163,6 +181,11 @@ class InterviewAssessmentController extends Controller
 
         ActivityLog::log('interview_assessment_delete', 'Menghapus penilaian interview '.$interview_assessment->candidate_name, InterviewAssessment::class, $interview_assessment->id);
         $this->deleteSignature($interview_assessment);
+        if (!empty($interview_assessment->photos)) {
+            foreach ($interview_assessment->photos as $photoPath) {
+                Storage::disk('public')->delete($photoPath);
+            }
+        }
         $interview_assessment->delete();
 
         return redirect()->route('admin.interview-assessments.index')
@@ -267,6 +290,10 @@ class InterviewAssessmentController extends Controller
             'hr_interviewer_name' => ['nullable', 'string', 'max:255'],
             'signature' => ['nullable', 'image', 'max:2048'],
             'remove_signature' => ['nullable', 'boolean'],
+            'photos' => ['nullable', 'array'],
+            'photos.*' => ['image', 'max:5120'],
+            'remove_photos' => ['nullable', 'array'],
+            'remove_photos.*' => ['string'],
             'scores' => ['required', 'array'],
             'scores.*.score' => ['nullable', 'integer', 'min:1', 'max:5'],
             'scores.*.notes' => ['nullable', 'string', 'max:500'],
@@ -310,6 +337,17 @@ class InterviewAssessmentController extends Controller
         if ($assessment->signature_path) {
             Storage::disk('public')->delete($assessment->signature_path);
         }
+    }
+
+    private function storePhotos(Request $request): array
+    {
+        $paths = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $paths[] = $photo->store('interview-photos', 'public');
+            }
+        }
+        return $paths;
     }
 
     /**

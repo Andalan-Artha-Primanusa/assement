@@ -194,11 +194,24 @@
                     </div>
                 </div>
 
-                <div class="mt-10 flex justify-end">
-                    <button onclick="window.print()" class="rounded-md bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 print:hidden shadow-sm">
+                <div class="mt-10 flex justify-end print:hidden">
+                    <button onclick="window.print()" class="rounded-md bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 shadow-sm">
                         Cetak / Print PDF
                     </button>
                 </div>
+
+                @if(!empty($interview_assessment->photos))
+                    <div style="page-break-before: always;" class="mt-12 pt-8 border-t print:border-t-0 print:pt-0">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 text-center">LAMPIRAN FOTO</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            @foreach($interview_assessment->photos as $photo)
+                                <div class="flex justify-center border p-2 rounded bg-gray-50">
+                                    <img src="{{ route('files.show', $photo) }}" alt="Lampiran Foto" class="max-w-full h-auto max-h-[400px] object-contain">
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
