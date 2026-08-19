@@ -151,6 +151,7 @@
             const initialCsrfToken = @json(csrf_token());
             const endsAt = new Date(@json($assessment->ends_at?->toIso8601String()));
             const secureMode = @json($secureMode);
+            const isOperator = {{ $assessment->questionPackage?->type === \App\Models\QuestionPackage::TYPE_OPERATOR ? 'true' : 'false' }};
             const lockMessage = document.getElementById('security-lock-message');
             const screenshotOverlay = document.getElementById('screenshot-overlay');
             const form = document.getElementById('assessment-form');
@@ -350,18 +351,20 @@
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
                         showScreenshotOverlay();
-                        reportViolation('Peserta meninggalkan tab assessment.', true);
+                        if (isOperator) {
+                            reportViolation('Peserta meninggalkan tab assessment.', true);
+                        }
                     } else {
                         hideScreenshotOverlay();
                     }
                 });
 
-                window.addEventListener('blur', () => {
-                    showScreenshotOverlay();
-                    reportViolation('Jendela assessment kehilangan fokus.');
-                });
+                // window.addEventListener('blur', () => {
+                //     showScreenshotOverlay();
+                //     reportViolation('Jendela assessment kehilangan fokus.');
+                // });
 
-                window.addEventListener('focus', hideScreenshotOverlay);
+                // window.addEventListener('focus', hideScreenshotOverlay);
 
                 window.addEventListener('beforeunload', () => {
                     reportViolation('Peserta membuka halaman lain saat assessment berlangsung.', true);

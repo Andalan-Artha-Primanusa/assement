@@ -128,6 +128,7 @@
             const overallRemaining = {{ $assessment->ends_at ? max(0, $assessment->ends_at->timestamp - now()->timestamp) : 999999 }};
             const maxViolations = {{ config('assessment.max_security_blocks', 2) }};
             const secureMode = @json($secureMode);
+            const isOperator = {{ $assessment->questionPackage?->type === \App\Models\QuestionPackage::TYPE_OPERATOR ? 'true' : 'false' }};
             const form = document.getElementById('assessment-form');
             const cameraPreview = document.getElementById('camera-preview');
             const cameraBadge = document.getElementById('camera-badge');
@@ -237,14 +238,14 @@
                 });
 
                 document.addEventListener('visibilitychange', function () {
-                    if (document.hidden) {
+                    if (document.hidden && isOperator) {
                         reportViolation('Peserta meninggalkan tab assessment.');
                     }
                 });
 
-                window.addEventListener('blur', () => {
-                    reportViolation('Jendela assessment kehilangan fokus.');
-                });
+                // window.addEventListener('blur', () => {
+                //     reportViolation('Jendela assessment kehilangan fokus.');
+                // });
 
                 setInterval(() => {
                     if (cameraStarted && !cameraReady) {
