@@ -280,8 +280,7 @@ class AssessmentController extends Controller
                 'ends_at' => now()->addMinutes($durationMinutes),
             ]);
 
-            (clone $questionQuery)
-                ->get()
+            $this->randomizedQuestions($questionQuery)
                 ->each(function (Question $question, int $index) use ($assessment): void {
                     AssessmentAnswer::create([
                         'assessment_id' => $assessment->id,
@@ -308,9 +307,9 @@ class AssessmentController extends Controller
                 return [
                     'type' => $segment['type'],
                     'duration' => (int) $segment['duration'],
-                    'questions' => (clone $questionQuery)
-                        ->where('type', $segment['type'])
-                        ->get(),
+                    'questions' => $this->randomizedQuestions(
+                        (clone $questionQuery)->where('type', $segment['type'])
+                    ),
                 ];
             })
             ->values();
@@ -740,6 +739,23 @@ class AssessmentController extends Controller
             Question::TYPE_UPLOAD => 'Portfolio',
             default => $type,
         };
+    }
+
+    private function randomizedQuestions($questionQuery)
+    {
+        $questions = (clone $questionQuery)->get()->values();
+
+        if ($questions->count() <= 1) {
+            return $questions;
+        }
+
+        $randomized = $questions->shuffle()->values();
+
+        if ($randomized->pluck('id')->all() === $questions->pluck('id')->all()) {
+            return $questions->slice(1)->concat($questions->take(1))->values();
+        }
+
+        return $randomized;
     }
 
     private function notifyAdmins(Assessment $assessment): void

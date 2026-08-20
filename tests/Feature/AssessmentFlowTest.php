@@ -177,6 +177,97 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Assessment Mechanic');
     }
 
+    public function test_multiple_choice_options_are_not_randomized_for_participants(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket Opsi Tetap',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Mechanic',
+            'difficulty' => 'basic',
+            'text' => 'Soal opsi tetap',
+            'option_a' => 'Opsi pertama',
+            'option_b' => 'Opsi kedua',
+            'option_c' => 'Opsi ketiga',
+            'option_d' => 'Opsi keempat',
+            'correct_option' => 'a',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('assessment.start'))
+            ->assertRedirect();
+
+        $html = $this->actingAs($user)
+            ->get(route('assessment.show', Assessment::first()))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertTrue(
+            strpos($html, 'Opsi pertama') < strpos($html, 'Opsi kedua')
+            && strpos($html, 'Opsi kedua') < strpos($html, 'Opsi ketiga')
+            && strpos($html, 'Opsi ketiga') < strpos($html, 'Opsi keempat')
+        );
+        $this->assertStringContainsString('Opsi pertama', $html);
+        $this->assertStringContainsString('Opsi kedua', $html);
+        $this->assertStringContainsString('Opsi ketiga', $html);
+        $this->assertStringContainsString('Opsi keempat', $html);
+    }
+
+    public function test_operator_and_mechanic_questions_are_randomized_when_assessment_starts(): void
+    {
+        foreach ([QuestionPackage::TYPE_OPERATOR, QuestionPackage::TYPE_MEKANIK] as $type) {
+            $package = QuestionPackage::create([
+                'name' => 'Paket Acak '.strtoupper($type),
+                'type' => $type,
+                'is_active' => true,
+            ]);
+            $user = User::factory()->create([
+                'role' => User::ROLE_USER,
+                'question_package_id' => $package->id,
+            ]);
+            $createdQuestionIds = [];
+
+            for ($i = 1; $i <= 8; $i++) {
+                $createdQuestionIds[] = Question::create([
+                    'question_package_id' => $package->id,
+                    'type' => Question::TYPE_MULTIPLE_CHOICE,
+                    'category' => $type,
+                    'difficulty' => 'basic',
+                    'text' => 'Soal '.$type.' '.$i,
+                    'option_a' => 'Benar',
+                    'option_b' => 'Salah',
+                    'option_c' => 'Salah',
+                    'option_d' => 'Salah',
+                    'correct_option' => 'a',
+                    'is_active' => true,
+                ])->id;
+            }
+
+            $this->actingAs($user)
+                ->post(route('assessment.start'))
+                ->assertRedirect();
+
+            $assessmentQuestionIds = Assessment::where('user_id', $user->id)
+                ->firstOrFail()
+                ->answers()
+                ->orderBy('position')
+                ->pluck('question_id')
+                ->all();
+
+            $this->assertNotSame($createdQuestionIds, $assessmentQuestionIds);
+            $this->assertEqualsCanonicalizing($createdQuestionIds, $assessmentQuestionIds);
+        }
+    }
+
     public function test_mechanic_true_false_question_is_auto_scored(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
