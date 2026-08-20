@@ -281,7 +281,6 @@ class AssessmentController extends Controller
             ]);
 
             (clone $questionQuery)
-                ->inRandomOrder()
                 ->get()
                 ->each(function (Question $question, int $index) use ($assessment): void {
                     AssessmentAnswer::create([
@@ -311,7 +310,6 @@ class AssessmentController extends Controller
                     'duration' => (int) $segment['duration'],
                     'questions' => (clone $questionQuery)
                         ->where('type', $segment['type'])
-                        ->inRandomOrder()
                         ->get(),
                 ];
             })
