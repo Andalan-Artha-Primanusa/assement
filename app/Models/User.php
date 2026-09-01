@@ -94,6 +94,23 @@ class User extends Authenticatable
         return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
+    public function normalizedSite(): ?string
+    {
+        $site = trim((string) $this->site);
+
+        return $site !== '' ? $site : null;
+    }
+
+    public function canViewAllSites(): bool
+    {
+        return $this->isSuperAdmin() || strtoupper((string) $this->normalizedSite()) === 'HO';
+    }
+
+    public function hasSiteRestriction(): bool
+    {
+        return $this->isAdmin() && ! $this->canViewAllSites();
+    }
+
     public function isAdmin(): bool
     {
         return in_array($this->role, [

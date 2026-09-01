@@ -17,6 +17,15 @@ class UserFactory extends Factory
      */
     protected static ?string $password;
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (User $user): void {
+            if ($user->isAdmin() && blank($user->site)) {
+                $user->site = 'HO';
+            }
+        });
+    }
+
     /**
      * Define the model's default state.
      *

@@ -49,6 +49,9 @@ class DashboardController extends Controller
                         $q->where('type', $selectedType);
                     });
                 });
+            })
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $this->applyAssessmentSiteScope($query, $adminUser);
             });
 
         $submitted = (clone $baseQuery)->whereNotNull('submitted_at');
@@ -56,15 +59,31 @@ class DashboardController extends Controller
         $averageScore = (float) (clone $gradedSubmitted)->avg('score');
 
         $packageIds = QuestionPackage::whereIn('type', $visibleTypes)->pluck('id');
+        $participantQuery = User::where('role', User::ROLE_USER)
+            ->whereIn('question_package_id', $packageIds)
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $query->where('site', $adminUser->normalizedSite());
+            });
+        $notStarted = (clone $participantQuery)
+            ->whereDoesntHave('assessments', function ($query): void {
+                $query->whereColumn('assessments.question_package_id', 'users.question_package_id')
+                    ->where(function ($categoryQuery): void {
+                        $categoryQuery->whereColumn('assessments.operator_assessment_category_id', 'users.operator_assessment_category_id')
+                            ->orWhere(function ($nullCategoryQuery): void {
+                                $nullCategoryQuery->whereNull('assessments.operator_assessment_category_id')
+                                    ->whereNull('users.operator_assessment_category_id');
+                            });
+                    });
+            })
+            ->count();
 
         $stats = [
             'questions' => Question::whereIn('question_package_id', $packageIds)->count(),
             'active_questions' => Question::whereIn('question_package_id', $packageIds)->where('is_active', true)->count(),
             'packages' => QuestionPackage::whereIn('type', $visibleTypes)->count(),
-            'users' => User::where('role', 'user')
-                ->whereIn('question_package_id', $packageIds)
-                ->count(),
+            'users' => (clone $participantQuery)->count(),
             'assessments' => (clone $submitted)->count(),
+            'not_started' => $notStarted,
             'blocked_assessments' => (clone $baseQuery)->whereNotNull('blocked_at')
                 ->whereNull('submitted_at')
                 ->where(function ($query): void {
@@ -139,8 +158,18 @@ class DashboardController extends Controller
         $answerCategoryStats = DB::table('assessment_answers')
             ->join('questions', 'assessment_answers.question_id', '=', 'questions.id')
             ->join('assessments', 'assessment_answers.assessment_id', '=', 'assessments.id')
+            ->join('users', 'assessments.user_id', '=', 'users.id')
             ->whereNotNull('assessments.submitted_at')
             ->whereIn('questions.question_package_id', $packageIds)
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $query->where(function ($q) use ($adminUser): void {
+                    $q->where('assessments.site', $adminUser->normalizedSite())
+                        ->orWhere(function ($subQuery) use ($adminUser): void {
+                            $subQuery->whereNull('assessments.site')
+                                ->where('users.site', $adminUser->normalizedSite());
+                        });
+                });
+            })
             ->select(
                 'questions.category',
                 DB::raw('COUNT(*) as total'),
@@ -175,6 +204,7 @@ class DashboardController extends Controller
             'submitted' => $stats['assessments'],
             'blocked' => $blocked,
             'pending' => $pending,
+            'notStarted' => $notStarted,
             'dailyLabels' => $dailyLabels,
             'dailyTotals' => $dailyTotals,
             'packageLabels' => $packageData->pluck('name')->toArray(),
@@ -193,6 +223,19 @@ class DashboardController extends Controller
             'chartData',
             'selectedType',
         ));
+    }
+
+    private function applyAssessmentSiteScope($query, User $adminUser): void
+    {
+        $site = $adminUser->normalizedSite();
+
+        $query->where(function ($q) use ($site): void {
+            $q->where('site', $site)
+                ->orWhere(function ($subQuery) use ($site): void {
+                    $subQuery->whereNull('site')
+                        ->whereHas('user', fn ($userQuery) => $userQuery->where('site', $site));
+                });
+        });
     }
 
     private function userDashboard(Request $request): View

@@ -270,7 +270,7 @@
                 sync();
 
                 function sync() {
-                    const usesSite = ['mekanik', 'operator', 'hr'].includes(typeSelect.value);
+                    const usesSite = ['mekanik', 'operator', 'she', 'hr'].includes(typeSelect.value);
                     wrap.classList.toggle('hidden', !usesSite);
                     input.disabled = !usesSite;
                     if (!usesSite) {

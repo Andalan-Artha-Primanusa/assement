@@ -27,6 +27,7 @@ class InterviewAssessmentController extends Controller
         $query = InterviewAssessment::with('template', 'creator')->latest();
         
         $query->whereHas('template', fn ($q) => $q->whereIn('type', $visibleTypes));
+        $this->applyInterviewSiteScope($query, $user);
         
         $assessments = $query->paginate(15);
         
@@ -58,6 +59,7 @@ class InterviewAssessmentController extends Controller
         $data = $this->validated($request);
 
         $template = InterviewTemplate::with('categories.aspects')->findOrFail($data['interview_template_id']);
+        $data = $this->applySubmittedSite($data, auth()->user());
         $calculated = $this->calculateResult($template, $data['scores']);
 
         $assessment = InterviewAssessment::create([
@@ -88,6 +90,7 @@ class InterviewAssessmentController extends Controller
     {
         $interview_assessment->load(['template.categories.aspects', 'scores']);
         $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
         $templates = InterviewTemplate::where('is_active', true)
             ->whereIn('type', $this->visibleInterviewTypes(auth()->user()))
@@ -101,10 +104,12 @@ class InterviewAssessmentController extends Controller
     {
         $interview_assessment->load('template');
         $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, $request->user());
 
         $data = $this->validated($request);
         $template = InterviewTemplate::with('categories.aspects')->findOrFail($data['interview_template_id']);
         $this->authorizeInterviewType($template->type);
+        $data = $this->applySubmittedSite($data, $request->user());
         $calculated = $this->calculateResult($template, $data['scores']);
 
         $attributes = [
@@ -162,6 +167,7 @@ class InterviewAssessmentController extends Controller
     {
         $interview_assessment->load(['template.categories.aspects', 'scores']);
         $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
         return view('admin.interview-assessments.show', compact('interview_assessment'));
     }
@@ -170,6 +176,7 @@ class InterviewAssessmentController extends Controller
     {
         $interview_assessment->load(['template.categories.aspects', 'scores']);
         $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
         return view('admin.interview-assessments.pdf', compact('interview_assessment'));
     }
@@ -178,6 +185,7 @@ class InterviewAssessmentController extends Controller
     {
         $interview_assessment->load('template');
         $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
         ActivityLog::log('interview_assessment_delete', 'Menghapus penilaian interview '.$interview_assessment->candidate_name, InterviewAssessment::class, $interview_assessment->id);
         $this->deleteSignature($interview_assessment);
@@ -202,6 +210,7 @@ class InterviewAssessmentController extends Controller
         $query = InterviewAssessment::with('template', 'creator')->latest();
         
         $query->whereHas('template', fn ($q) => $q->whereIn('type', $visibleTypes));
+        $this->applyInterviewSiteScope($query, $user);
         
         $assessments = $query->get();
 
@@ -267,6 +276,36 @@ class InterviewAssessmentController extends Controller
     private function authorizeInterviewType(string $type): void
     {
         abort_unless(in_array($type, $this->visibleInterviewTypes(auth()->user()), true), 403);
+    }
+
+    private function applyInterviewSiteScope($query, User $adminUser): void
+    {
+        if ($adminUser->canViewAllSites()) {
+            return;
+        }
+
+        $query->where('location', $adminUser->normalizedSite());
+    }
+
+    private function authorizeInterviewSite(InterviewAssessment $assessment, User $adminUser): void
+    {
+        abort_unless(
+            $adminUser->canViewAllSites() || $assessment->location === $adminUser->normalizedSite(),
+            403
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function applySubmittedSite(array $data, User $adminUser): array
+    {
+        if ($adminUser->hasSiteRestriction()) {
+            $data['location'] = $adminUser->normalizedSite();
+        }
+
+        return $data;
     }
 
     private function validated(Request $request): array

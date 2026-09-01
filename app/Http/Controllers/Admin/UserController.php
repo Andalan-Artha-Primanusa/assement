@@ -86,6 +86,9 @@ class UserController extends Controller
             ->when($request->filled('role'), function ($query) use ($request): void {
                 $query->where('role', $request->string('role'));
             })
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $query->where('site', $adminUser->normalizedSite());
+            })
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -110,6 +113,9 @@ class UserController extends Controller
                         $subQuery->whereIn('type', $visibleTypes);
                     });
                 });
+            })
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $query->where('site', $adminUser->normalizedSite());
             })
             ->distinct()
             ->orderBy('site')
@@ -191,7 +197,7 @@ class UserController extends Controller
             $site = $this->supportsInviteSite($type) && $siteIndex !== false && isset($row[$siteIndex])
                 ? Str::of($row[$siteIndex])->squish()->limit(100, '')->toString()
                 : null;
-            $site = $site !== '' ? $site : null;
+            $site = $this->siteForAdmin($adminUser, $site !== '' ? $site : null);
 
             $password = strtoupper(Str::random(4));
             $accessDays = (int) config('assessment.default_access_days', 7);
@@ -298,7 +304,7 @@ class UserController extends Controller
         $site = $this->supportsInviteSite($data['type'])
             ? Str::of($data['site'] ?? '')->squish()->toString()
             : null;
-        $site = $site !== '' ? $site : null;
+        $site = $this->siteForAdmin($adminUser, $site !== '' ? $site : null);
 
         [$user, $wasCreated] = $this->createOrRefreshInvitedUser(
             $data['email'],
@@ -370,7 +376,7 @@ class UserController extends Controller
         $site = $this->supportsInviteSite($data['bulk_type'])
             ? Str::of($data['bulk_site'] ?? '')->squish()->toString()
             : null;
-        $site = $site !== '' ? $site : null;
+        $site = $this->siteForAdmin($adminUser, $site !== '' ? $site : null);
         $created = 0;
         $sent = 0;
         $errors = [];
@@ -463,6 +469,8 @@ class UserController extends Controller
      */
     public function show(User $user): RedirectResponse
     {
+        $this->authorizeSiteAccess(request()->user(), $user);
+
         return redirect()->route('admin.users.edit', $user);
     }
 
@@ -472,6 +480,7 @@ class UserController extends Controller
     public function edit(User $user): View
     {
         $adminUser = request()->user();
+        $this->authorizeSiteAccess($adminUser, $user);
         $visibleTypes = $adminUser->visiblePackageTypes();
 
         $packages = QuestionPackage::whereIn('type', $visibleTypes)
@@ -489,6 +498,8 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): RedirectResponse
     {
+        $this->authorizeSiteAccess($request->user(), $user);
+
         $data = $this->validated($request, $user);
 
         if (blank($data['password'] ?? null)) {
@@ -507,6 +518,8 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user): RedirectResponse
     {
+        $this->authorizeSiteAccess($request->user(), $user);
+
         if ($request->user()->is($user)) {
             return back()->with('status', 'Admin yang sedang login tidak bisa menghapus akunnya sendiri.');
         }
@@ -520,6 +533,8 @@ class UserController extends Controller
 
     public function answers(Request $request, User $user): View
     {
+        $this->authorizeSiteAccess($request->user(), $user);
+
         $assessments = $user->assessments()
             ->with(['answers.question', 'questionPackage', 'segments'])
             ->whereNotNull('submitted_at')
@@ -583,10 +598,11 @@ class UserController extends Controller
         $data['operator_assessment_category_id'] = $this->supportsInviteCategory($package?->type)
             ? ($data['operator_assessment_category_id'] ?? null)
             : null;
-        $data['site'] = $this->supportsInviteSite($package?->type)
+        $data['site'] = $this->supportsInviteSite($package?->type) || $data['role'] !== User::ROLE_USER
             ? Str::of($data['site'] ?? '')->squish()->toString()
             : null;
         $data['site'] = $data['site'] !== '' ? $data['site'] : null;
+        $data['site'] = $this->siteForAdmin($adminUser, $data['site']);
         $data['segment_config'] = AssessmentSegmentConfig::forPackage($package, $data['segment_config'] ?? null);
 
         return $data;
@@ -629,8 +645,24 @@ class UserController extends Controller
         return count(array_intersect($types, [
             QuestionPackage::TYPE_MEKANIK,
             QuestionPackage::TYPE_OPERATOR,
+            QuestionPackage::TYPE_SHE,
             QuestionPackage::TYPE_HR,
         ])) > 0;
+    }
+
+    private function siteForAdmin(User $adminUser, ?string $site): ?string
+    {
+        return $adminUser->hasSiteRestriction()
+            ? $adminUser->normalizedSite()
+            : $site;
+    }
+
+    private function authorizeSiteAccess(User $adminUser, User $targetUser): void
+    {
+        abort_unless(
+            $adminUser->canViewAllSites() || $targetUser->normalizedSite() === $adminUser->normalizedSite(),
+            403
+        );
     }
 
     /**

@@ -14,6 +14,12 @@ class AssessmentExportController extends Controller
         abort_unless(auth()->user()->isAdmin(), 403);
 
         $assessment->load('user', 'questionPackage', 'operatorAssessmentCategory', 'answers.question');
+        abort_unless(
+            auth()->user()->canViewAllSites()
+                || $assessment->site === auth()->user()->normalizedSite()
+                || ($assessment->site === null && $assessment->user?->normalizedSite() === auth()->user()->normalizedSite()),
+            403
+        );
 
         $pdf = Pdf::loadView('admin.assessments.pdf', compact('assessment'));
 

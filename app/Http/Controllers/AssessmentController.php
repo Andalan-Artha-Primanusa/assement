@@ -43,6 +43,9 @@ class AssessmentController extends Controller
                     $q->where('type', $selectedType);
                 });
             })
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $this->applyAssessmentSiteScope($query, $adminUser);
+            })
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
                 $query->whereHas('user', function ($q) use ($search): void {
@@ -91,6 +94,9 @@ class AssessmentController extends Controller
             ->get();
         $sites = Assessment::query()
             ->whereHas('questionPackage', fn ($query) => $query->whereIn('type', $visibleTypes))
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $this->applyAssessmentSiteScope($query, $adminUser);
+            })
             ->select('site')
             ->whereNotNull('site')
             ->where('site', '<>', '')
@@ -102,6 +108,9 @@ class AssessmentController extends Controller
                     ->where('role', User::ROLE_USER)
                     ->whereNotNull('site')
                     ->where('site', '<>', '')
+                    ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                        $query->where('site', $adminUser->normalizedSite());
+                    })
                     ->distinct()
                     ->orderBy('site')
                     ->pluck('site')
@@ -125,6 +134,9 @@ class AssessmentController extends Controller
         $assessments = Assessment::with('user', 'questionPackage', 'operatorAssessmentCategory')
             ->whereHas('questionPackage', function ($query) use ($visibleTypes): void {
                 $query->whereIn('type', $visibleTypes);
+            })
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $this->applyAssessmentSiteScope($query, $adminUser);
             })
             ->when($request->filled('status'), function ($query) use ($request): void {
                 match ($request->string('status')->toString()) {
@@ -660,6 +672,7 @@ class AssessmentController extends Controller
     public function unblock(Request $request, Assessment $assessment): RedirectResponse
     {
         abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
 
         $assessment->update([
             'unlocked_at' => now(),
@@ -675,6 +688,7 @@ class AssessmentController extends Controller
     public function adminQuestions(Request $request, Assessment $assessment): View
     {
         abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
 
         $assessment->load(['answers.question', 'user', 'questionPackage', 'segments']);
 
@@ -686,6 +700,7 @@ class AssessmentController extends Controller
     public function setDuration(Request $request, Assessment $assessment): RedirectResponse
     {
         abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
 
         $data = $request->validate([
             'duration_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
@@ -758,6 +773,19 @@ class AssessmentController extends Controller
         return $randomized;
     }
 
+    private function applyAssessmentSiteScope($query, User $adminUser): void
+    {
+        $site = $adminUser->normalizedSite();
+
+        $query->where(function ($q) use ($site): void {
+            $q->where('site', $site)
+                ->orWhere(function ($subQuery) use ($site): void {
+                    $subQuery->whereNull('site')
+                        ->whereHas('user', fn ($userQuery) => $userQuery->where('site', $site));
+                });
+        });
+    }
+
     private function notifyAdmins(Assessment $assessment): void
     {
         try {
@@ -790,5 +818,14 @@ class AssessmentController extends Controller
             $request->user()->isAdmin() || $assessment->user_id === $request->user()->id,
             403
         );
+
+        if ($request->user()->isAdmin() && $request->user()->hasSiteRestriction()) {
+            $assessment->loadMissing('user');
+            abort_unless(
+                $assessment->site === $request->user()->normalizedSite()
+                    || ($assessment->site === null && $assessment->user?->normalizedSite() === $request->user()->normalizedSite()),
+                403
+            );
+        }
     }
 }

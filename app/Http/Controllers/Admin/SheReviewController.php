@@ -8,6 +8,7 @@ use App\Models\Assessment;
 use App\Models\AssessmentAnswer;
 use App\Models\Question;
 use App\Models\QuestionPackage;
+use App\Models\User;
 use App\Support\SheScore;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,9 @@ class SheReviewController extends Controller
             ->where('status', Assessment::STATUS_PENDING_REVIEW)
             ->whereHas('questionPackage', function ($q) use ($selectedType): void {
                 $q->where('type', $selectedType);
+            })
+            ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
+                $this->applyAssessmentSiteScope($query, $adminUser);
             })
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
@@ -49,6 +53,7 @@ class SheReviewController extends Controller
         $assessment->load('user', 'questionPackage', 'answers.question');
         abort_unless($assessment->questionPackage?->type === QuestionPackage::TYPE_SHE, 404);
         abort_unless(request()->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
+        $this->authorizeAssessmentSite($assessment, request()->user());
 
         $answers = $assessment->answers->filter(function ($answer) {
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
@@ -63,9 +68,10 @@ class SheReviewController extends Controller
     {
         abort_unless($assessment->status === Assessment::STATUS_PENDING_REVIEW, 400);
 
-        $assessment->load('questionPackage');
+        $assessment->load('questionPackage', 'user');
         abort_unless($assessment->questionPackage?->type === QuestionPackage::TYPE_SHE, 404);
         abort_unless($request->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
+        $this->authorizeAssessmentSite($assessment, $request->user());
 
         $validated = $request->validate([
             'scores' => ['required', 'array'],
@@ -114,5 +120,28 @@ class SheReviewController extends Controller
 
         return redirect()->route('admin.she-review.index', ['type' => $selectedType])
             ->with('status', 'Nilai assessment berhasil disimpan.');
+    }
+
+    private function applyAssessmentSiteScope($query, User $adminUser): void
+    {
+        $site = $adminUser->normalizedSite();
+
+        $query->where(function ($q) use ($site): void {
+            $q->where('site', $site)
+                ->orWhere(function ($subQuery) use ($site): void {
+                    $subQuery->whereNull('site')
+                        ->whereHas('user', fn ($userQuery) => $userQuery->where('site', $site));
+                });
+        });
+    }
+
+    private function authorizeAssessmentSite(Assessment $assessment, User $adminUser): void
+    {
+        abort_unless(
+            $adminUser->canViewAllSites()
+                || $assessment->site === $adminUser->normalizedSite()
+                || ($assessment->site === null && $assessment->user?->normalizedSite() === $adminUser->normalizedSite()),
+            403
+        );
     }
 }

@@ -3,7 +3,7 @@ import Chart from 'chart.js/auto';
 Chart.defaults.font.family = 'Figtree, ui-sans-serif, system-ui, sans-serif';
 Chart.defaults.color = '#4b5563';
 
-const statusColors = ['#10b981', '#ef4444', '#f59e0b'];
+const statusColors = ['#10b981', '#ef4444', '#f59e0b', '#64748b'];
 const categoryColors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#ec4899', '#64748b'];
 
 const chartInstances = {};
@@ -165,9 +165,9 @@ function createDoughnutChart(data) {
         type: 'doughnut',
         plugins: [centerTextPlugin],
         data: {
-            labels: ['Selesai', 'Terblokir', 'Berjalan'],
+            labels: ['Selesai', 'Terblokir', 'Berjalan', 'Belum Test'],
             datasets: [{
-                data: [data.submitted || 0, data.blocked || 0, data.pending || 0],
+                data: [data.submitted || 0, data.blocked || 0, data.pending || 0, data.notStarted || 0],
                 backgroundColor: statusColors,
                 borderColor: '#ffffff',
                 borderWidth: 4,

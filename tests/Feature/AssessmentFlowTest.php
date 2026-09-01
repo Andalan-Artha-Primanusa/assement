@@ -33,6 +33,41 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Dashboard Admin');
     }
 
+    public function test_admin_dashboard_counts_participants_who_have_not_started_test(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Belum Test',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $notStarted = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $submittedUser = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        Assessment::create([
+            'user_id' => $submittedUser->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 10,
+            'correct_answers' => 8,
+            'score' => 80,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Belum Test')
+            ->assertViewHas('stats', fn (array $stats): bool => $stats['not_started'] === 1)
+            ->assertViewHas('chartData', fn (array $chartData): bool => $chartData['notStarted'] === 1);
+    }
+
     public function test_non_admin_can_not_open_cms_routes(): void
     {
         $user = User::factory()->create(['role' => 'user']);
@@ -700,6 +735,83 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Kandidat HR')
             ->assertSee('Site Sangatta')
             ->assertSee('Template Interview HR');
+    }
+
+    public function test_site_admin_only_sees_interview_assessments_from_their_site(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'site' => 'Site A',
+        ]);
+        $template = InterviewTemplate::create([
+            'name' => 'Template Interview Site HR',
+            'type' => QuestionPackage::TYPE_HR,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+        $category = $template->categories()->create([
+            'name' => 'Kompetensi HR',
+            'order' => 1,
+        ]);
+        $aspect = $category->aspects()->create([
+            'name' => 'Komunikasi',
+            'order' => 1,
+        ]);
+
+        InterviewAssessment::create([
+            'interview_template_id' => $template->id,
+            'candidate_name' => 'Kandidat Site A',
+            'job_title' => 'HR Officer',
+            'location' => 'Site A',
+            'interview_date' => now()->toDateString(),
+            'total_score' => 10,
+            'average_score' => 5,
+            'percentage' => 100,
+            'recommendation' => 'DIREKOMENDASIKAN',
+            'created_by' => $admin->id,
+        ]);
+        $blocked = InterviewAssessment::create([
+            'interview_template_id' => $template->id,
+            'candidate_name' => 'Kandidat Site B',
+            'job_title' => 'HR Officer',
+            'location' => 'Site B',
+            'interview_date' => now()->toDateString(),
+            'total_score' => 10,
+            'average_score' => 5,
+            'percentage' => 100,
+            'recommendation' => 'DIREKOMENDASIKAN',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.interview-assessments.index'))
+            ->assertOk()
+            ->assertSee('Kandidat Site A')
+            ->assertDontSee('Kandidat Site B');
+
+        $this->actingAs($admin)
+            ->get(route('admin.interview-assessments.show', $blocked))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('admin.interview-assessments.store'), [
+                'interview_template_id' => $template->id,
+                'candidate_name' => 'Kandidat Baru',
+                'job_title' => 'HR Supervisor',
+                'location' => 'Site B',
+                'interview_date' => now()->toDateString(),
+                'scores' => [
+                    $aspect->id => ['score' => 5, 'notes' => 'baik'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('interview_assessments', [
+            'candidate_name' => 'Kandidat Baru',
+            'location' => 'Site A',
+            'created_by' => $admin->id,
+        ]);
     }
 
     public function test_interview_templates_are_scoped_to_operator_hr_and_mechanic_roles(): void
@@ -1983,18 +2095,18 @@ class AssessmentFlowTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('admin.operator-categories.store'), [
-                'name' => 'New Hire',
+                'name' => 'Operator Track Khusus',
                 'description' => 'Assessment untuk operator baru',
                 'is_active' => '1',
             ])
             ->assertRedirect(route('admin.operator-categories.index'));
 
         $this->assertDatabaseHas('operator_assessment_categories', [
-            'name' => 'New Hire',
+            'name' => 'Operator Track Khusus',
             'is_active' => true,
         ]);
 
-        $category = OperatorAssessmentCategory::where('name', 'New Hire')->firstOrFail();
+        $category = OperatorAssessmentCategory::where('name', 'Operator Track Khusus')->firstOrFail();
 
         $this->actingAs($admin)
             ->put(route('admin.operator-categories.update', $category), [
@@ -2224,6 +2336,210 @@ class AssessmentFlowTest extends TestCase
         $this->assertStringContainsString('"Kategori Invite",Site', $csv);
         $this->assertStringContainsString('Post Test', $csv);
         $this->assertStringContainsString('Site Separah', $csv);
+    }
+
+    public function test_site_admin_only_sees_users_and_assessments_from_their_site(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_MEKANIK,
+            'site' => 'Site A',
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Site Scope',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $siteAUser = User::factory()->create([
+            'name' => 'Peserta Site A',
+            'email' => 'site.a@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'site' => 'Site A',
+        ]);
+        $siteBUser = User::factory()->create([
+            'name' => 'Peserta Site B',
+            'email' => 'site.b@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'site' => 'Site B',
+        ]);
+        Assessment::create([
+            'user_id' => $siteAUser->id,
+            'question_package_id' => $package->id,
+            'site' => 'Site A',
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 5,
+            'correct_answers' => 4,
+            'score' => 80,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+        $siteBAssessment = Assessment::create([
+            'user_id' => $siteBUser->id,
+            'question_package_id' => $package->id,
+            'site' => 'Site B',
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 5,
+            'correct_answers' => 3,
+            'score' => 60,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertSee('Peserta Site A')
+            ->assertDontSee('Peserta Site B');
+
+        $this->actingAs($admin)
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Peserta Site A')
+            ->assertDontSee('Peserta Site B');
+
+        $this->actingAs($admin)
+            ->get(route('assessment.result', $siteBAssessment))
+            ->assertForbidden();
+    }
+
+    public function test_ho_admin_and_super_admin_can_see_all_sites(): void
+    {
+        $package = QuestionPackage::create([
+            'name' => 'Paket HO Scope',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        foreach (['Site A', 'Site B'] as $site) {
+            $user = User::factory()->create([
+                'name' => 'Peserta '.$site,
+                'role' => User::ROLE_USER,
+                'question_package_id' => $package->id,
+                'site' => $site,
+            ]);
+            Assessment::create([
+                'user_id' => $user->id,
+                'question_package_id' => $package->id,
+                'site' => $site,
+                'status' => Assessment::STATUS_GRADED,
+                'total_questions' => 5,
+                'correct_answers' => 4,
+                'score' => 80,
+                'started_at' => now()->subHour(),
+                'submitted_at' => now(),
+            ]);
+        }
+
+        $hoAdmin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_OPERATION,
+            'site' => 'HO',
+        ]);
+        $superAdmin = User::factory()->create([
+            'role' => User::ROLE_SUPER_ADMIN,
+            'site' => null,
+        ]);
+
+        $this->actingAs($hoAdmin)
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Peserta Site A')
+            ->assertSee('Peserta Site B');
+
+        $this->actingAs($superAdmin)
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Peserta Site A')
+            ->assertSee('Peserta Site B');
+    }
+
+    public function test_site_admin_invites_participant_to_their_own_site(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_SHE,
+            'site' => 'Site SHE',
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Site',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite'), [
+                'name' => 'Peserta SHE Site',
+                'email' => 'peserta.she.site@example.com',
+                'type' => QuestionPackage::TYPE_SHE,
+                'question_package_id' => $package->id,
+                'site' => 'Site Lain',
+                'access_days' => 7,
+                'duration_hours' => 2,
+            ])
+            ->assertRedirect(route('admin.invite'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'peserta.she.site@example.com',
+            'question_package_id' => $package->id,
+            'site' => 'Site SHE',
+        ]);
+    }
+
+    public function test_she_review_is_scoped_by_admin_site(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_SHE,
+            'site' => 'Site A',
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket SHE Review Site',
+            'type' => QuestionPackage::TYPE_SHE,
+            'is_active' => true,
+            'has_segments' => true,
+        ]);
+        $siteAUser = User::factory()->create([
+            'name' => 'Review Site A',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'site' => 'Site A',
+        ]);
+        $siteBUser = User::factory()->create([
+            'name' => 'Review Site B',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'site' => 'Site B',
+        ]);
+        Assessment::create([
+            'user_id' => $siteAUser->id,
+            'question_package_id' => $package->id,
+            'site' => 'Site A',
+            'status' => Assessment::STATUS_PENDING_REVIEW,
+            'total_questions' => 1,
+            'correct_answers' => 0,
+            'score' => 0,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+        $siteBAssessment = Assessment::create([
+            'user_id' => $siteBUser->id,
+            'question_package_id' => $package->id,
+            'site' => 'Site B',
+            'status' => Assessment::STATUS_PENDING_REVIEW,
+            'total_questions' => 1,
+            'correct_answers' => 0,
+            'score' => 0,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.she-review.index'))
+            ->assertOk()
+            ->assertSee('Review Site A')
+            ->assertDontSee('Review Site B');
+
+        $this->actingAs($admin)
+            ->get(route('admin.she-review.show', $siteBAssessment))
+            ->assertForbidden();
     }
 
     public function test_blocked_assessment_is_detected_after_reinvite_changes_user_package_type(): void
