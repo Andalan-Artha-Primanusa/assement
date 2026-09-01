@@ -427,15 +427,14 @@ class UserController extends Controller
         return redirect()->route('admin.invite')->with('status', $message);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    public function create(Request $request): View
     {
-        $adminUser = request()->user();
+        $adminUser = $request->user();
         $visibleTypes = $adminUser->visiblePackageTypes();
+        
+        $formType = $request->string('type')->toString() === 'admin' ? 'admin' : 'peserta';
 
-        $user = new User(['role' => User::ROLE_USER]);
+        $user = new User(['role' => $formType === 'admin' ? null : User::ROLE_USER]);
         $user->assessment_access_expires_at = now()->addDays((int) config('assessment.default_access_days', 7));
         $user->assessment_duration_minutes = (int) config('assessment.default_duration_minutes', 120);
         $user->max_attempts = (int) config('assessment.max_attempts', 1);
@@ -447,7 +446,7 @@ class UserController extends Controller
             ? OperatorAssessmentCategory::where('is_active', true)->orderBy('name')->get()
             : collect();
 
-        return view('admin.users.create', compact('user', 'packages', 'operatorCategories'));
+        return view('admin.users.create', compact('user', 'packages', 'operatorCategories', 'formType'));
     }
 
     /**
@@ -474,14 +473,13 @@ class UserController extends Controller
         return redirect()->route('admin.users.edit', $user);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(User $user): View
     {
         $adminUser = request()->user();
         $this->authorizeSiteAccess($adminUser, $user);
         $visibleTypes = $adminUser->visiblePackageTypes();
+
+        $formType = $user->role === User::ROLE_USER ? 'peserta' : 'admin';
 
         $packages = QuestionPackage::whereIn('type', $visibleTypes)
             ->orderBy('name')
@@ -490,7 +488,7 @@ class UserController extends Controller
             ? OperatorAssessmentCategory::orderBy('name')->get()
             : collect();
 
-        return view('admin.users.edit', compact('user', 'packages', 'operatorCategories'));
+        return view('admin.users.edit', compact('user', 'packages', 'operatorCategories', 'formType'));
     }
 
     /**

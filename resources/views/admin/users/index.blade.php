@@ -4,7 +4,8 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('CMS User') }}</h2>
             <div class="flex gap-2">
                 <a href="{{ route('admin.invite') }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Invite Peserta</a>
-                <a href="{{ route('admin.users.create') }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah User</a>
+                <a href="{{ route('admin.users.create', ['type' => 'peserta']) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">+ Tambah Peserta</a>
+                <a href="{{ route('admin.users.create', ['type' => 'admin']) }}" class="rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-900">+ Tambah Admin</a>
             </div>
         </div>
     </x-slot>

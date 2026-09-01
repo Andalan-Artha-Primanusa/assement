@@ -12,10 +12,10 @@
     <div class="py-6 sm:py-10">
         <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-                @include('admin.users.form', [
+                @include('admin.users.form_' . $formType, [
                     'action' => route('admin.users.store'),
                     'method' => 'POST',
-                    'button' => 'Simpan User',
+                    'button' => $formType === 'admin' ? 'Simpan Admin' : 'Simpan Peserta',
                 ])
             </div>
         </div>
