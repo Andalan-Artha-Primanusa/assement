@@ -80,7 +80,12 @@
                         </div>
                         <div id="bulk_site_wrap">
                             <label for="bulk_site" class="block text-sm font-medium text-gray-700">Site</label>
-                            <input id="bulk_site" type="text" name="bulk_site" value="{{ old('bulk_site') }}" placeholder="Contoh: Site A" maxlength="100" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <select id="bulk_site" name="bulk_site" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">-- Tanpa Site --</option>
+                                @foreach (($allSites ?? collect()) as $s)
+                                    <option value="{{ $s->code }}" @selected(old('bulk_site') === $s->code)>{{ $s->code }} — {{ $s->name }}</option>
+                                @endforeach
+                            </select>
                             <x-input-error :messages="$errors->get('bulk_site')" class="mt-1" />
                         </div>
                         <div>
@@ -152,7 +157,12 @@
                         </div>
                         <div id="site_wrap">
                             <label for="site" class="block text-sm font-medium text-gray-700">Site</label>
-                            <input id="site" type="text" name="site" value="{{ old('site') }}" placeholder="Contoh: Site A" maxlength="100" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <select id="site" name="site" class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">-- Tanpa Site --</option>
+                                @foreach (($allSites ?? collect()) as $s)
+                                    <option value="{{ $s->code }}" @selected(old('site') === $s->code)>{{ $s->code }} — {{ $s->name }}</option>
+                                @endforeach
+                            </select>
                             <x-input-error :messages="$errors->get('site')" class="mt-1" />
                         </div>
                         <div class="grid grid-cols-2 gap-3">

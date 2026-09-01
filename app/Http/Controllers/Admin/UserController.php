@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\OperatorAssessmentCategory;
 use App\Models\QuestionPackage;
+use App\Models\Site;
 use App\Models\User;
 use App\Support\AssessmentSegmentConfig;
 use Illuminate\Http\RedirectResponse;
@@ -259,8 +260,9 @@ class UserController extends Controller
             'value' => $t,
             'label' => QuestionPackage::typeLabel($t),
         ])->toArray();
+        $allSites = Site::active()->excludeHO()->orderBy('code')->get();
 
-        return view('admin.users.invite', compact('packages', 'operatorCategories', 'visibleTypes', 'availableTypes'));
+        return view('admin.users.invite', compact('packages', 'operatorCategories', 'visibleTypes', 'availableTypes', 'allSites'));
     }
 
     public function invite(Request $request): RedirectResponse
@@ -445,8 +447,9 @@ class UserController extends Controller
         $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::where('is_active', true)->orderBy('name')->get()
             : collect();
+        $allSites = Site::active()->orderBy('code')->get();
 
-        return view('admin.users.create', compact('user', 'packages', 'operatorCategories', 'formType'));
+        return view('admin.users.create', compact('user', 'packages', 'operatorCategories', 'formType', 'allSites'));
     }
 
     /**
@@ -487,8 +490,9 @@ class UserController extends Controller
         $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::orderBy('name')->get()
             : collect();
+        $allSites = Site::active()->orderBy('code')->get();
 
-        return view('admin.users.edit', compact('user', 'packages', 'operatorCategories', 'formType'));
+        return view('admin.users.edit', compact('user', 'packages', 'operatorCategories', 'formType', 'allSites'));
     }
 
     /**

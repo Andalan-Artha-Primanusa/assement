@@ -98,8 +98,15 @@
             <div class="p-6">
                 <div class="max-w-xl">
                     <x-input-label for="site" value="Site (Lokasi)" />
-                    <x-text-input id="site" name="site" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500" :value="old('site', $user->site ?? '')" maxlength="100" placeholder="Contoh: Site Kaltim" />
-                    <p class="mt-2 text-xs text-gray-500">Ketik <strong>HO</strong> untuk memberikan admin ini hak akses ke semua data Site.</p>
+                    <select id="site" name="site" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white">
+                        <option value="">-- Pilih Site --</option>
+                        @foreach (($allSites ?? collect()) as $s)
+                            <option value="{{ $s->code }}" @selected(old('site', $user->site ?? '') === $s->code)>
+                                {{ $s->code }} — {{ $s->name }}{{ $s->code === 'HO' ? ' (Akses Semua Site)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-gray-500">Pilih <strong>HO</strong> untuk memberikan admin ini hak akses ke semua data Site.</p>
                     <x-input-error :messages="$errors->get('site')" class="mt-2" />
                 </div>
             </div>

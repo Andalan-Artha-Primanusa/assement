@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuestionImportController;
 use App\Http\Controllers\Admin\QuestionPackageController;
 use App\Http\Controllers\Admin\SheReviewController;
+use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\DashboardController;
@@ -73,6 +74,7 @@ Route::middleware(['auth', 'admin'])
         Route::resource('users', UserController::class);
         Route::get('users/{user}/answers', [UserController::class, 'answers'])->name('users.answers');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::resource('sites', SiteController::class)->except(['show', 'create']);
 
         Route::get('she-review', [SheReviewController::class, 'index'])->name('she-review.index');
         Route::get('she-review/{assessment}', [SheReviewController::class, 'show'])->name('she-review.show');

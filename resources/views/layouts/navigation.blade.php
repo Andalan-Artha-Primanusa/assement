@@ -154,6 +154,12 @@
                 </x-nav-link>
             @endif
 
+            @if ($authUser?->canViewAllSites())
+                <x-nav-link :href="route('admin.sites.index')" :active="request()->routeIs('admin.sites.*')">
+                    {{ __('Master Site') }}
+                </x-nav-link>
+            @endif
+
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __('Log Aktivitas') }}
             </x-nav-link>

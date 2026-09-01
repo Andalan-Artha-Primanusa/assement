@@ -156,8 +156,13 @@
             <div class="p-6 grid gap-6 sm:grid-cols-2">
                 <div>
                     <x-input-label for="site" value="Site (Lokasi)" />
-                    <x-text-input id="site" name="site" class="mt-1 block w-full" :value="old('site', $user->site ?? '')" maxlength="100" placeholder="Contoh: Site Kaltim" />
-                    <p class="mt-2 text-xs text-gray-500" id="site-helper-text">Kosongkan jika tidak ada site.</p>
+                    <select id="site" name="site" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 bg-white">
+                        <option value="">-- Tanpa Site --</option>
+                        @foreach (($allSites ?? collect())->where('code', '!=', 'HO') as $s)
+                            <option value="{{ $s->code }}" @selected(old('site', $user->site ?? '') === $s->code)>{{ $s->code }} — {{ $s->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-gray-500">Pilih site lokasi penempatan peserta.</p>
                     <x-input-error :messages="$errors->get('site')" class="mt-2" />
                 </div>
 
