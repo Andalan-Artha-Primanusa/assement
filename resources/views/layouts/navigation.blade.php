@@ -144,6 +144,10 @@
                 {{ __('Invite Peserta') }}
             </x-nav-link>
 
+            <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
+                {{ __('Tambah Admin') }}
+            </x-nav-link>
+
             @if (array_intersect([\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR], $visibleTypes))
                 <x-nav-link :href="route('admin.operator-categories.index')" :active="request()->routeIs('admin.operator-categories.*')">
                     {{ __('Kategori Invite') }}
@@ -204,6 +208,9 @@
             </x-nav-link>
             <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
                 {{ __($menuLabels['invite']) }}
+            </x-nav-link>
+            <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
+                {{ __('Tambah Admin') }}
             </x-nav-link>
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __($menuLabels['logs']) }}

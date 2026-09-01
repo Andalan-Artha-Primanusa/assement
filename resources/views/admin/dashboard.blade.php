@@ -24,7 +24,8 @@
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('admin.packages.create') }}" class="inline-flex min-h-[44px] items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Tambah Paket</a>
                 <a href="{{ route('admin.questions.create') }}" class="inline-flex min-h-[44px] items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">Tambah Soal</a>
-                <a href="{{ route('admin.users.create') }}" class="inline-flex min-h-[44px] items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">Tambah User</a>
+                <a href="{{ route('admin.users.create', ['type' => 'peserta']) }}" class="inline-flex min-h-[44px] items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">Tambah Peserta</a>
+                <a href="{{ route('admin.users.create', ['type' => 'admin']) }}" class="inline-flex min-h-[44px] items-center rounded-lg bg-gray-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-800">Tambah Admin</a>
             </div>
         </div>
     </x-slot>
