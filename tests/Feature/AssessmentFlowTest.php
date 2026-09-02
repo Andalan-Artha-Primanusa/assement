@@ -37,7 +37,7 @@ class AssessmentFlowTest extends TestCase
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
         $package = QuestionPackage::create([
-            'name' => 'Paket Belum Test',
+            'name' => 'Paket Belum Mengerjakan',
             'type' => QuestionPackage::TYPE_MEKANIK,
             'is_active' => true,
         ]);
@@ -63,7 +63,7 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Belum Test')
+            ->assertSee('Belum Mengerjakan')
             ->assertViewHas('stats', fn (array $stats): bool => $stats['not_started'] === 1)
             ->assertViewHas('chartData', fn (array $chartData): bool => $chartData['notStarted'] === 1);
     }
@@ -88,7 +88,7 @@ class AssessmentFlowTest extends TestCase
         ]);
 
         $notStarted = User::factory()->create([
-            'name' => 'Peserta Belum Test',
+            'name' => 'Peserta Belum Mengerjakan',
             'email' => 'belum.test@example.com',
             'role' => User::ROLE_USER,
             'question_package_id' => $package->id,
@@ -164,7 +164,7 @@ class AssessmentFlowTest extends TestCase
             ->get(route('admin.users.index'))
             ->assertOk()
             ->assertSee('Status Test')
-            ->assertSee('Belum Test')
+            ->assertSee('Belum Mengerjakan')
             ->assertSee('Sudah Test')
             ->assertSee('Sedang Jalan')
             ->assertSee('Terblokir')

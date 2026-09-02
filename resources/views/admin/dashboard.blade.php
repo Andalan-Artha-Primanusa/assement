@@ -47,7 +47,7 @@
             ['label' => 'Paket Soal', 'value' => $stats['packages'], 'helper' => 'bank soal terpisah', 'accent' => 'bg-sky-600'],
             ['label' => 'Peserta', 'value' => $stats['users'], 'helper' => 'akun non-admin', 'accent' => 'bg-indigo-600'],
             ['label' => 'Assessment Selesai', 'value' => $stats['assessments'], 'helper' => $dailyTotal.' selesai dalam 30 hari', 'accent' => 'bg-emerald-600'],
-            ['label' => 'Belum Test', 'value' => $stats['not_started'] ?? 0, 'helper' => 'peserta belum mulai', 'accent' => 'bg-slate-500'],
+            ['label' => 'Belum Mengerjakan', 'value' => $stats['not_started'] ?? 0, 'helper' => 'peserta belum mengerjakan', 'accent' => 'bg-slate-500'],
             ['label' => 'Terblokir', 'value' => $stats['blocked_assessments'], 'helper' => 'butuh review admin', 'accent' => 'bg-rose-600'],
             ['label' => 'Menunggu Review', 'value' => $stats['pending_review'] ?? 0, 'helper' => 'khusus SHE essay/upload', 'accent' => 'bg-amber-600'],
             ['label' => 'Rata-rata Nilai', 'value' => number_format($stats['average_score'], 1), 'helper' => 'dari assessment selesai', 'accent' => 'bg-violet-600'],
@@ -89,7 +89,7 @@
                 <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                     <div>
                         <h3 class="text-base font-semibold text-gray-950">Status Assessment</h3>
-                        <p class="mt-1 text-sm text-gray-500">Selesai, terblokir, berjalan, dan belum mulai.</p>
+                        <p class="mt-1 text-sm text-gray-500">Selesai, terblokir, berjalan, dan belum mengerjakan.</p>
                     </div>
                     <div class="mt-5 h-[250px]">
                         <canvas id="donutChart"></canvas>
@@ -109,7 +109,7 @@
                         </div>
                         <div>
                             <p class="font-semibold text-slate-700">{{ $chartData['notStarted'] ?? 0 }}</p>
-                            <p class="mt-1 text-gray-500">Belum Test</p>
+                            <p class="mt-1 text-gray-500">Belum Mengerjakan</p>
                         </div>
                     </div>
                 </section>

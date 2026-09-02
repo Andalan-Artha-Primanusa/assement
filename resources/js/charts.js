@@ -165,7 +165,7 @@ function createDoughnutChart(data) {
         type: 'doughnut',
         plugins: [centerTextPlugin],
         data: {
-            labels: ['Selesai', 'Terblokir', 'Berjalan', 'Belum Test'],
+            labels: ['Selesai', 'Terblokir', 'Berjalan', 'Belum Mengerjakan'],
             datasets: [{
                 data: [data.submitted || 0, data.blocked || 0, data.pending || 0, data.notStarted || 0],
                 backgroundColor: statusColors,

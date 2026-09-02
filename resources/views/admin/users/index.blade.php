@@ -34,7 +34,7 @@
                 </select>
                 <select name="test_status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua status test</option>
-                    <option value="not_started" @selected(request('test_status') === 'not_started')>Belum Test</option>
+                    <option value="not_started" @selected(request('test_status') === 'not_started')>Belum Mengerjakan</option>
                     <option value="submitted" @selected(request('test_status') === 'submitted')>Sudah Test</option>
                     <option value="running" @selected(request('test_status') === 'running')>Sedang Jalan</option>
                     <option value="blocked" @selected(request('test_status') === 'blocked')>Terblokir</option>
@@ -134,7 +134,7 @@
                                         @elseif (($user->current_running_assessments_count ?? 0) > 0)
                                             <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Sedang Jalan</span>
                                         @else
-                                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Belum Test</span>
+                                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Belum Mengerjakan</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $user->assessments_count }}</td>
