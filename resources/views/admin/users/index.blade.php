@@ -49,6 +49,7 @@
                                 <th class="px-6 py-3">Segment</th>
                                 <th class="px-6 py-3">Akses Sampai</th>
                                 <th class="px-6 py-3 text-center">Durasi</th>
+                                <th class="px-6 py-3 text-center">Status Test</th>
                                 <th class="px-6 py-3 text-center">Assessment</th>
                                 <th class="px-6 py-3 text-right">Aksi</th>
                             </tr>
@@ -115,6 +116,19 @@
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $user->assessment_access_expires_at?->format('d M Y H:i') ?? '-' }}</td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ round(($user->assessment_duration_minutes ?? config('assessment.default_duration_minutes')) / 60, 2) }} jam</td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if ($user->role !== \App\Models\User::ROLE_USER)
+                                            <span class="text-gray-400">-</span>
+                                        @elseif (($user->current_submitted_assessments_count ?? 0) > 0)
+                                            <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Sudah Test</span>
+                                        @elseif (($user->current_blocked_assessments_count ?? 0) > 0)
+                                            <span class="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Terblokir</span>
+                                        @elseif (($user->current_running_assessments_count ?? 0) > 0)
+                                            <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Sedang Jalan</span>
+                                        @else
+                                            <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Belum Test</span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-center text-gray-700">{{ $user->assessments_count }}</td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center justify-end gap-1">
@@ -136,7 +150,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="px-6 py-10 text-center text-gray-500">Belum ada user.</td>
+                                    <td colspan="12" class="px-6 py-10 text-center text-gray-500">Belum ada user.</td>
                                 </tr>
                             @endforelse
                         </tbody>

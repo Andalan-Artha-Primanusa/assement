@@ -35,7 +35,33 @@ class UserController extends Controller
 
         $users = User::query()
             ->with('questionPackage', 'operatorAssessmentCategory')
-            ->withCount('assessments')
+            ->withCount([
+                'assessments',
+                'assessments as current_assessments_count' => function ($query): void {
+                    $this->scopeCurrentAssignmentAssessments($query);
+                },
+                'assessments as current_submitted_assessments_count' => function ($query): void {
+                    $this->scopeCurrentAssignmentAssessments($query);
+                    $query->whereNotNull('submitted_at');
+                },
+                'assessments as current_blocked_assessments_count' => function ($query): void {
+                    $this->scopeCurrentAssignmentAssessments($query);
+                    $query->whereNotNull('blocked_at')
+                        ->whereNull('submitted_at')
+                        ->where(function ($q): void {
+                            $q->whereNull('unlocked_at')
+                                ->orWhereColumn('unlocked_at', '<', 'blocked_at');
+                        });
+                },
+                'assessments as current_running_assessments_count' => function ($query): void {
+                    $this->scopeCurrentAssignmentAssessments($query);
+                    $query->whereNull('submitted_at')
+                        ->whereNull('blocked_at')
+                        ->where(function ($q): void {
+                            $q->whereNull('ends_at')->orWhere('ends_at', '>', now());
+                        });
+                },
+            ])
             ->when(! $adminUser->isSuperAdmin(), function ($query) use ($visibleTypes): void {
                 $query->where(function ($q) use ($visibleTypes): void {
                     $q->where('role', 'user')
@@ -657,6 +683,18 @@ class UserController extends Controller
         return $adminUser->hasSiteRestriction()
             ? $adminUser->normalizedSite()
             : $site;
+    }
+
+    private function scopeCurrentAssignmentAssessments($query): void
+    {
+        $query->whereColumn('assessments.question_package_id', 'users.question_package_id')
+            ->where(function ($categoryQuery): void {
+                $categoryQuery->whereColumn('assessments.operator_assessment_category_id', 'users.operator_assessment_category_id')
+                    ->orWhere(function ($nullCategoryQuery): void {
+                        $nullCategoryQuery->whereNull('assessments.operator_assessment_category_id')
+                            ->whereNull('users.operator_assessment_category_id');
+                    });
+            });
     }
 
     private function authorizeSiteAccess(User $adminUser, User $targetUser): void

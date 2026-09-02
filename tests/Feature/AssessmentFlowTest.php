@@ -68,6 +68,117 @@ class AssessmentFlowTest extends TestCase
             ->assertViewHas('chartData', fn (array $chartData): bool => $chartData['notStarted'] === 1);
     }
 
+    public function test_admin_users_index_shows_current_test_status(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Status Test',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $preTest = OperatorAssessmentCategory::firstOrCreate([
+            'name' => 'Pre Test',
+        ], [
+            'is_active' => true,
+        ]);
+        $postTest = OperatorAssessmentCategory::firstOrCreate([
+            'name' => 'Post Test',
+        ], [
+            'is_active' => true,
+        ]);
+
+        $notStarted = User::factory()->create([
+            'name' => 'Peserta Belum Test',
+            'email' => 'belum.test@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+        ]);
+        Assessment::create([
+            'user_id' => $notStarted->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $postTest->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 10,
+            'correct_answers' => 8,
+            'score' => 80,
+            'started_at' => now()->subDays(2),
+            'submitted_at' => now()->subDays(2),
+        ]);
+
+        $submitted = User::factory()->create([
+            'email' => 'sudah.test@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+        ]);
+        Assessment::create([
+            'user_id' => $submitted->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 10,
+            'correct_answers' => 9,
+            'score' => 90,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $running = User::factory()->create([
+            'email' => 'sedang.jalan@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+        ]);
+        Assessment::create([
+            'user_id' => $running->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'total_questions' => 10,
+            'correct_answers' => 0,
+            'score' => 0,
+            'started_at' => now()->subMinutes(5),
+            'ends_at' => now()->addHour(),
+        ]);
+
+        $blocked = User::factory()->create([
+            'email' => 'terblokir.test@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+        ]);
+        Assessment::create([
+            'user_id' => $blocked->id,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'total_questions' => 10,
+            'correct_answers' => 0,
+            'score' => 0,
+            'started_at' => now()->subMinutes(10),
+            'blocked_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertSee('Status Test')
+            ->assertSee('Belum Test')
+            ->assertSee('Sudah Test')
+            ->assertSee('Sedang Jalan')
+            ->assertSee('Terblokir')
+            ->assertViewHas('users', function ($users): bool {
+                $items = collect($users->items())->keyBy('email');
+
+                return ($items['belum.test@example.com']->current_submitted_assessments_count ?? null) === 0
+                    && ($items['belum.test@example.com']->current_assessments_count ?? null) === 0
+                    && ($items['sudah.test@example.com']->current_submitted_assessments_count ?? null) === 1
+                    && ($items['sedang.jalan@example.com']->current_running_assessments_count ?? null) === 1
+                    && ($items['terblokir.test@example.com']->current_blocked_assessments_count ?? null) === 1;
+            });
+    }
+
     public function test_non_admin_can_not_open_cms_routes(): void
     {
         $user = User::factory()->create(['role' => 'user']);
