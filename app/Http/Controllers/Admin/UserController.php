@@ -110,6 +110,36 @@ class UserController extends Controller
             ->when($request->filled('site'), function ($query) use ($request): void {
                 $query->where('site', $request->string('site')->toString());
             })
+            ->when($request->filled('test_status'), function ($query) use ($request): void {
+                match ($request->string('test_status')->toString()) {
+                    'submitted' => $query->whereHas('assessments', function ($assessmentQuery): void {
+                        $this->scopeCurrentAssignmentAssessments($assessmentQuery);
+                        $assessmentQuery->whereNotNull('submitted_at');
+                    }),
+                    'running' => $query->whereHas('assessments', function ($assessmentQuery): void {
+                        $this->scopeCurrentAssignmentAssessments($assessmentQuery);
+                        $assessmentQuery->whereNull('submitted_at')
+                            ->whereNull('blocked_at')
+                            ->where(function ($q): void {
+                                $q->whereNull('ends_at')->orWhere('ends_at', '>', now());
+                            });
+                    }),
+                    'blocked' => $query->whereHas('assessments', function ($assessmentQuery): void {
+                        $this->scopeCurrentAssignmentAssessments($assessmentQuery);
+                        $assessmentQuery->whereNotNull('blocked_at')
+                            ->whereNull('submitted_at')
+                            ->where(function ($q): void {
+                                $q->whereNull('unlocked_at')
+                                    ->orWhereColumn('unlocked_at', '<', 'blocked_at');
+                            });
+                    }),
+                    'not_started' => $query->where('role', User::ROLE_USER)
+                        ->whereDoesntHave('assessments', function ($assessmentQuery): void {
+                            $this->scopeCurrentAssignmentAssessments($assessmentQuery);
+                        }),
+                    default => null,
+                };
+            })
             ->when($request->filled('role'), function ($query) use ($request): void {
                 $query->where('role', $request->string('role'));
             })

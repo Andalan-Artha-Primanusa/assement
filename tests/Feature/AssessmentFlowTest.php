@@ -177,6 +177,32 @@ class AssessmentFlowTest extends TestCase
                     && ($items['sedang.jalan@example.com']->current_running_assessments_count ?? null) === 1
                     && ($items['terblokir.test@example.com']->current_blocked_assessments_count ?? null) === 1;
             });
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['test_status' => 'not_started']))
+            ->assertOk()
+            ->assertSee('belum.test@example.com')
+            ->assertDontSee('sudah.test@example.com')
+            ->assertDontSee('sedang.jalan@example.com')
+            ->assertDontSee('terblokir.test@example.com');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['test_status' => 'submitted']))
+            ->assertOk()
+            ->assertSee('sudah.test@example.com')
+            ->assertDontSee('belum.test@example.com');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['test_status' => 'running']))
+            ->assertOk()
+            ->assertSee('sedang.jalan@example.com')
+            ->assertDontSee('belum.test@example.com');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['test_status' => 'blocked']))
+            ->assertOk()
+            ->assertSee('terblokir.test@example.com')
+            ->assertDontSee('belum.test@example.com');
     }
 
     public function test_non_admin_can_not_open_cms_routes(): void

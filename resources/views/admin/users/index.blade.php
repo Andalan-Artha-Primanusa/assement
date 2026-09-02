@@ -12,7 +12,7 @@
 
     <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg md:grid-cols-[1fr_220px_220px_180px_auto]">
+            <form method="GET" class="grid gap-3 bg-white p-4 shadow-sm sm:rounded-lg lg:grid-cols-[minmax(220px,1fr)_190px_190px_170px_170px_auto_auto]">
                 <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari nama atau email" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <select name="package" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Semua paket</option>
@@ -32,7 +32,15 @@
                         <option value="{{ $site }}" @selected(request('site') === $site)>{{ $site }}</option>
                     @endforeach
                 </select>
+                <select name="test_status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Semua status test</option>
+                    <option value="not_started" @selected(request('test_status') === 'not_started')>Belum Test</option>
+                    <option value="submitted" @selected(request('test_status') === 'submitted')>Sudah Test</option>
+                    <option value="running" @selected(request('test_status') === 'running')>Sedang Jalan</option>
+                    <option value="blocked" @selected(request('test_status') === 'blocked')>Terblokir</option>
+                </select>
                 <button class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black">Filter</button>
+                <a href="{{ route('admin.users.index', array_filter(['type' => request('type')])) }}" class="rounded-md border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset</a>
             </form>
 
             <div class="mt-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
