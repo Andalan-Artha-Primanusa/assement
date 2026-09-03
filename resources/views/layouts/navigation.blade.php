@@ -158,6 +158,9 @@
                 <x-nav-link :href="route('admin.sites.index')" :active="request()->routeIs('admin.sites.*')">
                     {{ __('Master Site') }}
                 </x-nav-link>
+                <x-nav-link :href="route('admin.sites.create')" :active="request()->routeIs('admin.sites.create')">
+                    {{ __('Tambah Site') }}
+                </x-nav-link>
             @endif
 
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
@@ -215,9 +218,17 @@
             <x-nav-link :href="route('admin.invite')" :active="request()->routeIs('admin.invite')">
                 {{ __($menuLabels['invite']) }}
             </x-nav-link>
-            <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
-                {{ __('Tambah Admin') }}
-            </x-nav-link>
+            @if ($authUser?->canViewAllSites())
+                <x-nav-link :href="route('admin.sites.index')" :active="request()->routeIs('admin.sites.*')">
+                    {{ __('Master Site') }}
+                </x-nav-link>
+                <x-nav-link :href="route('admin.sites.create')" :active="request()->routeIs('admin.sites.create')">
+                    {{ __('Tambah Site') }}
+                </x-nav-link>
+                <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
+                    {{ __('Tambah Admin') }}
+                </x-nav-link>
+            @endif
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
                 {{ __($menuLabels['logs']) }}
             </x-nav-link>

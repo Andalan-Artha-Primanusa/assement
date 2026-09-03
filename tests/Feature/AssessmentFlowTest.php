@@ -33,6 +33,106 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Dashboard Admin');
     }
 
+    public function test_site_admin_cannot_create_admin_or_manage_sites(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_MEKANIK,
+            'site' => 'SITE-A',
+        ]);
+        $otherAdmin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'site' => 'SITE-A',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Tambah User')
+            ->assertDontSee('Tambah Admin')
+            ->assertDontSee('Tambah Site');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertDontSee('+ Tambah User')
+            ->assertDontSee('+ Tambah Admin')
+            ->assertDontSee('+ Tambah Site');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'peserta']))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'admin']))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.edit', $otherAdmin))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(route('admin.sites.create'))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.store'), [
+                'name' => 'User Site Tidak Boleh',
+                'email' => 'user.site.blocked@example.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+                'role' => User::ROLE_USER,
+                'site' => 'SITE-A',
+                'assessment_duration_hours' => 2,
+                'max_attempts' => 1,
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_ho_admin_can_create_admin_and_manage_sites(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'site' => 'HO',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Tambah User')
+            ->assertSee('Tambah Admin')
+            ->assertSee('Tambah Site');
+
+        $this->actingAs($admin)
+            ->get(route('admin.sites.create'))
+            ->assertOk()
+            ->assertSee('Tambah Site Baru');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'peserta']))
+            ->assertOk()
+            ->assertSee('Informasi Akun User');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'admin']))
+            ->assertOk()
+            ->assertSee('Informasi Akun Admin');
+    }
+
+    public function test_super_admin_can_create_admin_and_manage_sites(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPER_ADMIN]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.sites.create'))
+            ->assertOk()
+            ->assertSee('Tambah Site Baru');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'admin']))
+            ->assertOk()
+            ->assertSee('Super Admin');
+    }
+
     public function test_admin_dashboard_counts_participants_who_have_not_started_test(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);

@@ -12,17 +12,10 @@ use Illuminate\View\View;
 
 class SiteController extends Controller
 {
-    public function __construct()
+    public function index(Request $request): View
     {
-        $this->middleware(function ($request, $next) {
-            abort_unless($request->user()?->canViewAllSites(), 403, 'Hanya admin HO yang bisa mengelola Master Site.');
+        $this->authorizeManageSites($request);
 
-            return $next($request);
-        });
-    }
-
-    public function index(): View
-    {
         $sites = Site::orderByRaw("CASE WHEN code = 'HO' THEN 0 ELSE 1 END")
             ->orderBy('code')
             ->get();
@@ -30,8 +23,15 @@ class SiteController extends Controller
         return view('admin.sites.index', compact('sites'));
     }
 
+    public function create(Request $request): View
+    {
+        return $this->index($request);
+    }
+
     public function store(Request $request): RedirectResponse
     {
+        $this->authorizeManageSites($request);
+
         $data = $request->validate([
             'code' => ['required', 'string', 'max:20', 'unique:sites,code', 'regex:/^[A-Za-z0-9\-_]+$/'],
             'name' => ['required', 'string', 'max:255'],
@@ -49,8 +49,10 @@ class SiteController extends Controller
         return redirect()->route('admin.sites.index')->with('status', 'Site "' . $site->name . '" berhasil ditambahkan.');
     }
 
-    public function edit(Site $site): View
+    public function edit(Request $request, Site $site): View
     {
+        $this->authorizeManageSites($request);
+
         $sites = Site::orderByRaw("CASE WHEN code = 'HO' THEN 0 ELSE 1 END")
             ->orderBy('code')
             ->get();
@@ -60,6 +62,8 @@ class SiteController extends Controller
 
     public function update(Request $request, Site $site): RedirectResponse
     {
+        $this->authorizeManageSites($request);
+
         $data = $request->validate([
             'code' => ['required', 'string', 'max:20', Rule::unique('sites', 'code')->ignore($site), 'regex:/^[A-Za-z0-9\-_]+$/'],
             'name' => ['required', 'string', 'max:255'],
@@ -85,8 +89,10 @@ class SiteController extends Controller
         return redirect()->route('admin.sites.index')->with('status', 'Site "' . $site->name . '" berhasil diperbarui.');
     }
 
-    public function destroy(Site $site): RedirectResponse
+    public function destroy(Request $request, Site $site): RedirectResponse
     {
+        $this->authorizeManageSites($request);
+
         if ($site->isHO()) {
             return back()->with('status', 'Site HO (Head Office) tidak bisa dihapus.');
         }
@@ -101,5 +107,10 @@ class SiteController extends Controller
         $site->delete();
 
         return redirect()->route('admin.sites.index')->with('status', 'Site berhasil dihapus.');
+    }
+
+    private function authorizeManageSites(Request $request): void
+    {
+        abort_unless($request->user()?->canViewAllSites(), 403, 'Hanya admin HO yang bisa mengelola Master Site.');
     }
 }

@@ -491,6 +491,7 @@ class UserController extends Controller
         $visibleTypes = $adminUser->visiblePackageTypes();
         
         $formType = $request->string('type')->toString() === 'admin' ? 'admin' : 'peserta';
+        abort_unless($adminUser->canViewAllSites(), 403);
 
         $user = new User(['role' => $formType === 'admin' ? null : User::ROLE_USER]);
         $user->assessment_access_expires_at = now()->addDays((int) config('assessment.default_access_days', 7));
@@ -513,6 +514,8 @@ class UserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canViewAllSites(), 403);
+
         $data = $this->validated($request);
 
         User::create($data);
@@ -643,6 +646,7 @@ class UserController extends Controller
         ]);
 
         $data['role'] = $data['role'] ?? User::ROLE_USER;
+        abort_if($data['role'] !== User::ROLE_USER && ! $adminUser->canViewAllSites(), 403);
         $data['question_package_id'] = $data['question_package_id'] ?? null;
         $data['assessment_duration_minutes'] = (int) round(((float) $data['assessment_duration_hours']) * 60);
         $data['assessment_access_expires_at'] = filled($data['assessment_access_expires_at'] ?? null)
@@ -729,6 +733,8 @@ class UserController extends Controller
 
     private function authorizeSiteAccess(User $adminUser, User $targetUser): void
     {
+        abort_if($targetUser->role !== User::ROLE_USER && ! $adminUser->canViewAllSites(), 403);
+
         abort_unless(
             $adminUser->canViewAllSites() || $targetUser->normalizedSite() === $adminUser->normalizedSite(),
             403

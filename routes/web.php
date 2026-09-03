@@ -74,7 +74,7 @@ Route::middleware(['auth', 'admin'])
         Route::resource('users', UserController::class);
         Route::get('users/{user}/answers', [UserController::class, 'answers'])->name('users.answers');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-        Route::resource('sites', SiteController::class)->except(['show', 'create']);
+        Route::resource('sites', SiteController::class)->except('show');
 
         Route::get('she-review', [SheReviewController::class, 'index'])->name('she-review.index');
         Route::get('she-review/{assessment}', [SheReviewController::class, 'show'])->name('she-review.show');

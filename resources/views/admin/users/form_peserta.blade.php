@@ -1,7 +1,7 @@
 <form method="POST" action="{{ $action }}" class="space-y-8" data-confirm
-      data-confirm-title="{{ $method === 'POST' ? 'Tambah Peserta?' : 'Simpan perubahan Peserta?' }}"
+      data-confirm-title="{{ $method === 'POST' ? 'Tambah User?' : 'Simpan perubahan User?' }}"
       data-confirm-message="Pastikan data yang diinput sudah benar."
-      data-confirm-text="{{ $method === 'POST' ? 'Ya, tambah peserta' : 'Ya, simpan peserta' }}">
+      data-confirm-text="{{ $method === 'POST' ? 'Ya, tambah user' : 'Ya, simpan user' }}">
     @csrf
     @if ($method !== 'POST')
         @method($method)
@@ -17,7 +17,7 @@
                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
                 </div>
-                <h3 class="text-base font-semibold text-emerald-900">Informasi Akun Peserta</h3>
+                <h3 class="text-base font-semibold text-emerald-900">Informasi Akun User</h3>
             </div>
             <div class="p-6 space-y-6">
                 <div class="grid gap-6 sm:grid-cols-2">
@@ -162,19 +162,19 @@
                             <option value="{{ $s->code }}" @selected(old('site', $user->site ?? '') === $s->code)>{{ $s->code }} — {{ $s->name }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-2 text-xs text-gray-500">Pilih site lokasi penempatan peserta.</p>
+                    <p class="mt-2 text-xs text-gray-500">Pilih site lokasi penempatan user.</p>
                     <x-input-error :messages="$errors->get('site')" class="mt-2" />
                 </div>
 
                 <div id="operator-category-field">
-                    <x-input-label for="operator_assessment_category_id" value="Kategori Peserta (Khusus Mekanik/Operator)" />
+                    <x-input-label for="operator_assessment_category_id" value="Kategori User (Khusus Mekanik/Operator)" />
                     <select id="operator_assessment_category_id" name="operator_assessment_category_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">Tanpa Kategori / Bukan Operator</option>
                         @foreach (($operatorCategories ?? collect()) as $category)
                             <option value="{{ $category->id }}" @selected(old('operator_assessment_category_id', $user->operator_assessment_category_id ?? '') == $category->id)>{{ $category->name }}{{ $category->is_active ? '' : ' (Nonaktif)' }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-2 text-xs text-gray-500">Digunakan untuk melacak kelompok peserta (Misal: Batch New Hire).</p>
+                    <p class="mt-2 text-xs text-gray-500">Digunakan untuk melacak kelompok user (Misal: Batch New Hire).</p>
                     <x-input-error :messages="$errors->get('operator_assessment_category_id')" class="mt-2" />
                 </div>
             </div>
