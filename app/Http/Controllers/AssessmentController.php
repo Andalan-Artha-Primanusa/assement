@@ -18,7 +18,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 class AssessmentController extends Controller
 {
@@ -121,7 +122,7 @@ class AssessmentController extends Controller
         return view('admin.assessments.index', compact('assessments', 'packages', 'operatorCategories', 'sites', 'selectedType'));
     }
 
-    public function export(Request $request): StreamedResponse
+    public function export(Request $request): BinaryFileResponse
     {
         $adminUser = $request->user();
         $visibleTypes = $adminUser->visiblePackageTypes();
@@ -170,42 +171,129 @@ class AssessmentController extends Controller
             ->latest()
             ->get();
 
-        $headers = [
-            'Content-Type' => 'text/csv; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="assessment-' . now()->format('Y-m-d') . '.csv"',
-        ];
+        $filename = 'assessment-' . now()->format('Y-m-d') . '.xlsx';
+        $tempBasePath = tempnam(storage_path('app'), 'assessment-export-');
 
-        $callback = function () use ($assessments): void {
-            $output = fopen('php://output', 'w');
-            fputcsv($output, [
-                'Peserta', 'Email', 'Paket', 'Kategori Invite', 'Site', 'Mulai', 'Selesai',
-                'Benar', 'Total', 'Nilai', 'Status', 'Pelanggaran',
-            ]);
+        abort_if($tempBasePath === false, 500, 'Gagal menyiapkan file export.');
 
-            foreach ($assessments as $a) {
-                $status = $a->isPendingReview()
-                    ? 'Menunggu Review SHE'
-                    : ($a->isSubmitted() ? 'Selesai' : ($a->isBlocked() ? 'Terblokir' : 'Berjalan'));
-                fputcsv($output, [
-                    $a->user->name,
-                    $a->user->email,
-                    $a->questionPackage?->name ?? '-',
-                    $a->operatorAssessmentCategory?->name ?? '-',
-                    $a->site ?: ($a->user->site ?: '-'),
-                    $a->started_at?->format('d/m/Y H:i'),
-                    $a->submitted_at?->format('d/m/Y H:i'),
-                    $a->correct_answers ?? 0,
-                    $a->total_questions ?? 0,
-                    $a->isPendingReview() ? 'Review SHE' : ($a->isSubmitted() ? number_format($a->score ?? 0, 2) : '-'),
-                    $status,
-                    $a->security_violations ?? 0,
-                ]);
+        $tempPath = $tempBasePath . '.xlsx';
+        rename($tempBasePath, $tempPath);
+
+        $rows = [[
+            'Peserta',
+            'Email',
+            'Paket',
+            'Kategori Invite',
+            'Site',
+            'Mulai',
+            'Selesai',
+            'Benar',
+            'Total',
+            'Nilai',
+            'Status',
+            'Pelanggaran',
+        ]];
+
+        foreach ($assessments as $a) {
+            $status = $a->isPendingReview()
+                ? 'Menunggu Review SHE'
+                : ($a->isSubmitted() ? 'Selesai' : ($a->isBlocked() ? 'Terblokir' : 'Berjalan'));
+
+            $rows[] = [
+                $a->user->name,
+                $a->user->email,
+                $a->questionPackage?->name ?? '-',
+                $a->operatorAssessmentCategory?->name ?? '-',
+                $a->site ?: ($a->user->site ?: '-'),
+                $a->started_at?->format('d/m/Y H:i') ?? '-',
+                $a->submitted_at?->format('d/m/Y H:i') ?? '-',
+                $a->correct_answers ?? 0,
+                $a->total_questions ?? 0,
+                $a->isPendingReview() ? 'Review SHE' : ($a->isSubmitted() ? number_format($a->score ?? 0, 2) : '-'),
+                $status,
+                $a->security_violations ?? 0,
+            ];
+        }
+
+        $this->writeAssessmentExportXlsx($rows, $tempPath);
+
+        return response()
+            ->download($tempPath, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])
+            ->deleteFileAfterSend(true);
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $rows
+     */
+    private function writeAssessmentExportXlsx(array $rows, string $path): void
+    {
+        $lastRow = max(1, count($rows));
+        $sheetData = '';
+
+        foreach ($rows as $rowIndex => $row) {
+            $excelRow = $rowIndex + 1;
+            $sheetData .= '<row r="' . $excelRow . '" ht="20" customHeight="1">';
+
+            foreach ($row as $columnIndex => $value) {
+                $sheetData .= $this->xlsxCell($value, $excelRow, $columnIndex + 1, $excelRow === 1 ? 1 : 0);
             }
 
-            fclose($output);
-        };
+            $sheetData .= '</row>';
+        }
 
-        return response()->stream($callback, 200, $headers);
+        $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+            . '<cols>'
+            . '<col min="1" max="4" width="24" customWidth="1"/>'
+            . '<col min="5" max="7" width="18" customWidth="1"/>'
+            . '<col min="8" max="10" width="12" customWidth="1"/>'
+            . '<col min="11" max="11" width="18" customWidth="1"/>'
+            . '<col min="12" max="12" width="12" customWidth="1"/>'
+            . '</cols>'
+            . '<sheetData>' . $sheetData . '</sheetData>'
+            . '<autoFilter ref="A1:L' . $lastRow . '"/>'
+            . '</worksheet>';
+
+        $zip = new ZipArchive();
+        abort_unless($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE), 500, 'Gagal membuat file export.');
+
+        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+        $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>');
+        $zip->addFromString('docProps/app.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Competra</Application></Properties>');
+        $zip->addFromString('docProps/core.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Assessment Report</dc:title><dc:creator>Competra</dc:creator></cp:coreProperties>');
+        $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Assessment" sheetId="1" r:id="rId1"/></sheets></workbook>');
+        $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+        $zip->addFromString('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF002060"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+        $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+        $zip->close();
+    }
+
+    private function xlsxCell(mixed $value, int $row, int $column, int $styleIndex = 0): string
+    {
+        $cell = $this->xlsxColumnName($column) . $row;
+        $style = $styleIndex > 0 ? ' s="' . $styleIndex . '"' : '';
+
+        if (is_int($value) || is_float($value)) {
+            return '<c r="' . $cell . '"' . $style . '><v>' . $value . '</v></c>';
+        }
+
+        return '<c r="' . $cell . '" t="inlineStr"' . $style . '><is><t>' . htmlspecialchars((string) $value, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</t></is></c>';
+    }
+
+    private function xlsxColumnName(int $column): string
+    {
+        $name = '';
+
+        while ($column > 0) {
+            $column--;
+            $name = chr(65 + ($column % 26)) . $name;
+            $column = intdiv($column, 26);
+        }
+
+        return $name;
     }
 
     public function start(Request $request): RedirectResponse

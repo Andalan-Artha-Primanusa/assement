@@ -37,15 +37,10 @@ class UserController extends Controller
             ->with('questionPackage', 'operatorAssessmentCategory')
             ->withCount([
                 'assessments',
-                'assessments as current_assessments_count' => function ($query): void {
-                    $this->scopeCurrentAssignmentAssessments($query);
-                },
-                'assessments as current_submitted_assessments_count' => function ($query): void {
-                    $this->scopeCurrentAssignmentAssessments($query);
+                'assessments as submitted_assessments_count' => function ($query): void {
                     $query->whereNotNull('submitted_at');
                 },
-                'assessments as current_blocked_assessments_count' => function ($query): void {
-                    $this->scopeCurrentAssignmentAssessments($query);
+                'assessments as blocked_assessments_count' => function ($query): void {
                     $query->whereNotNull('blocked_at')
                         ->whereNull('submitted_at')
                         ->where(function ($q): void {
@@ -53,8 +48,7 @@ class UserController extends Controller
                                 ->orWhereColumn('unlocked_at', '<', 'blocked_at');
                         });
                 },
-                'assessments as current_running_assessments_count' => function ($query): void {
-                    $this->scopeCurrentAssignmentAssessments($query);
+                'assessments as running_assessments_count' => function ($query): void {
                     $query->whereNull('submitted_at')
                         ->whereNull('blocked_at')
                         ->where(function ($q): void {
@@ -113,11 +107,9 @@ class UserController extends Controller
             ->when($request->filled('test_status'), function ($query) use ($request): void {
                 match ($request->string('test_status')->toString()) {
                     'submitted' => $query->whereHas('assessments', function ($assessmentQuery): void {
-                        $this->scopeCurrentAssignmentAssessments($assessmentQuery);
                         $assessmentQuery->whereNotNull('submitted_at');
                     }),
                     'running' => $query->whereHas('assessments', function ($assessmentQuery): void {
-                        $this->scopeCurrentAssignmentAssessments($assessmentQuery);
                         $assessmentQuery->whereNull('submitted_at')
                             ->whereNull('blocked_at')
                             ->where(function ($q): void {
@@ -125,7 +117,6 @@ class UserController extends Controller
                             });
                     }),
                     'blocked' => $query->whereHas('assessments', function ($assessmentQuery): void {
-                        $this->scopeCurrentAssignmentAssessments($assessmentQuery);
                         $assessmentQuery->whereNotNull('blocked_at')
                             ->whereNull('submitted_at')
                             ->where(function ($q): void {
@@ -134,9 +125,7 @@ class UserController extends Controller
                             });
                     }),
                     'not_started' => $query->where('role', User::ROLE_USER)
-                        ->whereDoesntHave('assessments', function ($assessmentQuery): void {
-                            $this->scopeCurrentAssignmentAssessments($assessmentQuery);
-                        }),
+                        ->whereDoesntHave('assessments'),
                     default => null,
                 };
             })
@@ -717,18 +706,6 @@ class UserController extends Controller
         return $adminUser->hasSiteRestriction()
             ? $adminUser->normalizedSite()
             : $site;
-    }
-
-    private function scopeCurrentAssignmentAssessments($query): void
-    {
-        $query->whereColumn('assessments.question_package_id', 'users.question_package_id')
-            ->where(function ($categoryQuery): void {
-                $categoryQuery->whereColumn('assessments.operator_assessment_category_id', 'users.operator_assessment_category_id')
-                    ->orWhere(function ($nullCategoryQuery): void {
-                        $nullCategoryQuery->whereNull('assessments.operator_assessment_category_id')
-                            ->whereNull('users.operator_assessment_category_id');
-                    });
-            });
     }
 
     private function authorizeSiteAccess(User $adminUser, User $targetUser): void

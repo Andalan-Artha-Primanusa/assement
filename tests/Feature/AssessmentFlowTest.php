@@ -185,15 +185,15 @@ class AssessmentFlowTest extends TestCase
             'is_active' => true,
         ]);
 
-        $notStarted = User::factory()->create([
-            'name' => 'Peserta Belum Mengerjakan',
-            'email' => 'belum.test@example.com',
+        $previouslySubmitted = User::factory()->create([
+            'name' => 'Peserta Sudah Test Lalu Diupdate',
+            'email' => 'riwayat.test@example.com',
             'role' => User::ROLE_USER,
             'question_package_id' => $package->id,
             'operator_assessment_category_id' => $preTest->id,
         ]);
         Assessment::create([
-            'user_id' => $notStarted->id,
+            'user_id' => $previouslySubmitted->id,
             'question_package_id' => $package->id,
             'operator_assessment_category_id' => $postTest->id,
             'status' => Assessment::STATUS_GRADED,
@@ -202,6 +202,14 @@ class AssessmentFlowTest extends TestCase
             'score' => 80,
             'started_at' => now()->subDays(2),
             'submitted_at' => now()->subDays(2),
+        ]);
+
+        $notStarted = User::factory()->create([
+            'name' => 'Peserta Belum Mengerjakan',
+            'email' => 'belum.test@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'operator_assessment_category_id' => $preTest->id,
         ]);
 
         $submitted = User::factory()->create([
@@ -269,17 +277,18 @@ class AssessmentFlowTest extends TestCase
             ->assertViewHas('users', function ($users): bool {
                 $items = collect($users->items())->keyBy('email');
 
-                return ($items['belum.test@example.com']->current_submitted_assessments_count ?? null) === 0
-                    && ($items['belum.test@example.com']->current_assessments_count ?? null) === 0
-                    && ($items['sudah.test@example.com']->current_submitted_assessments_count ?? null) === 1
-                    && ($items['sedang.jalan@example.com']->current_running_assessments_count ?? null) === 1
-                    && ($items['terblokir.test@example.com']->current_blocked_assessments_count ?? null) === 1;
+                return ($items['riwayat.test@example.com']->submitted_assessments_count ?? null) === 1
+                    && ($items['belum.test@example.com']->assessments_count ?? null) === 0
+                    && ($items['sudah.test@example.com']->submitted_assessments_count ?? null) === 1
+                    && ($items['sedang.jalan@example.com']->running_assessments_count ?? null) === 1
+                    && ($items['terblokir.test@example.com']->blocked_assessments_count ?? null) === 1;
             });
 
         $this->actingAs($admin)
             ->get(route('admin.users.index', ['test_status' => 'not_started']))
             ->assertOk()
             ->assertSee('belum.test@example.com')
+            ->assertDontSee('riwayat.test@example.com')
             ->assertDontSee('sudah.test@example.com')
             ->assertDontSee('sedang.jalan@example.com')
             ->assertDontSee('terblokir.test@example.com');
@@ -288,6 +297,7 @@ class AssessmentFlowTest extends TestCase
             ->get(route('admin.users.index', ['test_status' => 'submitted']))
             ->assertOk()
             ->assertSee('sudah.test@example.com')
+            ->assertSee('riwayat.test@example.com')
             ->assertDontSee('belum.test@example.com');
 
         $this->actingAs($admin)
@@ -2563,14 +2573,24 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Post Test')
             ->assertSee('Site Separah');
 
-        $csv = $this->actingAs($admin)
+        $response = $this->actingAs($admin)
             ->get(route('admin.assessments.export'))
             ->assertOk()
-            ->streamedContent();
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
-        $this->assertStringContainsString('"Kategori Invite",Site', $csv);
-        $this->assertStringContainsString('Post Test', $csv);
-        $this->assertStringContainsString('Site Separah', $csv);
+        $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
+
+        $zip = new \ZipArchive();
+        $this->assertTrue($zip->open($response->baseResponse->getFile()->getPathname()));
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+
+        $this->assertIsString($sheetXml);
+        $this->assertStringContainsString('<c r="D1" t="inlineStr" s="1"><is><t>Kategori Invite</t></is></c>', $sheetXml);
+        $this->assertStringContainsString('<c r="E1" t="inlineStr" s="1"><is><t>Site</t></is></c>', $sheetXml);
+        $this->assertStringContainsString('Post Test', $sheetXml);
+        $this->assertStringContainsString('Site Separah', $sheetXml);
+        $this->assertStringContainsString('<autoFilter ref="A1:L2"/>', $sheetXml);
     }
 
     public function test_site_admin_only_sees_users_and_assessments_from_their_site(): void

@@ -129,11 +129,11 @@
                                     <td class="px-6 py-4 text-center">
                                         @if ($user->role !== \App\Models\User::ROLE_USER)
                                             <span class="text-gray-400">-</span>
-                                        @elseif (($user->current_submitted_assessments_count ?? 0) > 0)
+                                        @elseif (($user->submitted_assessments_count ?? 0) > 0)
                                             <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Sudah Test</span>
-                                        @elseif (($user->current_blocked_assessments_count ?? 0) > 0)
+                                        @elseif (($user->blocked_assessments_count ?? 0) > 0)
                                             <span class="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Terblokir</span>
-                                        @elseif (($user->current_running_assessments_count ?? 0) > 0)
+                                        @elseif (($user->running_assessments_count ?? 0) > 0)
                                             <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Sedang Jalan</span>
                                         @else
                                             <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">Belum Mengerjakan</span>
