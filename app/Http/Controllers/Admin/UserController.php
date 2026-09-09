@@ -627,8 +627,8 @@ class UserController extends Controller
             'operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
             'site' => ['nullable', 'string', 'max:100'],
             'assessment_access_expires_at' => ['nullable', 'date'],
-            'assessment_duration_hours' => ['required', 'numeric', 'min:0.25', 'max:24'],
-            'max_attempts' => ['required', 'integer', 'min:1', 'max:100'],
+            'assessment_duration_hours' => ['nullable', 'numeric', 'min:0.25', 'max:24'],
+            'max_attempts' => ['nullable', 'integer', 'min:1', 'max:100'],
             'segment_config' => ['nullable', 'array'],
             'segment_config.*.type' => ['required_with:segment_config', 'string', 'in:multiple_choice,essay,upload'],
             'segment_config.*.duration' => ['required_with:segment_config', 'integer', 'min:1', 'max:480'],
@@ -637,7 +637,13 @@ class UserController extends Controller
         $data['role'] = $data['role'] ?? User::ROLE_USER;
         abort_if($data['role'] !== User::ROLE_USER && ! $adminUser->canViewAllSites(), 403);
         $data['question_package_id'] = $data['question_package_id'] ?? null;
-        $data['assessment_duration_minutes'] = (int) round(((float) $data['assessment_duration_hours']) * 60);
+        $durationHours = filled($data['assessment_duration_hours'] ?? null)
+            ? (float) $data['assessment_duration_hours']
+            : ((int) config('assessment.default_duration_minutes', 120) / 60);
+        $data['assessment_duration_minutes'] = (int) round($durationHours * 60);
+        $data['max_attempts'] = filled($data['max_attempts'] ?? null)
+            ? (int) $data['max_attempts']
+            : (int) config('assessment.max_attempts', 1);
         $data['assessment_access_expires_at'] = filled($data['assessment_access_expires_at'] ?? null)
             ? $data['assessment_access_expires_at']
             : null;

@@ -1901,6 +1901,32 @@ class AssessmentFlowTest extends TestCase
         ], $user->segment_config);
     }
 
+    public function test_admin_user_form_uses_default_duration_and_attempts_when_fields_are_missing(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Default Durasi',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.store'), [
+                'name' => 'Peserta Default Durasi',
+                'email' => 'peserta.default.durasi@example.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+                'role' => User::ROLE_USER,
+                'question_package_id' => $package->id,
+            ])
+            ->assertRedirect(route('admin.users.index'));
+
+        $user = User::where('email', 'peserta.default.durasi@example.com')->firstOrFail();
+
+        $this->assertSame((int) config('assessment.default_duration_minutes', 120), $user->assessment_duration_minutes);
+        $this->assertSame((int) config('assessment.max_attempts', 1), $user->max_attempts);
+    }
+
     public function test_she_assessment_start_normalizes_legacy_duplicate_segments(): void
     {
         $package = QuestionPackage::create([
