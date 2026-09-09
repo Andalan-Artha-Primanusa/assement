@@ -1,7 +1,7 @@
 <form method="POST" action="{{ $action }}" class="space-y-8" data-confirm
-      data-confirm-title="{{ $method === 'POST' ? 'Tambah Admin?' : 'Simpan perubahan Admin?' }}"
+      data-confirm-title="{{ $method === 'POST' ? 'Tambah User?' : 'Simpan perubahan User?' }}"
       data-confirm-message="Pastikan data yang diinput sudah benar."
-      data-confirm-text="{{ $method === 'POST' ? 'Ya, tambah admin' : 'Ya, simpan admin' }}">
+      data-confirm-text="{{ $method === 'POST' ? 'Ya, tambah user' : 'Ya, simpan user' }}">
     @csrf
     @if ($method !== 'POST')
         @method($method)
@@ -14,22 +14,22 @@
                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
                 </div>
-                <h3 class="text-base font-semibold text-indigo-900">Informasi Akun Admin</h3>
+                <h3 class="text-base font-semibold text-indigo-900">Informasi Akun User</h3>
             </div>
             <div class="p-6 space-y-6">
                 {{-- ROLE ADMIN SELECTION --}}
                 <div>
-                    <x-input-label for="role" value="Pilih Hak Akses Admin" class="mb-3 text-sm font-semibold text-gray-700" />
+                    <x-input-label for="role" value="Pilih Hak Akses User" class="mb-3 text-sm font-semibold text-gray-700" />
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                         @php
                             $adminRoles = [
-                                'admin_mekanik' => ['label' => 'Admin Mekanik', 'color' => 'indigo'],
-                                'admin_operation' => ['label' => 'Admin Operator', 'color' => 'purple'],
-                                'admin_she' => ['label' => 'Admin SHE', 'color' => 'cyan'],
-                                'admin_hr' => ['label' => 'Admin HR', 'color' => 'rose'],
+                                'admin_mekanik' => ['label' => 'User Mekanik', 'color' => 'indigo'],
+                                'admin_operation' => ['label' => 'User Operator', 'color' => 'purple'],
+                                'admin_she' => ['label' => 'User SHE', 'color' => 'cyan'],
+                                'admin_hr' => ['label' => 'User HR', 'color' => 'rose'],
                             ];
                             if (Auth::user()->isSuperAdmin()) {
-                                $adminRoles['super_admin'] = ['label' => 'Super Admin', 'color' => 'red'];
+                                $adminRoles['super_admin'] = ['label' => 'Super User', 'color' => 'red'];
                             }
                         @endphp
 
@@ -106,7 +106,7 @@
                             </option>
                         @endforeach
                     </select>
-                    <p class="mt-2 text-xs text-gray-500">Pilih <strong>HO</strong> untuk memberikan admin ini hak akses ke semua data Site.</p>
+                    <p class="mt-2 text-xs text-gray-500">Pilih <strong>HO</strong> untuk memberikan user ini hak akses ke semua data Site.</p>
                     <x-input-error :messages="$errors->get('site')" class="mt-2" />
                 </div>
             </div>
@@ -134,11 +134,11 @@
         pwdInput.value = retVal;
         confirmInput.value = retVal;
         
-        // Make passwords visible so admin can copy/see them
+        // Make passwords visible so the creator can copy/see them.
         pwdInput.type = "text";
         confirmInput.type = "text";
         
-        alert("Password berhasil di-generate: " + retVal + "\n\nSilakan simpan password ini untuk diinfokan ke Admin terkait.");
+        alert("Password berhasil di-generate: " + retVal + "\n\nSilakan simpan password ini untuk diinfokan ke user terkait.");
     }
     
     function togglePasswordVisibility(fieldId) {

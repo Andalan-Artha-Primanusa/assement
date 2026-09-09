@@ -5,9 +5,8 @@
             <div class="flex gap-2">
                 <a href="{{ route('admin.invite') }}" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Invite Peserta</a>
                 @if (request()->user()?->canViewAllSites())
-                    <a href="{{ route('admin.users.create', ['type' => 'peserta']) }}" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">+ Tambah User</a>
                     <a href="{{ route('admin.sites.create') }}" class="rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-700">+ Tambah Site</a>
-                    <a href="{{ route('admin.users.create', ['type' => 'admin']) }}" class="rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-900">+ Tambah Admin</a>
+                    <a href="{{ route('admin.users.create', ['type' => 'admin']) }}" class="rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-900">+ Tambah User</a>
                 @endif
             </div>
         </div>
@@ -81,11 +80,11 @@
                                                 'user' => 'bg-emerald-50 text-emerald-700',
                                             ];
                                             $roleLabels = [
-                                                'super_admin' => 'Super Admin',
-                                                'admin_mekanik' => 'Admin Mekanik',
-                                                'admin_operation' => 'Admin Operator',
-                                                'admin_she' => 'Admin SHE',
-                                                'admin_hr' => 'Admin HR',
+                                                'super_admin' => 'Super User',
+                                                'admin_mekanik' => 'User Mekanik',
+                                                'admin_operation' => 'User Operator',
+                                                'admin_she' => 'User SHE',
+                                                'admin_hr' => 'User HR',
                                                 'user' => 'Peserta',
                                             ];
                                         @endphp

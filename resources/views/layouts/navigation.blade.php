@@ -145,7 +145,7 @@
             </x-nav-link>
 
             <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
-                {{ __('Tambah Admin') }}
+                {{ __('Tambah User') }}
             </x-nav-link>
 
             @if (array_intersect([\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR], $visibleTypes))
@@ -157,9 +157,6 @@
             @if ($authUser?->canViewAllSites())
                 <x-nav-link :href="route('admin.sites.index')" :active="request()->routeIs('admin.sites.*')">
                     {{ __('Master Site') }}
-                </x-nav-link>
-                <x-nav-link :href="route('admin.sites.create')" :active="request()->routeIs('admin.sites.create')">
-                    {{ __('Tambah Site') }}
                 </x-nav-link>
             @endif
 
@@ -222,11 +219,8 @@
                 <x-nav-link :href="route('admin.sites.index')" :active="request()->routeIs('admin.sites.*')">
                     {{ __('Master Site') }}
                 </x-nav-link>
-                <x-nav-link :href="route('admin.sites.create')" :active="request()->routeIs('admin.sites.create')">
-                    {{ __('Tambah Site') }}
-                </x-nav-link>
                 <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
-                    {{ __('Tambah Admin') }}
+                    {{ __('Tambah User') }}
                 </x-nav-link>
             @endif
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">
@@ -257,11 +251,11 @@
                 <p class="truncate text-xs text-gray-500">{{ $authUser?->email }}</p>
                 @php
                     $roleLabels = [
-                        'super_admin' => 'Super Admin',
-                        'admin_mekanik' => 'Admin Mekanik',
-                        'admin_operation' => 'Admin Operator',
-                        'admin_she' => 'Admin SHE',
-                        'admin_hr' => 'Admin HR',
+                        'super_admin' => 'Super User',
+                        'admin_mekanik' => 'User Mekanik',
+                        'admin_operation' => 'User Operator',
+                        'admin_she' => 'User SHE',
+                        'admin_hr' => 'User HR',
                         'user' => 'Peserta',
                     ];
                     $roleColors = [

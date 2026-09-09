@@ -48,14 +48,12 @@ class AssessmentFlowTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertDontSee('Tambah User')
-            ->assertDontSee('Tambah Admin')
             ->assertDontSee('Tambah Site');
 
         $this->actingAs($admin)
             ->get(route('admin.users.index'))
             ->assertOk()
             ->assertDontSee('+ Tambah User')
-            ->assertDontSee('+ Tambah Admin')
             ->assertDontSee('+ Tambah Site');
 
         $this->actingAs($admin)
@@ -99,7 +97,6 @@ class AssessmentFlowTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Tambah User')
-            ->assertSee('Tambah Admin')
             ->assertSee('Tambah Site');
 
         $this->actingAs($admin)
@@ -115,7 +112,8 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.users.create', ['type' => 'admin']))
             ->assertOk()
-            ->assertSee('Informasi Akun Admin');
+            ->assertSee('Informasi Akun User')
+            ->assertSee('User HR');
     }
 
     public function test_super_admin_can_create_admin_and_manage_sites(): void
@@ -130,7 +128,7 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.users.create', ['type' => 'admin']))
             ->assertOk()
-            ->assertSee('Super Admin');
+            ->assertSee('Super User');
     }
 
     public function test_admin_dashboard_counts_participants_who_have_not_started_test(): void
