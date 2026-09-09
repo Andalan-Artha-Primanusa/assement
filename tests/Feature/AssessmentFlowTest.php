@@ -150,6 +150,15 @@ class AssessmentFlowTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.users.create', ['type' => 'admin']))
             ->assertOk()
+            ->assertSee('Master Akun')
+            ->assertSee('+ Tambah User')
+            ->assertSee($admin->email)
+            ->assertSee('Edit')
+            ->assertSee('Hapus');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'admin', 'form' => 1]))
+            ->assertOk()
             ->assertSee('Informasi Akun User')
             ->assertSee('User HR');
     }
@@ -165,6 +174,12 @@ class AssessmentFlowTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.users.create', ['type' => 'admin']))
+            ->assertOk()
+            ->assertSee('Master Akun')
+            ->assertSee('+ Tambah User');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.create', ['type' => 'admin', 'form' => 1]))
             ->assertOk()
             ->assertSee('Super User');
     }
@@ -2756,6 +2771,99 @@ class AssessmentFlowTest extends TestCase
         $this->assertStringContainsString('Post Test', $sheetXml);
         $this->assertStringContainsString('Site Separah', $sheetXml);
         $this->assertStringContainsString('<autoFilter ref="A1:L2"/>', $sheetXml);
+    }
+
+    public function test_admin_can_mark_running_assessment_as_submitted_from_assessment_list(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Tandai Sudah Test',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $question = Question::create([
+            'question_package_id' => $package->id,
+            'type' => Question::TYPE_MULTIPLE_CHOICE,
+            'category' => 'Teori',
+            'difficulty' => 'basic',
+            'text' => 'Jawaban benar A?',
+            'option_a' => 'Benar',
+            'option_b' => 'Salah',
+            'option_c' => 'Salah',
+            'option_d' => 'Salah',
+            'correct_option' => 'a',
+            'points' => 1,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'started_at' => now()->subMinutes(5),
+            'total_questions' => 1,
+        ]);
+        AssessmentAnswer::create([
+            'assessment_id' => $assessment->id,
+            'question_id' => $question->id,
+            'position' => 1,
+            'selected_option' => 'a',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Tandai Sudah Test')
+            ->assertSee('Reset ke Belum');
+
+        $this->actingAs($admin)
+            ->post(route('admin.assessments.mark-submitted', $assessment))
+            ->assertRedirect();
+
+        $assessment->refresh();
+        $this->assertNotNull($assessment->submitted_at);
+        $this->assertSame(Assessment::STATUS_GRADED, $assessment->status);
+        $this->assertSame(1, $assessment->correct_answers);
+        $this->assertEquals(100.0, (float) $assessment->score);
+    }
+
+    public function test_admin_can_reset_assessment_status_to_not_started(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Reset Belum',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'email' => 'reset.belum@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 1,
+            'correct_answers' => 1,
+            'score' => 100,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.assessments.reset-status', $assessment))
+            ->assertRedirect(route('admin.assessments.index'));
+
+        $this->assertDatabaseMissing('assessments', ['id' => $assessment->id]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['test_status' => 'not_started']))
+            ->assertOk()
+            ->assertSee('reset.belum@example.com');
     }
 
     public function test_site_admin_only_sees_users_and_assessments_from_their_site(): void

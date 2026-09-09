@@ -59,6 +59,8 @@ Route::middleware(['auth', 'admin'])
         Route::get('assessments/{assessment}/pdf', [AssessmentExportController::class, 'pdf'])->name('assessments.pdf');
         Route::post('assessments/{assessment}/unblock', [AssessmentController::class, 'unblock'])->name('assessments.unblock');
         Route::post('assessments/{assessment}/set-duration', [AssessmentController::class, 'setDuration'])->name('assessments.set-duration');
+        Route::post('assessments/{assessment}/mark-submitted', [AssessmentController::class, 'markSubmitted'])->name('assessments.mark-submitted');
+        Route::delete('assessments/{assessment}/reset', [AssessmentController::class, 'resetStatus'])->name('assessments.reset-status');
         Route::resource('operator-categories', OperatorAssessmentCategoryController::class)->except('show');
         Route::resource('packages', QuestionPackageController::class)->except('show');
         Route::get('packages/{package}/questions', [QuestionPackageController::class, 'questions'])->name('packages.questions');

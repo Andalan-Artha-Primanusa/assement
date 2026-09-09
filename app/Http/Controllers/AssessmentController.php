@@ -808,6 +808,33 @@ class AssessmentController extends Controller
         return back()->with('status', 'Durasi assessment berhasil diatur ke '.$data['duration_minutes'].' menit.');
     }
 
+    public function markSubmitted(Request $request, Assessment $assessment): RedirectResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
+
+        if ($assessment->isSubmitted()) {
+            return back()->with('status', 'Assessment ini sudah berstatus Sudah Test.');
+        }
+
+        app(AssessmentSecurity::class)->finishAssessment($assessment);
+
+        ActivityLog::log('assessment_mark_submitted', 'Menandai assessment #'.$assessment->id.' sebagai Sudah Test', Assessment::class, $assessment->id);
+
+        return back()->with('status', 'Assessment berhasil ditandai sebagai Sudah Test.');
+    }
+
+    public function resetStatus(Request $request, Assessment $assessment): RedirectResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
+
+        ActivityLog::log('assessment_reset_status', 'Mereset assessment #'.$assessment->id.' ke Belum Mengerjakan', Assessment::class, $assessment->id);
+        $assessment->delete();
+
+        return redirect()->route('admin.assessments.index')->with('status', 'Assessment berhasil di-reset. Peserta kembali berstatus Belum Mengerjakan jika tidak ada riwayat lain.');
+    }
+
     private function processUploadedFiles(Request $request, Assessment $assessment, array $answers): void
     {
         $assessment->load('answers.question');

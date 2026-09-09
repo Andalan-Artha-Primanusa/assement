@@ -145,7 +145,7 @@
             </x-nav-link>
 
             <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
-                {{ __('Tambah User') }}
+                {{ __('Master Akun') }}
             </x-nav-link>
 
             @if (array_intersect([\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR], $visibleTypes))
@@ -220,7 +220,7 @@
                     {{ __('Master Site') }}
                 </x-nav-link>
                 <x-nav-link :href="route('admin.users.create', ['type' => 'admin'])" :active="request()->routeIs('admin.users.create') && request('type') === 'admin'">
-                    {{ __('Tambah User') }}
+                    {{ __('Master Akun') }}
                 </x-nav-link>
             @endif
             <x-nav-link :href="route('admin.activity-logs.index')" :active="request()->routeIs('admin.activity-logs.*')">

@@ -482,6 +482,25 @@ class UserController extends Controller
         $formType = $request->string('type')->toString() === 'admin' ? 'admin' : 'peserta';
         abort_unless($adminUser->canViewAllSites(), 403);
 
+        $allSites = Site::active()->orderBy('code')->get();
+
+        if ($formType === 'admin' && ! $request->boolean('form')) {
+            $adminUsers = User::query()
+                ->whereIn('role', [
+                    User::ROLE_ADMIN_MEKANIK,
+                    User::ROLE_ADMIN_OPERATION,
+                    User::ROLE_ADMIN_SHE,
+                    User::ROLE_ADMIN_HR,
+                    User::ROLE_SUPER_ADMIN,
+                ])
+                ->when(! $adminUser->isSuperAdmin(), fn ($query) => $query->where('role', '<>', User::ROLE_SUPER_ADMIN))
+                ->latest()
+                ->paginate(12)
+                ->withQueryString();
+
+            return view('admin.users.admin_index', compact('adminUsers', 'allSites'));
+        }
+
         $user = new User(['role' => $formType === 'admin' ? null : User::ROLE_USER]);
         $user->assessment_access_expires_at = now()->addDays((int) config('assessment.default_access_days', 7));
         $user->assessment_duration_minutes = (int) config('assessment.default_duration_minutes', 120);
@@ -493,8 +512,6 @@ class UserController extends Controller
         $operatorCategories = $this->supportsInviteCategory($visibleTypes)
             ? OperatorAssessmentCategory::where('is_active', true)->orderBy('name')->get()
             : collect();
-        $allSites = Site::active()->orderBy('code')->get();
-
         return view('admin.users.create', compact('user', 'packages', 'operatorCategories', 'formType', 'allSites'));
     }
 

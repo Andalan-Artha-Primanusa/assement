@@ -121,11 +121,20 @@
                                         @endif
                                     </td>
                                     <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
-                                        <div class="flex items-center justify-end gap-1">
+                                        <div class="flex flex-wrap items-center justify-end gap-1">
                                             <a href="{{ route('admin.assessments.questions', $assessment) }}" class="rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">Lihat Soal</a>
                                             @if ($assessment->isSubmitted())
                                                 <a href="{{ route('assessment.result', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
                                                 <a href="{{ route('admin.assessments.pdf', $assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">PDF</a>
+                                                <form method="POST" action="{{ route('admin.assessments.reset-status', $assessment) }}" class="inline" data-confirm
+                                                      data-confirm-title="Reset ke Belum Mengerjakan?"
+                                                      data-confirm-message="Data attempt assessment ini akan dihapus. Peserta bisa mulai ulang jika aksesnya masih aktif."
+                                                      data-confirm-text="Ya, reset"
+                                                      data-confirm-variant="danger">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Reset ke Belum</button>
+                                                </form>
                                             @elseif ($assessment->isBlocked())
                                                 <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}" class="inline" data-confirm
                                                       data-confirm-title="Buka akses peserta?"
@@ -134,7 +143,39 @@
                                                     @csrf
                                                     <button class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Buka</button>
                                                 </form>
+                                                <form method="POST" action="{{ route('admin.assessments.mark-submitted', $assessment) }}" class="inline" data-confirm
+                                                      data-confirm-title="Tandai sebagai Sudah Test?"
+                                                      data-confirm-message="Assessment akan difinalkan berdasarkan jawaban yang sudah tersimpan."
+                                                      data-confirm-text="Ya, tandai sudah test">
+                                                    @csrf
+                                                    <button class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Tandai Sudah Test</button>
+                                                </form>
+                                                <form method="POST" action="{{ route('admin.assessments.reset-status', $assessment) }}" class="inline" data-confirm
+                                                      data-confirm-title="Reset ke Belum Mengerjakan?"
+                                                      data-confirm-message="Data attempt assessment ini akan dihapus. Peserta bisa mulai ulang jika aksesnya masih aktif."
+                                                      data-confirm-text="Ya, reset"
+                                                      data-confirm-variant="danger">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Reset ke Belum</button>
+                                                </form>
                                             @else
+                                                <form method="POST" action="{{ route('admin.assessments.mark-submitted', $assessment) }}" class="inline" data-confirm
+                                                      data-confirm-title="Tandai sebagai Sudah Test?"
+                                                      data-confirm-message="Assessment akan difinalkan berdasarkan jawaban yang sudah tersimpan."
+                                                      data-confirm-text="Ya, tandai sudah test">
+                                                    @csrf
+                                                    <button class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Tandai Sudah Test</button>
+                                                </form>
+                                                <form method="POST" action="{{ route('admin.assessments.reset-status', $assessment) }}" class="inline" data-confirm
+                                                      data-confirm-title="Reset ke Belum Mengerjakan?"
+                                                      data-confirm-message="Data attempt assessment ini akan dihapus. Peserta bisa mulai ulang jika aksesnya masih aktif."
+                                                      data-confirm-text="Ya, reset"
+                                                      data-confirm-variant="danger">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="rounded-md bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Reset ke Belum</button>
+                                                </form>
                                                 <div x-data="{ showDurasi: false }">
                                                     <button type="button" @click="showDurasi = !showDurasi" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Atur Durasi</button>
                                                     <div x-show="showDurasi" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showDurasi = false">
