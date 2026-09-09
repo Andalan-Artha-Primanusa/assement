@@ -55,6 +55,8 @@ Route::middleware(['auth', 'admin'])
     ->group(function () {
         Route::get('assessments', [AssessmentController::class, 'adminIndex'])->name('assessments.index');
         Route::get('assessments/export', [AssessmentController::class, 'export'])->name('assessments.export');
+        Route::get('assessments/{assessment}/edit', [AssessmentController::class, 'edit'])->name('assessments.edit');
+        Route::put('assessments/{assessment}', [AssessmentController::class, 'update'])->name('assessments.update');
         Route::get('assessments/{assessment}/questions', [AssessmentController::class, 'adminQuestions'])->name('assessments.questions');
         Route::get('assessments/{assessment}/pdf', [AssessmentExportController::class, 'pdf'])->name('assessments.pdf');
         Route::post('assessments/{assessment}/unblock', [AssessmentController::class, 'unblock'])->name('assessments.unblock');

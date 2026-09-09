@@ -123,6 +123,7 @@
                                     <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
                                         <div class="flex flex-wrap items-center justify-end gap-1">
                                             <a href="{{ route('admin.assessments.questions', $assessment) }}" class="rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">Lihat Soal</a>
+                                            <a href="{{ route('admin.assessments.edit', $assessment) }}" class="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">Edit</a>
                                             @if ($assessment->isSubmitted())
                                                 <a href="{{ route('assessment.result', $assessment) }}" class="rounded-md bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Detail</a>
                                                 <a href="{{ route('admin.assessments.pdf', $assessment) }}" class="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">PDF</a>

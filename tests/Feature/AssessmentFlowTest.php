@@ -2830,6 +2830,81 @@ class AssessmentFlowTest extends TestCase
         $this->assertEquals(100.0, (float) $assessment->score);
     }
 
+    public function test_admin_can_edit_assessment_from_assessment_list(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPER_ADMIN]);
+        Site::create([
+            'code' => 'SITE-EDIT',
+            'name' => 'Site Edit',
+            'is_active' => true,
+        ]);
+        $oldPackage = QuestionPackage::create([
+            'name' => 'Paket Lama Edit Assessment',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $newPackage = QuestionPackage::create([
+            'name' => 'Paket Baru Edit Assessment',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $category = OperatorAssessmentCategory::create([
+            'name' => 'Remidial Edit',
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'question_package_id' => $oldPackage->id,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $oldPackage->id,
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'started_at' => now()->subMinutes(30),
+            'total_questions' => 10,
+            'correct_answers' => 0,
+            'score' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.assessments.index'))
+            ->assertOk()
+            ->assertSee('Edit');
+
+        $this->actingAs($admin)
+            ->get(route('admin.assessments.edit', $assessment))
+            ->assertOk()
+            ->assertSee('Edit Assessment')
+            ->assertSee('Paket Baru Edit Assessment')
+            ->assertSee('Sudah Test');
+
+        $this->actingAs($admin)
+            ->put(route('admin.assessments.update', $assessment), [
+                'question_package_id' => $newPackage->id,
+                'operator_assessment_category_id' => $category->id,
+                'site' => 'SITE-EDIT',
+                'status_mode' => 'submitted',
+                'total_questions' => 10,
+                'correct_answers' => 7,
+                'score' => 70,
+                'started_at' => now()->subHour()->format('Y-m-d H:i:s'),
+                'submitted_at' => now()->format('Y-m-d H:i:s'),
+            ])
+            ->assertRedirect(route('admin.assessments.index'));
+
+        $this->assertDatabaseHas('assessments', [
+            'id' => $assessment->id,
+            'question_package_id' => $newPackage->id,
+            'operator_assessment_category_id' => $category->id,
+            'site' => 'SITE-EDIT',
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 10,
+            'correct_answers' => 7,
+            'score' => 70,
+        ]);
+        $this->assertNotNull($assessment->fresh()->submitted_at);
+    }
+
     public function test_admin_can_reset_assessment_status_to_not_started(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);

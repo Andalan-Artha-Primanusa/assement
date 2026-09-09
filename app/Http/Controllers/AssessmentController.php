@@ -9,6 +9,7 @@ use App\Models\AssessmentSegment;
 use App\Models\OperatorAssessmentCategory;
 use App\Models\Question;
 use App\Models\QuestionPackage;
+use App\Models\Site;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
 use App\Support\AssessmentSegmentConfig;
@@ -17,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
@@ -222,6 +224,98 @@ class AssessmentController extends Controller
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ])
             ->deleteFileAfterSend(true);
+    }
+
+    public function edit(Request $request, Assessment $assessment): View
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
+
+        $adminUser = $request->user();
+        $packages = QuestionPackage::whereIn('type', $adminUser->visiblePackageTypes())
+            ->orderBy('name')
+            ->get();
+        $operatorCategories = OperatorAssessmentCategory::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        $sites = Site::active()
+            ->when($adminUser->hasSiteRestriction(), fn ($query) => $query->where('code', $adminUser->normalizedSite()))
+            ->orderBy('code')
+            ->get();
+
+        $assessment->load('user', 'questionPackage', 'operatorAssessmentCategory');
+
+        return view('admin.assessments.edit', compact('assessment', 'packages', 'operatorCategories', 'sites'));
+    }
+
+    public function update(Request $request, Assessment $assessment): RedirectResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $this->authorizeAssessment($request, $assessment);
+
+        $adminUser = $request->user();
+        $data = $request->validate([
+            'question_package_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('question_packages', 'id')->where(fn ($query) => $query->whereIn('type', $adminUser->visiblePackageTypes())),
+            ],
+            'operator_assessment_category_id' => ['nullable', 'integer', Rule::exists('operator_assessment_categories', 'id')],
+            'site' => ['nullable', 'string', 'max:100'],
+            'status_mode' => ['required', 'string', 'in:running,blocked,submitted,not_started'],
+            'total_questions' => ['required', 'integer', 'min:0', 'max:10000'],
+            'correct_answers' => ['required', 'integer', 'min:0', 'max:10000'],
+            'score' => ['required', 'numeric', 'min:0', 'max:100'],
+            'started_at' => ['nullable', 'date'],
+            'submitted_at' => ['nullable', 'date'],
+        ]);
+
+        if ($data['status_mode'] === 'not_started') {
+            return $this->resetStatus($request, $assessment);
+        }
+
+        $site = $adminUser->hasSiteRestriction()
+            ? $adminUser->normalizedSite()
+            : ($data['site'] ?: null);
+
+        $statusUpdates = match ($data['status_mode']) {
+            'submitted' => [
+                'status' => Assessment::STATUS_GRADED,
+                'submitted_at' => $data['submitted_at'] ?? now(),
+                'blocked_at' => null,
+                'block_reason' => null,
+                'unlocked_at' => null,
+            ],
+            'blocked' => [
+                'status' => Assessment::STATUS_IN_PROGRESS,
+                'submitted_at' => null,
+                'blocked_at' => now(),
+                'block_reason' => 'Diatur manual oleh admin.',
+                'unlocked_at' => null,
+            ],
+            default => [
+                'status' => Assessment::STATUS_IN_PROGRESS,
+                'submitted_at' => null,
+                'blocked_at' => null,
+                'block_reason' => null,
+                'unlocked_at' => null,
+            ],
+        };
+
+        $assessment->update([
+            'question_package_id' => $data['question_package_id'] ?? null,
+            'operator_assessment_category_id' => $data['operator_assessment_category_id'] ?? null,
+            'site' => $site,
+            'total_questions' => (int) $data['total_questions'],
+            'correct_answers' => min((int) $data['correct_answers'], (int) $data['total_questions']),
+            'score' => round((float) $data['score'], 2),
+            'started_at' => $data['started_at'] ?? $assessment->started_at,
+            ...$statusUpdates,
+        ]);
+
+        ActivityLog::log('assessment_update', 'Mengedit assessment #'.$assessment->id, Assessment::class, $assessment->id);
+
+        return redirect()->route('admin.assessments.index')->with('status', 'Assessment berhasil diperbarui.');
     }
 
     /**
