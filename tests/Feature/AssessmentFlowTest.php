@@ -10,6 +10,7 @@ use App\Models\InterviewTemplate;
 use App\Models\OperatorAssessmentCategory;
 use App\Models\Question;
 use App\Models\QuestionPackage;
+use App\Models\Site;
 use App\Models\User;
 use App\Services\AssessmentSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -84,6 +85,43 @@ class AssessmentFlowTest extends TestCase
                 'max_attempts' => 1,
             ])
             ->assertForbidden();
+    }
+
+    public function test_site_admin_can_delete_participant_account_from_their_site(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_MEKANIK,
+            'site' => 'SITE-A',
+        ]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Hapus Site',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $participant = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'email' => 'hapus.site@example.com',
+            'site' => 'SITE-A',
+            'question_package_id' => $package->id,
+        ]);
+
+        Assessment::create([
+            'user_id' => $participant->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 1,
+            'correct_answers' => 1,
+            'score' => 100,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.users.destroy', $participant))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('users', ['email' => 'hapus.site@example.com']);
+        $this->assertSame(0, Assessment::where('user_id', $participant->id)->count());
     }
 
     public function test_ho_admin_can_create_admin_and_manage_sites(): void
@@ -311,6 +349,81 @@ class AssessmentFlowTest extends TestCase
             ->assertOk()
             ->assertSee('terblokir.test@example.com')
             ->assertDontSee('belum.test@example.com');
+    }
+
+    public function test_user_update_resets_unsubmitted_assessments_that_no_longer_match_assignment(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_SUPER_ADMIN]);
+        $oldPackage = QuestionPackage::create([
+            'name' => 'Tes Teori Lama',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $newPackage = QuestionPackage::create([
+            'name' => 'Tes Teori Baru',
+            'type' => QuestionPackage::TYPE_OPERATOR,
+            'is_active' => true,
+        ]);
+        $oldCategory = OperatorAssessmentCategory::create([
+            'name' => 'Post Test Lama',
+            'is_active' => true,
+        ]);
+        $newCategory = OperatorAssessmentCategory::create([
+            'name' => 'Pre Test Baru',
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'name' => 'Peserta Update Tes',
+            'email' => 'peserta.update.tes@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $oldPackage->id,
+            'operator_assessment_category_id' => $oldCategory->id,
+            'site' => 'SITE-LAMA',
+            'assessment_duration_minutes' => 120,
+            'max_attempts' => 1,
+        ]);
+        $openAssessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $oldPackage->id,
+            'operator_assessment_category_id' => $oldCategory->id,
+            'site' => 'SITE-LAMA',
+            'status' => Assessment::STATUS_IN_PROGRESS,
+            'total_questions' => 10,
+            'started_at' => now()->subMinutes(10),
+        ]);
+        $submittedAssessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $oldPackage->id,
+            'operator_assessment_category_id' => $oldCategory->id,
+            'site' => 'SITE-LAMA',
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 10,
+            'correct_answers' => 8,
+            'score' => 80,
+            'started_at' => now()->subDay(),
+            'submitted_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $user), [
+                'name' => 'Peserta Update Tes',
+                'email' => 'peserta.update.tes@example.com',
+                'role' => User::ROLE_USER,
+                'question_package_id' => $newPackage->id,
+                'operator_assessment_category_id' => $newCategory->id,
+                'site' => 'SITE-BARU',
+                'assessment_duration_hours' => 2,
+                'max_attempts' => 1,
+            ])
+            ->assertRedirect(route('admin.users.index'));
+
+        $this->assertDatabaseMissing('assessments', ['id' => $openAssessment->id]);
+        $this->assertDatabaseHas('assessments', [
+            'id' => $submittedAssessment->id,
+            'question_package_id' => $oldPackage->id,
+            'operator_assessment_category_id' => $oldCategory->id,
+            'site' => 'SITE-LAMA',
+        ]);
     }
 
     public function test_non_admin_can_not_open_cms_routes(): void
@@ -980,6 +1093,32 @@ class AssessmentFlowTest extends TestCase
             ->assertSee('Kandidat HR')
             ->assertSee('Site Sangatta')
             ->assertSee('Template Interview HR');
+    }
+
+    public function test_interview_assessment_location_uses_master_site_options(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN_HR,
+            'site' => 'HO',
+        ]);
+        Site::create([
+            'code' => 'SANGATTA',
+            'name' => 'Site Sangatta',
+            'is_active' => true,
+        ]);
+        $template = InterviewTemplate::create([
+            'name' => 'Template Interview Master Site',
+            'type' => QuestionPackage::TYPE_HR,
+            'min_recommended_percentage' => 70,
+            'min_considered_percentage' => 50,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.interview-assessments.create', ['template_id' => $template->id]))
+            ->assertOk()
+            ->assertSee('SANGATTA')
+            ->assertSee('Site Sangatta');
     }
 
     public function test_site_admin_only_sees_interview_assessments_from_their_site(): void

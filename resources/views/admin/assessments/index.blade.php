@@ -36,7 +36,7 @@
                 <div class="flex gap-2 md:col-span-6">
                     <button class="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black">Filter</button>
                     <a href="{{ route('admin.assessments.index') }}" class="w-full rounded-md border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset</a>
-                    <a href="{{ route('admin.assessments.export', request()->query()) }}" class="w-full rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-center text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Export CSV</a>
+                    <a href="{{ route('admin.assessments.export', request()->query()) }}" class="w-full rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-center text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Export Excel</a>
                 </div>
             </form>
 

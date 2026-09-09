@@ -557,6 +557,7 @@ class UserController extends Controller
         }
 
         $user->update($data);
+        $this->resetOpenAssessmentsThatNoLongerMatchUser($user);
 
         ActivityLog::log('user_update', 'Mengupdate user '.$user->email, User::class, $user->id);
 
@@ -712,6 +713,53 @@ class UserController extends Controller
         return $adminUser->hasSiteRestriction()
             ? $adminUser->normalizedSite()
             : $site;
+    }
+
+    private function resetOpenAssessmentsThatNoLongerMatchUser(User $user): void
+    {
+        if ($user->role !== User::ROLE_USER) {
+            return;
+        }
+
+        $user->assessments()
+            ->whereNull('submitted_at')
+            ->update(['site' => $user->site]);
+
+        $staleAssessments = $user->assessments()
+            ->whereNull('submitted_at')
+            ->where(function ($query) use ($user): void {
+                $query->where(function ($packageQuery) use ($user): void {
+                    $this->whereNullableValueDiffers($packageQuery, 'question_package_id', $user->question_package_id);
+                })->orWhere(function ($categoryQuery) use ($user): void {
+                    $this->whereNullableValueDiffers($categoryQuery, 'operator_assessment_category_id', $user->operator_assessment_category_id);
+                });
+            })
+            ->get();
+
+        foreach ($staleAssessments as $assessment) {
+            ActivityLog::log(
+                'assessment_reset_after_user_update',
+                'Mereset assessment aktif setelah assignment user '.$user->email.' diperbarui',
+                $assessment::class,
+                $assessment->id
+            );
+
+            $assessment->delete();
+        }
+    }
+
+    private function whereNullableValueDiffers($query, string $column, mixed $value): void
+    {
+        if ($value === null) {
+            $query->whereNotNull($column);
+
+            return;
+        }
+
+        $query->where(function ($q) use ($column, $value): void {
+            $q->where($column, '<>', $value)
+                ->orWhereNull($column);
+        });
     }
 
     private function authorizeSiteAccess(User $adminUser, User $targetUser): void

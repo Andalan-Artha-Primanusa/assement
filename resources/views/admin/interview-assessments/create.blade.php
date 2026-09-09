@@ -61,7 +61,15 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Lokasi / Site</label>
-                                        <input type="text" name="location" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <select name="location" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" @if(request()->user()?->hasSiteRestriction()) disabled @endif>
+                                            <option value="">-- Pilih Site --</option>
+                                            @foreach (($allSites ?? collect()) as $site)
+                                                <option value="{{ $site->code }}" @selected(old('location', request()->user()?->hasSiteRestriction() ? request()->user()?->normalizedSite() : '') === $site->code)>{{ $site->code }} — {{ $site->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if(request()->user()?->hasSiteRestriction())
+                                            <input type="hidden" name="location" value="{{ request()->user()?->normalizedSite() }}">
+                                        @endif
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Domisili</label>

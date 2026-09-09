@@ -8,6 +8,7 @@ use App\Models\InterviewAssessment;
 use App\Models\InterviewTemplate;
 use App\Models\InterviewScore;
 use App\Models\QuestionPackage;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,7 +52,9 @@ class InterviewAssessmentController extends Controller
             abort_unless($templates->contains('id', $request->integer('template_id')), 403);
         }
         
-        return view('admin.interview-assessments.create', compact('templates'));
+        $allSites = $this->availableSites($user);
+
+        return view('admin.interview-assessments.create', compact('templates', 'allSites'));
     }
 
     public function store(Request $request)
@@ -97,7 +100,9 @@ class InterviewAssessmentController extends Controller
             ->with(['categories.aspects'])
             ->get();
 
-        return view('admin.interview-assessments.edit', compact('interview_assessment', 'templates'));
+        $allSites = $this->availableSites(auth()->user());
+
+        return view('admin.interview-assessments.edit', compact('interview_assessment', 'templates', 'allSites'));
     }
 
     public function update(Request $request, InterviewAssessment $interview_assessment): RedirectResponse
@@ -310,6 +315,11 @@ class InterviewAssessmentController extends Controller
 
     private function validated(Request $request): array
     {
+        $locationRules = ['nullable', 'string', 'max:255'];
+        if ($request->user()->canViewAllSites()) {
+            $locationRules[] = Rule::exists('sites', 'code')->where(fn ($query) => $query->where('is_active', true));
+        }
+
         return $request->validate([
             'interview_template_id' => [
                 'required',
@@ -320,7 +330,7 @@ class InterviewAssessmentController extends Controller
             'gender' => ['nullable', 'in:L,P'],
             'department' => ['nullable', 'string', 'max:255'],
             'age' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'location' => ['nullable', 'string', 'max:255'],
+            'location' => $locationRules,
             'domicile' => ['nullable', 'string', 'max:255'],
             'join_date' => ['nullable', 'date'],
             'expected_salary' => ['nullable', 'string', 'max:255'],
@@ -360,6 +370,14 @@ class InterviewAssessmentController extends Controller
             'hr_interviewer_name' => $data['hr_interviewer_name'] ?? null,
             'user_interviewer_name' => null,
         ];
+    }
+
+    private function availableSites(User $adminUser)
+    {
+        return Site::active()
+            ->when($adminUser->hasSiteRestriction(), fn ($query) => $query->where('code', $adminUser->normalizedSite()))
+            ->orderBy('code')
+            ->get();
     }
 
     private function storeSignature(Request $request): ?string
