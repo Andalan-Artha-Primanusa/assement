@@ -55,7 +55,7 @@
                                 <th class="px-4 sm:px-6 py-3 text-center">Benar</th>
                                 <th class="px-4 sm:px-6 py-3 text-center">Nilai</th>
                                 <th class="px-4 sm:px-6 py-3 text-center">Status</th>
-                                <th class="px-4 sm:px-6 py-3 text-right">Aksi</th>
+                                <th class="px-4 sm:px-6 py-3 text-right min-w-[13rem]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -120,8 +120,8 @@
                                             <span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Berjalan</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap">
-                                        <div class="flex flex-wrap items-center justify-end gap-1">
+                                    <td class="px-4 sm:px-6 py-4 text-right whitespace-nowrap min-w-[13rem]">
+                                        <div class="flex flex-nowrap items-center justify-end gap-1">
                                             <a href="{{ route('admin.assessments.questions', $assessment) }}" title="Lihat Soal" aria-label="Lihat Soal" class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100">
                                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a5.25 5.25 0 0 0-5.25 5.25M12 6.75A5.25 5.25 0 0 1 17.25 12M12 6.75v10.5m-5.25-5.25H17.25M4.5 19.5h15M4.5 4.5h15" /></svg>
                                             </a>
@@ -135,17 +135,6 @@
                                                 <a href="{{ route('admin.assessments.pdf', $assessment) }}" title="Download PDF" aria-label="Download PDF" class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
                                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-8.25A2.25 2.25 0 0 0 17.25 3.75H8.25A2.25 2.25 0 0 0 6 6v12A2.25 2.25 0 0 0 8.25 20.25H12" /><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 15.75 16.5 18m0 0 2.25-2.25M16.5 18v-6M9 8.25h6M9 11.25h4.5" /></svg>
                                                 </a>
-                                                <form method="POST" action="{{ route('admin.assessments.reset-status', $assessment) }}" class="inline" data-confirm
-                                                      data-confirm-title="Reset ke Belum Mengerjakan?"
-                                                      data-confirm-message="Data attempt assessment ini akan dihapus. Peserta bisa mulai ulang jika aksesnya masih aktif."
-                                                      data-confirm-text="Ya, reset"
-                                                      data-confirm-variant="danger">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button title="Reset ke Belum" aria-label="Reset ke Belum" class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100">
-                                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h11.25A6.75 6.75 0 1 1 7.5 15.75" /></svg>
-                                                    </button>
-                                                </form>
                                             @elseif ($assessment->isBlocked())
                                                 <form method="POST" action="{{ route('admin.assessments.unblock', $assessment) }}" class="inline" data-confirm
                                                       data-confirm-title="Buka akses peserta?"
@@ -165,17 +154,6 @@
                                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                                     </button>
                                                 </form>
-                                                <form method="POST" action="{{ route('admin.assessments.reset-status', $assessment) }}" class="inline" data-confirm
-                                                      data-confirm-title="Reset ke Belum Mengerjakan?"
-                                                      data-confirm-message="Data attempt assessment ini akan dihapus. Peserta bisa mulai ulang jika aksesnya masih aktif."
-                                                      data-confirm-text="Ya, reset"
-                                                      data-confirm-variant="danger">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button title="Reset ke Belum" aria-label="Reset ke Belum" class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100">
-                                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h11.25A6.75 6.75 0 1 1 7.5 15.75" /></svg>
-                                                    </button>
-                                                </form>
                                             @else
                                                 <form method="POST" action="{{ route('admin.assessments.mark-submitted', $assessment) }}" class="inline" data-confirm
                                                       data-confirm-title="Tandai sebagai Sudah Test?"
@@ -184,17 +162,6 @@
                                                     @csrf
                                                     <button title="Tandai Sudah Test" aria-label="Tandai Sudah Test" class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
                                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                                                    </button>
-                                                </form>
-                                                <form method="POST" action="{{ route('admin.assessments.reset-status', $assessment) }}" class="inline" data-confirm
-                                                      data-confirm-title="Reset ke Belum Mengerjakan?"
-                                                      data-confirm-message="Data attempt assessment ini akan dihapus. Peserta bisa mulai ulang jika aksesnya masih aktif."
-                                                      data-confirm-text="Ya, reset"
-                                                      data-confirm-variant="danger">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button title="Reset ke Belum" aria-label="Reset ke Belum" class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100">
-                                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h11.25A6.75 6.75 0 1 1 7.5 15.75" /></svg>
                                                     </button>
                                                 </form>
                                                 <div x-data="{ showDurasi: false }">

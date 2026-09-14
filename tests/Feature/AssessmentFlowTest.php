@@ -2900,7 +2900,7 @@ class AssessmentFlowTest extends TestCase
             ->get(route('admin.assessments.index'))
             ->assertOk()
             ->assertSee('Tandai Sudah Test')
-            ->assertSee('Reset ke Belum');
+            ->assertDontSee('Reset ke Belum');
 
         $this->actingAs($admin)
             ->post(route('admin.assessments.mark-submitted', $assessment))
