@@ -64,6 +64,21 @@
                     <x-input-error :messages="$errors->get('question_package_id')" class="mt-2" />
                 </div>
 
+                @if ($method !== 'POST')
+                    <div>
+                        <x-input-label for="test_status_control" value="Status Pengerjaan" />
+                        <select id="test_status_control" name="test_status_control" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white">
+                            <option value="keep" @selected(old('test_status_control', $currentTestStatus ?? 'keep') === 'keep')>Biarkan status sekarang</option>
+                            <option value="not_started" @selected(old('test_status_control', $currentTestStatus ?? '') === 'not_started')>Belum Mengerjakan / Reset ke Belum</option>
+                            <option value="submitted" @selected(old('test_status_control', $currentTestStatus ?? '') === 'submitted')>Sudah Mengerjakan</option>
+                            <option value="running" @selected(old('test_status_control', $currentTestStatus ?? '') === 'running')>Sedang Jalan</option>
+                            <option value="blocked" @selected(old('test_status_control', $currentTestStatus ?? '') === 'blocked')>Terblokir</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Pilih Reset ke Belum untuk menghapus riwayat assessment user ini.</p>
+                        <x-input-error :messages="$errors->get('test_status_control')" class="mt-2" />
+                    </div>
+                @endif
+
                 <div class="grid gap-6 sm:grid-cols-3">
                     <div>
                         <x-input-label for="assessment_duration_hours" value="Durasi Pengerjaan (Jam)" />

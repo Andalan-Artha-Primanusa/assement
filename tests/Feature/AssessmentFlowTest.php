@@ -441,6 +441,89 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_reset_user_assessment_status_from_user_edit_form(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Reset Dari User',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'name' => 'Peserta Reset User',
+            'email' => 'peserta.reset.user@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'assessment_duration_minutes' => 120,
+            'max_attempts' => 1,
+        ]);
+        $assessment = Assessment::create([
+            'user_id' => $user->id,
+            'question_package_id' => $package->id,
+            'status' => Assessment::STATUS_GRADED,
+            'total_questions' => 5,
+            'correct_answers' => 4,
+            'score' => 80,
+            'started_at' => now()->subHour(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.edit', $user))
+            ->assertOk()
+            ->assertSee('Status Pengerjaan')
+            ->assertSee('Belum Mengerjakan / Reset ke Belum');
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $user), [
+                'name' => 'Peserta Reset User',
+                'email' => 'peserta.reset.user@example.com',
+                'role' => User::ROLE_USER,
+                'question_package_id' => $package->id,
+                'assessment_duration_hours' => 2,
+                'max_attempts' => 1,
+                'test_status_control' => 'not_started',
+            ])
+            ->assertRedirect(route('admin.users.index'));
+
+        $this->assertDatabaseMissing('assessments', ['id' => $assessment->id]);
+    }
+
+    public function test_admin_can_mark_user_as_submitted_from_user_edit_form(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN_MEKANIK]);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Sudah Dari User',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+        $user = User::factory()->create([
+            'name' => 'Peserta Sudah User',
+            'email' => 'peserta.sudah.user@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+            'assessment_duration_minutes' => 120,
+            'max_attempts' => 1,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.users.update', $user), [
+                'name' => 'Peserta Sudah User',
+                'email' => 'peserta.sudah.user@example.com',
+                'role' => User::ROLE_USER,
+                'question_package_id' => $package->id,
+                'assessment_duration_hours' => 2,
+                'max_attempts' => 1,
+                'test_status_control' => 'submitted',
+            ])
+            ->assertRedirect(route('admin.users.index'));
+
+        $assessment = Assessment::where('user_id', $user->id)->firstOrFail();
+        $this->assertNotNull($assessment->submitted_at);
+        $this->assertSame(Assessment::STATUS_GRADED, $assessment->status);
+        $this->assertSame($package->id, $assessment->question_package_id);
+    }
+
     public function test_non_admin_can_not_open_cms_routes(): void
     {
         $user = User::factory()->create(['role' => 'user']);

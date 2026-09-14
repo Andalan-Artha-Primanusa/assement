@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Assessment;
 use App\Models\OperatorAssessmentCategory;
 use App\Models\QuestionPackage;
 use App\Models\Site;
@@ -556,8 +557,9 @@ class UserController extends Controller
             ? OperatorAssessmentCategory::orderBy('name')->get()
             : collect();
         $allSites = Site::active()->orderBy('code')->get();
+        $currentTestStatus = $this->testStatusFor($user);
 
-        return view('admin.users.edit', compact('user', 'packages', 'operatorCategories', 'formType', 'allSites'));
+        return view('admin.users.edit', compact('user', 'packages', 'operatorCategories', 'formType', 'allSites', 'currentTestStatus'));
     }
 
     /**
@@ -567,6 +569,7 @@ class UserController extends Controller
     {
         $this->authorizeSiteAccess($request->user(), $user);
 
+        $testStatus = $request->input('test_status_control');
         $data = $this->validated($request, $user);
 
         if (blank($data['password'] ?? null)) {
@@ -575,6 +578,7 @@ class UserController extends Controller
 
         $user->update($data);
         $this->resetOpenAssessmentsThatNoLongerMatchUser($user);
+        $this->syncUserAssessmentStatus($user, $testStatus);
 
         ActivityLog::log('user_update', 'Mengupdate user '.$user->email, User::class, $user->id);
 
@@ -647,6 +651,7 @@ class UserController extends Controller
             'assessment_access_expires_at' => ['nullable', 'date'],
             'assessment_duration_hours' => ['nullable', 'numeric', 'min:0.25', 'max:24'],
             'max_attempts' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'test_status_control' => ['nullable', 'string', 'in:keep,not_started,submitted,running,blocked'],
             'segment_config' => ['nullable', 'array'],
             'segment_config.*.type' => ['required_with:segment_config', 'string', 'in:multiple_choice,essay,upload'],
             'segment_config.*.duration' => ['required_with:segment_config', 'integer', 'min:1', 'max:480'],
@@ -666,6 +671,7 @@ class UserController extends Controller
             ? $data['assessment_access_expires_at']
             : null;
         unset($data['assessment_duration_hours']);
+        unset($data['test_status_control']);
 
         $package = $data['question_package_id']
             ? QuestionPackage::find($data['question_package_id'])
@@ -730,6 +736,105 @@ class UserController extends Controller
         return $adminUser->hasSiteRestriction()
             ? $adminUser->normalizedSite()
             : $site;
+    }
+
+    private function testStatusFor(User $user): string
+    {
+        if ($user->role !== User::ROLE_USER) {
+            return 'keep';
+        }
+
+        if ($user->assessments()->whereNotNull('submitted_at')->exists()) {
+            return 'submitted';
+        }
+
+        if ($user->assessments()
+            ->whereNotNull('blocked_at')
+            ->whereNull('submitted_at')
+            ->where(function ($query): void {
+                $query->whereNull('unlocked_at')
+                    ->orWhereColumn('unlocked_at', '<', 'blocked_at');
+            })
+            ->exists()) {
+            return 'blocked';
+        }
+
+        if ($user->assessments()->whereNull('submitted_at')->exists()) {
+            return 'running';
+        }
+
+        return 'not_started';
+    }
+
+    private function syncUserAssessmentStatus(User $user, ?string $status): void
+    {
+        if ($user->role !== User::ROLE_USER || blank($status) || $status === 'keep') {
+            return;
+        }
+
+        if ($status === 'not_started') {
+            $user->assessments()->delete();
+            ActivityLog::log('user_assessment_status_reset', 'Mereset status assessment user '.$user->email.' ke Belum Mengerjakan', User::class, $user->id);
+
+            return;
+        }
+
+        $assessment = $user->assessments()
+            ->whereNull('submitted_at')
+            ->latest()
+            ->first();
+
+        if (! $assessment) {
+            $assessment = $user->assessments()->create([
+                'question_package_id' => $user->question_package_id,
+                'operator_assessment_category_id' => $user->operator_assessment_category_id,
+                'site' => $user->site,
+                'status' => Assessment::STATUS_IN_PROGRESS,
+                'started_at' => now(),
+                'duration_minutes' => $user->assessmentDurationMinutes(),
+                'ends_at' => now()->addMinutes($user->assessmentDurationMinutes()),
+                'total_questions' => 0,
+                'correct_answers' => 0,
+                'score' => 0,
+            ]);
+        }
+
+        if ($status === 'submitted') {
+            $assessment->update([
+                'question_package_id' => $user->question_package_id,
+                'operator_assessment_category_id' => $user->operator_assessment_category_id,
+                'site' => $user->site,
+                'status' => Assessment::STATUS_GRADED,
+                'submitted_at' => now(),
+                'blocked_at' => null,
+                'block_reason' => null,
+                'unlocked_at' => null,
+            ]);
+        } elseif ($status === 'blocked') {
+            $assessment->update([
+                'question_package_id' => $user->question_package_id,
+                'operator_assessment_category_id' => $user->operator_assessment_category_id,
+                'site' => $user->site,
+                'status' => Assessment::STATUS_IN_PROGRESS,
+                'submitted_at' => null,
+                'blocked_at' => now(),
+                'block_reason' => 'Diatur manual oleh admin.',
+                'unlocked_at' => null,
+            ]);
+        } else {
+            $assessment->update([
+                'question_package_id' => $user->question_package_id,
+                'operator_assessment_category_id' => $user->operator_assessment_category_id,
+                'site' => $user->site,
+                'status' => Assessment::STATUS_IN_PROGRESS,
+                'submitted_at' => null,
+                'blocked_at' => null,
+                'block_reason' => null,
+                'unlocked_at' => null,
+            ]);
+        }
+
+        ActivityLog::log('user_assessment_status_update', 'Mengubah status assessment user '.$user->email.' menjadi '.$status, User::class, $user->id);
     }
 
     private function resetOpenAssessmentsThatNoLongerMatchUser(User $user): void
