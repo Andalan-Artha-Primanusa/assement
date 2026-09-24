@@ -3447,6 +3447,38 @@ class AssessmentFlowTest extends TestCase
         ]);
     }
 
+    public function test_invite_does_not_crash_when_mail_provider_limit_is_reached(): void
+    {
+        Mail::shouldReceive('send')
+            ->once()
+            ->andThrow(new \RuntimeException('550-5.4.5 Daily user sending limit exceeded'));
+
+        $admin = User::factory()->create(['role' => 'admin_mekanik']);
+        $package = QuestionPackage::create([
+            'name' => 'Paket Invite Limit',
+            'type' => QuestionPackage::TYPE_MEKANIK,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.invite'), [
+                'email' => 'limit@example.com',
+                'type' => QuestionPackage::TYPE_MEKANIK,
+                'question_package_id' => $package->id,
+                'access_days' => 5,
+                'duration_hours' => 1,
+            ])
+            ->assertRedirect(route('admin.invite'))
+            ->assertSessionHas('status', fn (string $message): bool => str_contains($message, 'email undangan belum terkirim')
+                && str_contains($message, 'limit harian email Gmail sudah habis'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'limit@example.com',
+            'role' => User::ROLE_USER,
+            'question_package_id' => $package->id,
+        ]);
+    }
+
     public function test_admin_can_invite_many_users_from_email_list(): void
     {
         Mail::fake();

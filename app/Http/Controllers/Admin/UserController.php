@@ -267,11 +267,11 @@ class UserController extends Controller
                 continue;
             }
 
-            try {
-                $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
+            $mailError = $this->sendAssessmentInviteSafely($user, $password, $accessDays, $durationMinutes);
+            if ($mailError) {
+                $errors[] = "Gagal kirim email ke {$email}: {$mailError}";
+            } else {
                 $sent++;
-            } catch (\Throwable $e) {
-                $errors[] = "Gagal kirim email ke {$email}.";
             }
 
             ActivityLog::log($wasCreated ? 'user_invite_bulk' : 'user_reinvite_bulk', 'Mengundang user '.$email, User::class, $user->id);
@@ -368,9 +368,15 @@ class UserController extends Controller
 
         $user->load('questionPackage', 'operatorAssessmentCategory');
 
-        $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
+        $mailError = $this->sendAssessmentInviteSafely($user, $password, $accessDays, $durationMinutes);
 
         ActivityLog::log($wasCreated ? 'user_invite' : 'user_reinvite', 'Mengundang user '.$data['email'], User::class, $user->id);
+
+        if ($mailError) {
+            return redirect()
+                ->route('admin.invite')
+                ->with('status', ($wasCreated ? 'Akun peserta dibuat' : 'Akun peserta diperbarui').", tapi email undangan belum terkirim: {$mailError} Password sementara: {$password}. Nama: {$user->name}");
+        }
 
         return redirect()
             ->route('admin.invite')
@@ -456,11 +462,11 @@ class UserController extends Controller
                 continue;
             }
 
-            try {
-                $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
+            $mailError = $this->sendAssessmentInviteSafely($user, $password, $accessDays, $durationMinutes);
+            if ($mailError) {
+                $errors[] = "Akun {$email} diproses, tapi email gagal dikirim: {$mailError}";
+            } else {
                 $sent++;
-            } catch (\Throwable $e) {
-                $errors[] = "Akun {$email} diproses, tapi email gagal dikirim.";
             }
 
             ActivityLog::log($wasCreated ? 'user_invite_bulk' : 'user_reinvite_bulk', 'Mengundang user '.$email, User::class, $user->id);
@@ -1011,5 +1017,29 @@ class UserController extends Controller
             $message->to($user->email, $user->name)
                 ->subject('Undangan Assessment - Andalan HR');
         });
+    }
+
+    private function sendAssessmentInviteSafely(User $user, string $password, int $accessDays, int $durationMinutes): ?string
+    {
+        try {
+            $this->sendAssessmentInvite($user, $password, $accessDays, $durationMinutes);
+
+            return null;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $this->mailFailureMessage($e);
+        }
+    }
+
+    private function mailFailureMessage(\Throwable $e): string
+    {
+        $message = strtolower($e->getMessage());
+
+        if (str_contains($message, 'daily user sending limit exceeded') || str_contains($message, 'sending limit')) {
+            return 'limit harian email Gmail sudah habis. Tunggu limit Gmail reset atau ganti SMTP, lalu kirim ulang invite.';
+        }
+
+        return 'server email menolak pengiriman. Coba lagi nanti atau cek konfigurasi SMTP.';
     }
 }

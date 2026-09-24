@@ -83,6 +83,7 @@ class QuestionPackage extends Model
             'Admin Operation' => 'Admin Operation',
             'Admin Engineering' => 'Admin Engineering',
             'Admin General' => 'Admin General',
+            'Assistant Grade Control' => 'Assistant Grade Control',
         ],
     ];
 
