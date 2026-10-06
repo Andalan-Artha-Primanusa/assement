@@ -16,7 +16,6 @@
                 margin: 0;
                 padding: 0;
             }
-            /* Remove box shadow and borders for cleaner print */
             #print-area .shadow-sm {
                 box-shadow: none !important;
             }
@@ -48,6 +47,70 @@
                         @method('DELETE')
                         <button class="rounded-md bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
                     </form>
+                </div>
+            </div>
+
+            {{-- Candidate Feedback Links Section --}}
+            <div class="mb-6 print:hidden">
+                <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h3 class="text-sm font-semibold text-indigo-900">Link Feedback Kandidat</h3>
+                            <p class="text-xs text-indigo-700 mt-0.5">Bagikan link ini kepada kandidat agar mereka bisa mengisi penilaian diri sendiri tanpa harus login.</p>
+                        </div>
+                        @if(!$interview_assessment->candidateFeedbacks->where('submitted_at', null)->count())
+                            <form method="POST" action="{{ route('admin.interview-assessments.generate-feedback-link', $interview_assessment) }}">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                    Generate Link
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    @if(session('success'))
+                        <div class="mb-3 rounded bg-emerald-100 px-3 py-2 text-xs font-medium text-emerald-800">{{ session('success') }}</div>
+                    @endif
+
+                    @forelse($interview_assessment->candidateFeedbacks as $fb)
+                        <div class="rounded-md bg-white border border-indigo-100 p-3 mb-2">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-mono text-gray-600 truncate select-all" id="link-{{ $fb->id }}">{{ route('feedback.show', $fb->token) }}</p>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    @if($fb->submitted_at)
+                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">✓ Sudah diisi ({{ $fb->submitted_at->format('d M Y H:i') }})</span>
+                                    @else
+                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Belum diisi</span>
+                                    @endif
+                                    <button type="button" onclick="copyLink('{{ route('feedback.show', $fb->token) }}')" class="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
+                                        Salin Link
+                                    </button>
+                                    <form method="POST" action="{{ route('admin.interview-assessments.delete-feedback-link', [$interview_assessment, $fb]) }}" onsubmit="return confirm('Hapus link feedback ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="rounded bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100">Hapus</button>
+                                    </form>
+                                </div>
+                            </div>
+                            @if($fb->submitted_at && $fb->scores)
+                                <div class="mt-2 pt-2 border-t border-indigo-100">
+                                    <p class="text-xs text-gray-600">
+                                        <span class="font-semibold">Nama:</span> {{ $fb->candidate_name ?? '-' }} &bull;
+                                        <span class="font-semibold">Total Skor:</span> {{ $fb->total_score }} &bull;
+                                        <span class="font-semibold">Persentase:</span> {{ $fb->percentage }}%
+                                    </p>
+                                    @if($fb->feedback)
+                                        <p class="text-xs text-gray-600 mt-1"><span class="font-semibold">Komentar:</span> {{ $fb->feedback }}</p>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-xs text-indigo-600 italic">Belum ada link feedback yang dibuat. Klik "Generate Link" untuk membuat link baru.</p>
+                    @endforelse
                 </div>
             </div>
 
@@ -107,11 +170,12 @@
                             <table class="min-w-full divide-y divide-gray-200 border">
                                 <thead class="bg-gray-100">
                                     <tr>
-                                        <th colspan="4" class="px-4 py-2 text-left font-bold text-gray-900">{{ $category->name }}</th>
+                                        <th colspan="5" class="px-4 py-2 text-left font-bold text-gray-900">{{ $category->name }}</th>
                                     </tr>
                                     <tr>
                                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 w-12 border-b">No</th>
                                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b">Aspek Penilaian</th>
+                                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 w-16 border-b">Bobot</th>
                                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700 w-24 border-b">Skor (1-5)</th>
                                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b">Keterangan / Catatan</th>
                                     </tr>
@@ -124,6 +188,7 @@
                                         <tr>
                                             <td class="px-4 py-2 text-sm text-gray-700 border-b">{{ $index + 1 }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-900 border-b">{{ $aspect->name }}</td>
+                                            <td class="px-4 py-2 text-center text-xs font-semibold border-b text-gray-500">{{ $aspect->weight }}</td>
                                             <td class="px-4 py-2 text-center text-sm font-semibold border-b text-indigo-600">{{ $score?->score ?? '-' }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-700 border-b">{{ $score?->notes ?? '-' }}</td>
                                         </tr>
@@ -170,6 +235,7 @@
                         <div class="mt-4 text-xs text-gray-500 bg-gray-50 p-3 rounded">
                             <p><strong>RATING SCALE:</strong></p>
                             <p>5 = Sangat Baik | 4 = Baik | 3 = Sedang | 2 = Kurang | 1 = Sangat Kurang</p>
+                            <p class="mt-1 text-indigo-600"><strong>*</strong> Persentase dihitung berdasarkan bobot tertimbang per aspek.</p>
                         </div>
                     </div>
 
@@ -215,4 +281,24 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link berhasil disalin!');
+            }).catch(() => {
+                // Fallback
+                const el = document.createElement('textarea');
+                el.value = url;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert('Link berhasil disalin!');
+            });
+        }
+    </script>
+    @endpush
 </x-app-layout>
+

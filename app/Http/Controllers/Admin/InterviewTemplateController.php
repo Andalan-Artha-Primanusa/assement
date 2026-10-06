@@ -51,6 +51,7 @@ class InterviewTemplateController extends Controller
             'categories.*.name' => 'required|string|max:255',
             'categories.*.aspects' => 'required|array|min:1',
             'categories.*.aspects.*.name' => 'required|string|max:255',
+            'categories.*.aspects.*.weight' => 'required|integer|min:1|max:100',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -71,7 +72,7 @@ class InterviewTemplateController extends Controller
                 foreach ($categoryData['aspects'] as $aIndex => $aspectData) {
                     $category->aspects()->create([
                         'name' => $aspectData['name'],
-                        'weight' => 100,
+                        'weight' => (int) ($aspectData['weight'] ?? 1),
                         'order' => $aIndex,
                     ]);
                 }
@@ -106,6 +107,7 @@ class InterviewTemplateController extends Controller
             'categories.*.name' => 'required|string|max:255',
             'categories.*.aspects' => 'required|array|min:1',
             'categories.*.aspects.*.name' => 'required|string|max:255',
+            'categories.*.aspects.*.weight' => 'required|integer|min:1|max:100',
         ]);
 
         $this->authorizeInterviewType($interview_template->type);
@@ -147,12 +149,13 @@ class InterviewTemplateController extends Controller
                         $aspect = $category->aspects()->findOrFail($aspectId);
                         $aspect->update([
                             'name' => $aspectData['name'],
+                            'weight' => (int) ($aspectData['weight'] ?? 1),
                             'order' => $aIndex,
                         ]);
                     } else {
                         $aspect = $category->aspects()->create([
                             'name' => $aspectData['name'],
-                            'weight' => 100,
+                            'weight' => (int) ($aspectData['weight'] ?? 1),
                             'order' => $aIndex,
                         ]);
                         $aspectId = $aspect->id;

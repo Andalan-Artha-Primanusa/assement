@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\InterviewAssessment;
+use App\Models\InterviewCandidateFeedback;
 use App\Models\InterviewTemplate;
 use App\Models\InterviewScore;
 use App\Models\QuestionPackage;
@@ -170,7 +171,7 @@ class InterviewAssessmentController extends Controller
 
     public function show(InterviewAssessment $interview_assessment)
     {
-        $interview_assessment->load(['template.categories.aspects', 'scores']);
+        $interview_assessment->load(['template.categories.aspects', 'scores', 'candidateFeedbacks']);
         $this->authorizeInterviewType($interview_assessment->template->type);
         $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
@@ -203,6 +204,38 @@ class InterviewAssessmentController extends Controller
 
         return redirect()->route('admin.interview-assessments.index')
             ->with('success', 'Penilaian interview berhasil dihapus.');
+    }
+
+    public function generateFeedbackLink(InterviewAssessment $interview_assessment): RedirectResponse
+    {
+        $interview_assessment->load('template');
+        $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, auth()->user());
+
+        // Only create if not yet created
+        if (!$interview_assessment->candidateFeedbacks()->whereNull('submitted_at')->exists()) {
+            InterviewCandidateFeedback::create([
+                'interview_assessment_id' => $interview_assessment->id,
+                'token' => InterviewCandidateFeedback::generateToken(),
+            ]);
+        }
+
+        return redirect()->route('admin.interview-assessments.show', $interview_assessment)
+            ->with('success', 'Link feedback kandidat berhasil dibuat.');
+    }
+
+    public function deleteFeedbackLink(InterviewAssessment $interview_assessment, InterviewCandidateFeedback $feedback): RedirectResponse
+    {
+        $interview_assessment->load('template');
+        $this->authorizeInterviewType($interview_assessment->template->type);
+        $this->authorizeInterviewSite($interview_assessment, auth()->user());
+
+        abort_if($feedback->interview_assessment_id !== $interview_assessment->id, 403);
+
+        $feedback->delete();
+
+        return redirect()->route('admin.interview-assessments.show', $interview_assessment)
+            ->with('success', 'Link feedback berhasil dihapus.');
     }
 
     public function export(Request $request)
@@ -413,11 +446,25 @@ class InterviewAssessmentController extends Controller
      */
     private function calculateResult(InterviewTemplate $template, array $scores): array
     {
-        $countAspects = $template->categories->sum(fn ($category) => $category->aspects->count());
-        $maxPossibleScore = $countAspects * 5;
-        $totalScore = collect($scores)->sum(fn ($scoreData) => (int) ($scoreData['score'] ?? 0));
+        $allAspects = $template->categories->flatMap(fn ($cat) => $cat->aspects);
+        $countAspects = $allAspects->count();
+        $totalWeight = $allAspects->sum('weight');
+
+        $totalScore = 0;
+        $weightedSum = 0.0;
+
+        foreach ($allAspects as $aspect) {
+            $scoreData = $scores[$aspect->id] ?? [];
+            $score = isset($scoreData['score']) ? (int) $scoreData['score'] : 0;
+            $totalScore += $score;
+            $weightedSum += $score * $aspect->weight;
+        }
+
+        $maxPossibleWeightedScore = $totalWeight > 0 ? $totalWeight * 5 : $countAspects * 5;
         $averageScore = $countAspects > 0 ? $totalScore / $countAspects : 0;
-        $percentage = $maxPossibleScore > 0 ? ($totalScore / $maxPossibleScore) * 100 : 0;
+        $percentage = $maxPossibleWeightedScore > 0
+            ? ($weightedSum / $maxPossibleWeightedScore) * 100
+            : 0;
 
         $recommendation = 'TIDAK DIREKOMENDASIKAN';
         if ($percentage >= $template->min_recommended_percentage) {
@@ -427,9 +474,9 @@ class InterviewAssessmentController extends Controller
         }
 
         return [
-            'total_score' => $totalScore,
+            'total_score'   => $totalScore,
             'average_score' => round($averageScore, 2),
-            'percentage' => round($percentage, 2),
+            'percentage'    => round($percentage, 2),
             'recommendation' => $recommendation,
         ];
     }

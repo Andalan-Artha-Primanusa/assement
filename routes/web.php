@@ -10,11 +10,16 @@ use App\Http\Controllers\Admin\SheReviewController;
 use App\Http\Controllers\Admin\SiteController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\CandidateFeedbackController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StorageFileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// Public candidate feedback (no login required)
+Route::get('/feedback/{token}', [CandidateFeedbackController::class, 'show'])->name('feedback.show');
+Route::post('/feedback/{token}', [CandidateFeedbackController::class, 'store'])->name('feedback.store');
 
 Route::get('/', function () {
     return auth()->check()
@@ -88,6 +93,8 @@ Route::middleware(['auth', 'admin'])
         Route::resource('interview-templates', \App\Http\Controllers\Admin\InterviewTemplateController::class);
         Route::get('interview-assessments/export', [\App\Http\Controllers\Admin\InterviewAssessmentController::class, 'export'])->name('interview-assessments.export');
         Route::get('interview-assessments/{interview_assessment}/pdf', [\App\Http\Controllers\Admin\InterviewAssessmentController::class, 'pdf'])->name('interview-assessments.pdf');
+        Route::post('interview-assessments/{interview_assessment}/generate-feedback-link', [\App\Http\Controllers\Admin\InterviewAssessmentController::class, 'generateFeedbackLink'])->name('interview-assessments.generate-feedback-link');
+        Route::delete('interview-assessments/{interview_assessment}/feedback/{feedback}', [\App\Http\Controllers\Admin\InterviewAssessmentController::class, 'deleteFeedbackLink'])->name('interview-assessments.delete-feedback-link');
         Route::resource('interview-assessments', \App\Http\Controllers\Admin\InterviewAssessmentController::class);
     });
 

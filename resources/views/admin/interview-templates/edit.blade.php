@@ -94,6 +94,10 @@
                                                     <div class="flex-1">
                                                         <input type="text" :name="`categories[${cIndex}][aspects][${aIndex}][name]`" x-model="aspect.name" placeholder="Nama Aspek Penilaian (Contoh: Trouble Shooting)" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" required>
                                                     </div>
+                                                    <div class="w-28 flex items-center gap-1">
+                                                        <label class="text-xs text-gray-500 whitespace-nowrap">Bobot:</label>
+                                                        <input type="number" :name="`categories[${cIndex}][aspects][${aIndex}][weight]`" x-model.number="aspect.weight" min="1" max="100" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs text-center" required>
+                                                    </div>
                                                     <button type="button" @click="removeAspect(cIndex, aIndex)" class="text-gray-400 hover:text-rose-600 p-1">
                                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -101,6 +105,9 @@
                                                     </button>
                                                 </div>
                                             </template>
+                                        </div>
+                                        <div class="mt-2 text-right text-xs text-gray-500">
+                                            Total bobot kategori ini: <span class="font-semibold text-indigo-600" x-text="category.aspects.reduce((s,a) => s + (parseInt(a.weight)||0), 0)"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -125,7 +132,7 @@
                     {
                         name: '',
                         aspects: [
-                            { name: '' }
+                            { name: '', weight: 1 }
                         ]
                     }
                 ],
@@ -133,7 +140,7 @@
                     this.categories.push({
                         name: '',
                         aspects: [
-                            { name: '' }
+                            { name: '', weight: 1 }
                         ]
                     });
                 },
@@ -145,7 +152,7 @@
                     }
                 },
                 addAspect(cIndex) {
-                    this.categories[cIndex].aspects.push({ name: '' });
+                    this.categories[cIndex].aspects.push({ name: '', weight: 1 });
                 },
                 removeAspect(cIndex, aIndex) {
                     if (this.categories[cIndex].aspects.length > 1) {

@@ -53,4 +53,9 @@ class InterviewAssessment extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function candidateFeedbacks()
+    {
+        return $this->hasMany(InterviewCandidateFeedback::class);
+    }
 }
