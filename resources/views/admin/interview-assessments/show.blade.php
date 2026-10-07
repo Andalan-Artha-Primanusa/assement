@@ -92,7 +92,11 @@
                                 </div>
                             </div>
                             @if(count($fb->submissions ?? []))
-                                @php($best = collect($fb->submissions)->sortByDesc('percentage')->first())
+                                @php
+                                    $best = collect($fb->submissions)
+                                        ->sortByDesc('percentage')
+                                        ->first();
+                                @endphp
                                 <div class="mt-2 pt-2 border-t border-indigo-100">
                                     <p class="text-xs text-gray-600">
                                         <span class="font-semibold">Nilai tertinggi:</span> {{ $best['percentage'] }}% &bull;
@@ -161,7 +165,7 @@
                 </div>
 
                 <div class="mb-8">
-                    <?php foreach ($interview_assessment->template->categories as $category): ?>
+                    @foreach($interview_assessment->template->categories as $category)
                         <div class="mb-6">
                             <table class="min-w-full divide-y divide-gray-200 border">
                                 <thead class="bg-gray-100">
@@ -177,7 +181,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($category->aspects as $index => $aspect): ?>
+                                    @foreach($category->aspects as $index => $aspect)
                                         @php
                                             $score = $interview_assessment->scores->where('interview_aspect_id', $aspect->id)->first();
                                         @endphp
@@ -188,11 +192,11 @@
                                             <td class="px-4 py-2 text-center text-sm font-semibold border-b text-indigo-600">{{ $score?->score ?? '-' }}</td>
                                             <td class="px-4 py-2 text-sm text-gray-700 border-b">{{ $score?->notes ?? '-' }}</td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
-                    <?php endforeach; ?>
+                    @endforeach
                 </div>
 
                 <div class="grid grid-cols-2 gap-8 mt-8 border-t pt-8">
