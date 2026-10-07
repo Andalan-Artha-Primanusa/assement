@@ -130,27 +130,16 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            @if($evaluatorSubmissions->isEmpty())
-                                <tr><td colspan="6" class="px-6 py-6 text-center text-sm text-gray-500">Belum ada user yang mengisi penilaian.</td></tr>
-                            @else
                             @foreach($evaluatorSubmissions as $index => $submission)
-                                @php
-                                    $resultColor = match ($submission['recommendation']) {
-                                        'DIREKOMENDASIKAN' => 'bg-emerald-100 text-emerald-700',
-                                        'DIPERTIMBANGKAN' => 'bg-amber-100 text-amber-700',
-                                        default => 'bg-rose-100 text-rose-700',
-                                    };
-                                @endphp
                                 <tr>
                                     <td class="px-6 py-3 text-gray-500">{{ $index + 1 }}</td>
                                     <td class="px-6 py-3 font-semibold text-gray-900">{{ $submission['evaluator_name'] ?? '-' }}</td>
                                     <td class="px-6 py-3 text-right text-gray-700">{{ $submission['total_score'] ?? 0 }}</td>
                                     <td class="px-6 py-3 text-right font-bold text-gray-900">{{ $submission['percentage'] ?? 0 }}%</td>
-                                    <td class="px-6 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $resultColor }}">{{ $submission['recommendation'] }}</span></td>
+                                    <td class="px-6 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold">{{ $submission['recommendation'] }}</span></td>
                                     <td class="px-6 py-3 text-gray-500">{{ !empty($submission['submitted_at']) ? \Carbon\Carbon::parse($submission['submitted_at'])->format('d M Y H:i') : '-' }}</td>
                                 </tr>
                             @endforeach
-                            @endif
                         </tbody>
                     </table>
                 </div>
