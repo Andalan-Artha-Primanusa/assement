@@ -1,6 +1,6 @@
 <x-app-layout>
     <style>
-        @media print {
+        @@media print {
             body * {
                 visibility: hidden;
             }
