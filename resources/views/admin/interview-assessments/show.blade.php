@@ -112,23 +112,6 @@
                 </div>
             </div>
 
-            @php
-                $allEvaluatorSubmissions = collect();
-                foreach ($interview_assessment->candidateFeedbacks as $link) {
-                    foreach (($link->submissions ?? []) as $submission) {
-                        $percentage = (float) ($submission['percentage'] ?? 0);
-                        $recommendation = $percentage >= (float) $interview_assessment->template->min_recommended_percentage
-                            ? 'DIREKOMENDASIKAN'
-                            : ($percentage >= (float) $interview_assessment->template->min_considered_percentage
-                                ? 'DIPERTIMBANGKAN'
-                                : 'TIDAK DIREKOMENDASIKAN');
-
-                        $allEvaluatorSubmissions->push(array_merge($submission, ['recommendation' => $recommendation]));
-                    }
-                }
-                $allEvaluatorSubmissions = $allEvaluatorSubmissions->sortByDesc('percentage');
-            @endphp
-
             <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 print:hidden">
                 <div class="border-b border-gray-100 px-6 py-4">
                     <h2 class="text-base font-bold text-gray-900">Daftar Penilaian User</h2>
@@ -147,7 +130,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            @forelse($allEvaluatorSubmissions as $index => $submission)
+                            @forelse($evaluatorSubmissions as $index => $submission)
                                 @php
                                     $resultColor = match ($submission['recommendation']) {
                                         'DIREKOMENDASIKAN' => 'bg-emerald-100 text-emerald-700',

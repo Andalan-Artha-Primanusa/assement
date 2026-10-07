@@ -175,7 +175,24 @@ class InterviewAssessmentController extends Controller
         $this->authorizeInterviewType($interview_assessment->template->type);
         $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
-        return view('admin.interview-assessments.show', compact('interview_assessment'));
+        $evaluatorSubmissions = collect();
+        foreach ($interview_assessment->candidateFeedbacks as $link) {
+            foreach (($link->submissions ?? []) as $submission) {
+                $percentage = (float) ($submission['percentage'] ?? 0);
+                $recommendation = 'TIDAK DIREKOMENDASIKAN';
+                if ($percentage >= (float) $interview_assessment->template->min_recommended_percentage) {
+                    $recommendation = 'DIREKOMENDASIKAN';
+                } elseif ($percentage >= (float) $interview_assessment->template->min_considered_percentage) {
+                    $recommendation = 'DIPERTIMBANGKAN';
+                }
+
+                $submission['recommendation'] = $recommendation;
+                $evaluatorSubmissions->push($submission);
+            }
+        }
+        $evaluatorSubmissions = $evaluatorSubmissions->sortByDesc('percentage')->values();
+
+        return view('admin.interview-assessments.show', compact('interview_assessment', 'evaluatorSubmissions'));
     }
 
     public function pdf(InterviewAssessment $interview_assessment): View
