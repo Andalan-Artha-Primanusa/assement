@@ -112,6 +112,63 @@
                 </div>
             </div>
 
+            @php
+                $allEvaluatorSubmissions = $interview_assessment->candidateFeedbacks
+                    ->flatMap(fn ($link) => collect($link->submissions ?? [])->map(function ($submission) use ($interview_assessment) {
+                        $percentage = (float) ($submission['percentage'] ?? 0);
+                        $recommendation = $percentage >= (float) $interview_assessment->template->min_recommended_percentage
+                            ? 'DIREKOMENDASIKAN'
+                            : ($percentage >= (float) $interview_assessment->template->min_considered_percentage
+                                ? 'DIPERTIMBANGKAN'
+                                : 'TIDAK DIREKOMENDASIKAN');
+
+                        return [...$submission, 'recommendation' => $recommendation];
+                    }))
+                    ->sortByDesc('percentage');
+            @endphp
+
+            <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 print:hidden">
+                <div class="border-b border-gray-100 px-6 py-4">
+                    <h2 class="text-base font-bold text-gray-900">Daftar Penilaian User</h2>
+                    <p class="mt-1 text-xs text-gray-500">Setiap baris adalah hasil penilaian dari satu user/interviewer.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="px-6 py-3">No</th>
+                                <th class="px-6 py-3">Nama Penilai</th>
+                                <th class="px-6 py-3 text-right">Total</th>
+                                <th class="px-6 py-3 text-right">Persentase</th>
+                                <th class="px-6 py-3">Hasil</th>
+                                <th class="px-6 py-3">Waktu Isi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($allEvaluatorSubmissions as $index => $submission)
+                                @php
+                                    $resultColor = match ($submission['recommendation']) {
+                                        'DIREKOMENDASIKAN' => 'bg-emerald-100 text-emerald-700',
+                                        'DIPERTIMBANGKAN' => 'bg-amber-100 text-amber-700',
+                                        default => 'bg-rose-100 text-rose-700',
+                                    };
+                                @endphp
+                                <tr>
+                                    <td class="px-6 py-3 text-gray-500">{{ $index + 1 }}</td>
+                                    <td class="px-6 py-3 font-semibold text-gray-900">{{ $submission['evaluator_name'] ?? '-' }}</td>
+                                    <td class="px-6 py-3 text-right text-gray-700">{{ $submission['total_score'] ?? 0 }}</td>
+                                    <td class="px-6 py-3 text-right font-bold text-gray-900">{{ $submission['percentage'] ?? 0 }}%</td>
+                                    <td class="px-6 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $resultColor }}">{{ $submission['recommendation'] }}</span></td>
+                                    <td class="px-6 py-3 text-gray-500">{{ !empty($submission['submitted_at']) ? CarbonCarbon::parse($submission['submitted_at'])->format('d M Y H:i') : '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="px-6 py-6 text-center text-sm text-gray-500">Belum ada user yang mengisi penilaian.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="print-area" class="overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-8 print:shadow-none print:ring-0 print:p-0">
                 
                 <div class="text-center mb-8 border-b pb-6">
