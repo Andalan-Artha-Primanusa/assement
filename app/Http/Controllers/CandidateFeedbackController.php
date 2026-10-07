@@ -39,7 +39,7 @@ class CandidateFeedbackController extends Controller
         }
 
         $request->validate([
-            'candidate_name' => ['required', 'string', 'max:255'],
+            'evaluator_name'  => ['required', 'string', 'max:255'],
             'feedback'       => ['nullable', 'string', 'max:3000'],
             'scores'         => ['nullable', 'array'],
             'scores.*.score' => ['nullable', 'integer', 'min:1', 'max:5'],
@@ -80,15 +80,40 @@ class CandidateFeedbackController extends Controller
             ? ($weightedSum / $maxPossibleWeightedScore) * 100
             : 0;
 
+        $submissions = $feedback->submissions ?? [];
+        $submissions[] = [
+            'evaluator_name' => $request->evaluator_name,
+            'feedback' => $request->feedback,
+            'scores' => $scoresData,
+            'total_score' => $totalScore,
+            'average_score' => round($averageScore, 2),
+            'percentage' => round($percentage, 2),
+            'submitted_at' => now()->toISOString(),
+        ];
+
         $feedback->update([
-            'candidate_name' => $request->candidate_name,
-            'feedback'       => $request->feedback,
-            'scores'         => $scoresData,
-            'total_score'    => $totalScore,
-            'average_score'  => round($averageScore, 2),
-            'percentage'     => round($percentage, 2),
-            'submitted_at'   => now(),
+            'submissions' => $submissions,
+            'submitted_at' => count($submissions) >= 5 ? now() : null,
         ]);
+
+        $bestFeedback = collect($submissions)->sortByDesc('percentage')->first();
+
+        if ($bestFeedback) {
+            $assessment = $feedback->assessment->load('template');
+            $recommendation = 'TIDAK DIREKOMENDASIKAN';
+            if ((float) $bestFeedback['percentage'] >= (float) $assessment->template->min_recommended_percentage) {
+                $recommendation = 'DIREKOMENDASIKAN';
+            } elseif ((float) $bestFeedback['percentage'] >= (float) $assessment->template->min_considered_percentage) {
+                $recommendation = 'DIPERTIMBANGKAN';
+            }
+
+            $assessment->update([
+                'total_score' => $bestFeedback['total_score'],
+                'average_score' => $bestFeedback['average_score'],
+                'percentage' => $bestFeedback['percentage'],
+                'recommendation' => $recommendation,
+            ]);
+        }
 
         return redirect()->route('feedback.show', $token)
             ->with('success', 'Terima kasih! Feedback Anda berhasil dikirimkan.');

@@ -212,13 +212,10 @@ class InterviewAssessmentController extends Controller
         $this->authorizeInterviewType($interview_assessment->template->type);
         $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
-        // Only create if not yet created
-        if (!$interview_assessment->candidateFeedbacks()->whereNull('submitted_at')->exists()) {
-            InterviewCandidateFeedback::create([
-                'interview_assessment_id' => $interview_assessment->id,
-                'token' => InterviewCandidateFeedback::generateToken(),
-            ]);
-        }
+        InterviewCandidateFeedback::create([
+            'interview_assessment_id' => $interview_assessment->id,
+            'token' => InterviewCandidateFeedback::generateToken(),
+        ]);
 
         return redirect()->route('admin.interview-assessments.show', $interview_assessment)
             ->with('success', 'Link feedback kandidat berhasil dibuat.');

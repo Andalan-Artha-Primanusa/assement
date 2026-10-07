@@ -55,18 +55,16 @@
                 <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
                     <div class="flex items-center justify-between mb-3">
                         <div>
-                            <h3 class="text-sm font-semibold text-indigo-900">Link Feedback Kandidat</h3>
-                            <p class="text-xs text-indigo-700 mt-0.5">Bagikan link ini kepada kandidat agar mereka bisa mengisi penilaian diri sendiri tanpa harus login.</p>
+                            <h3 class="text-sm font-semibold text-indigo-900">Link Penilaian User/Interviewer</h3>
+                            <p class="text-xs text-indigo-700 mt-0.5">Bagikan link ini kepada user/interviewer agar dapat menilai kandidat tanpa harus login.</p>
                         </div>
-                        @if(!$interview_assessment->candidateFeedbacks->where('submitted_at', null)->count())
                             <form method="POST" action="{{ route('admin.interview-assessments.generate-feedback-link', $interview_assessment) }}">
                                 @csrf
                                 <button type="submit" class="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                                    Generate Link
+                                    Tambah Link Penilai
                                 </button>
                             </form>
-                        @endif
                     </div>
 
                     @if(session('success'))
@@ -80,10 +78,10 @@
                                     <p class="text-xs font-mono text-gray-600 truncate select-all" id="link-{{ $fb->id }}">{{ route('feedback.show', $fb->token) }}</p>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    @if($fb->submitted_at)
-                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">✓ Sudah diisi ({{ $fb->submitted_at->format('d M Y H:i') }})</span>
+                                    @if($fb->isSubmitted())
+                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">✓ 5/5 penilai</span>
                                     @else
-                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Belum diisi</span>
+                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ count($fb->submissions ?? []) }}/5 penilai</span>
                                     @endif
                                     <button type="button" onclick="copyLink('{{ route('feedback.show', $fb->token) }}')" class="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
                                         Salin Link
@@ -95,15 +93,15 @@
                                     </form>
                                 </div>
                             </div>
-                            @if($fb->submitted_at && $fb->scores)
+                            @if(count($fb->submissions ?? []))
+                                @php($best = collect($fb->submissions)->sortByDesc('percentage')->first())
                                 <div class="mt-2 pt-2 border-t border-indigo-100">
                                     <p class="text-xs text-gray-600">
-                                        <span class="font-semibold">Nama:</span> {{ $fb->candidate_name ?? '-' }} &bull;
-                                        <span class="font-semibold">Total Skor:</span> {{ $fb->total_score }} &bull;
-                                        <span class="font-semibold">Persentase:</span> {{ $fb->percentage }}%
+                                        <span class="font-semibold">Nilai tertinggi:</span> {{ $best['percentage'] }}% &bull;
+                                        <span class="font-semibold">Penilai:</span> {{ $best['evaluator_name'] ?? '-' }}
                                     </p>
-                                    @if($fb->feedback)
-                                        <p class="text-xs text-gray-600 mt-1"><span class="font-semibold">Komentar:</span> {{ $fb->feedback }}</p>
+                                    @if(!empty($best['feedback']))
+                                        <p class="text-xs text-gray-600 mt-1"><span class="font-semibold">Komentar:</span> {{ $best['feedback'] }}</p>
                                     @endif
                                 </div>
                             @endif

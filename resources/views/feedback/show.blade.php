@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Self-Assessment Kandidat – {{ $feedback->assessment->template->name }}</title>
-    <meta name="description" content="Form self-assessment untuk kandidat interview {{ $feedback->assessment->template->name }}">
+    <title>Penilaian Kandidat – {{ $feedback->assessment->template->name }}</title>
+    <meta name="description" content="Form penilaian kandidat interview {{ $feedback->assessment->template->name }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -401,11 +401,11 @@
         {{-- Header --}}
         <div class="header-card">
             <div class="template-badge">{{ $feedback->assessment->template->name }}</div>
-            <h1>Form Self-Assessment Kandidat</h1>
-            <p>Silakan isi penilaian diri Anda secara jujur. Jawaban Anda akan membantu proses evaluasi.</p>
+            <h1>Form Penilaian Kandidat</h1>
+            <p>Silakan isi penilaian kandidat berdasarkan hasil interview.</p>
             @if($feedback->assessment->candidate_name)
                 <div class="candidate-info">
-                    Formulir untuk: <strong>{{ $feedback->assessment->candidate_name }}</strong>
+                    Kandidat: <strong>{{ $feedback->assessment->candidate_name }}</strong>
                     &nbsp;|&nbsp; Posisi: <strong>{{ $feedback->assessment->job_title ?? '-' }}</strong>
                 </div>
             @endif
@@ -417,8 +417,8 @@
             {{-- Identity --}}
             <div class="form-card">
                 <div class="form-card-header">
-                    <h2>Data Diri</h2>
-                    <p>Konfirmasi nama Anda sebelum mengisi penilaian.</p>
+                    <h2>Data Penilai</h2>
+                    <p>Isi nama user/interviewer yang melakukan penilaian.</p>
                 </div>
                 <div class="form-card-body">
                     @if($errors->any())
@@ -433,8 +433,8 @@
                     @endif
 
                     <div class="form-group">
-                        <label for="candidate_name">Nama Lengkap <span style="color:#ef4444">*</span></label>
-                        <input type="text" id="candidate_name" name="candidate_name" value="{{ old('candidate_name', $feedback->assessment->candidate_name) }}" placeholder="Masukkan nama lengkap Anda" required>
+                        <label for="evaluator_name">Nama Penilai <span style="color:#ef4444">*</span></label>
+                        <input type="text" id="evaluator_name" name="evaluator_name" value="{{ old('evaluator_name') }}" placeholder="Masukkan nama user/interviewer" required>
                     </div>
                 </div>
             </div>
@@ -524,7 +524,7 @@
                         @endforeach
                     </div>
                     <button type="submit" class="btn-submit" onclick="return confirmSubmit()">
-                        ✓ Kirim Self-Assessment Saya
+                        ✓ Kirim Penilaian Kandidat
                     </button>
                 </div>
             </div>

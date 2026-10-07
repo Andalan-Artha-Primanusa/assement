@@ -12,13 +12,14 @@ class InterviewCandidateFeedback extends Model
     protected $fillable = [
         'interview_assessment_id',
         'token',
-        'candidate_name',
+        'evaluator_name',
         'feedback',
         'scores',
         'total_score',
         'average_score',
         'percentage',
         'submitted_at',
+        'submissions',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class InterviewCandidateFeedback extends Model
         'average_score' => 'decimal:2',
         'percentage' => 'decimal:2',
         'submitted_at' => 'datetime',
+        'submissions' => 'array',
     ];
 
     public function assessment(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -45,7 +47,7 @@ class InterviewCandidateFeedback extends Model
 
     public function isSubmitted(): bool
     {
-        return $this->submitted_at !== null;
+        return count($this->submissions ?? []) >= 5;
     }
 
     public function getFeedbackLinkAttribute(): string
