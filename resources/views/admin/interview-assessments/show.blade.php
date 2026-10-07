@@ -339,7 +339,6 @@
         </div>
     </div>
 
-    @push('scripts')
     <script>
         function copyLink(url) {
             navigator.clipboard.writeText(url).then(() => {
@@ -356,6 +355,5 @@
             });
         }
     </script>
-    @endpush
 </x-app-layout>
 
