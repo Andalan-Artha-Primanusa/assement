@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 
 class InterviewCandidateFeedback extends Model
 {
+    protected $table = 'interview_candidate_feedbacks';
+
     protected $fillable = [
         'interview_assessment_id',
         'token',
