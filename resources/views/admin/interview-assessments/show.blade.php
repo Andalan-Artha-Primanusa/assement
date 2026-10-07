@@ -130,7 +130,10 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            @forelse($evaluatorSubmissions as $index => $submission)
+                            @if($evaluatorSubmissions->isEmpty())
+                                <tr><td colspan="6" class="px-6 py-6 text-center text-sm text-gray-500">Belum ada user yang mengisi penilaian.</td></tr>
+                            @else
+                            @foreach($evaluatorSubmissions as $index => $submission)
                                 @php
                                     $resultColor = match ($submission['recommendation']) {
                                         'DIREKOMENDASIKAN' => 'bg-emerald-100 text-emerald-700',
@@ -146,9 +149,8 @@
                                     <td class="px-6 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $resultColor }}">{{ $submission['recommendation'] }}</span></td>
                                     <td class="px-6 py-3 text-gray-500">{{ !empty($submission['submitted_at']) ? \Carbon\Carbon::parse($submission['submitted_at'])->format('d M Y H:i') : '-' }}</td>
                                 </tr>
-                            @empty
-                                <tr><td colspan="6" class="px-6 py-6 text-center text-sm text-gray-500">Belum ada user yang mengisi penilaian.</td></tr>
-                            @endforelse
+                            @endforeach
+                            @endif
                         </tbody>
                     </table>
                 </div>
