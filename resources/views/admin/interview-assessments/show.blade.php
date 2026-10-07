@@ -1,5 +1,4 @@
 <x-app-layout>
-    @push('styles')
     <style>
         @media print {
             body * {
@@ -22,13 +21,12 @@
             #print-area .ring-1 {
                 box-shadow: none !important;
             }
-            @page {
+            @@page {
                 size: auto;
                 margin: 1.5cm;
             }
         }
     </style>
-    @endpush
 
     <div class="py-12 print:py-0">
         <div class="mx-auto max-w-5xl sm:px-6 lg:px-8 print:px-0 print:max-w-none">
