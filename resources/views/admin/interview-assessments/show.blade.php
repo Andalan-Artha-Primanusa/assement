@@ -113,8 +113,9 @@
             </div>
 
             @php
-                $allEvaluatorSubmissions = $interview_assessment->candidateFeedbacks
-                    ->flatMap(fn ($link) => collect($link->submissions ?? [])->map(function ($submission) use ($interview_assessment) {
+                $allEvaluatorSubmissions = collect();
+                foreach ($interview_assessment->candidateFeedbacks as $link) {
+                    foreach (($link->submissions ?? []) as $submission) {
                         $percentage = (float) ($submission['percentage'] ?? 0);
                         $recommendation = $percentage >= (float) $interview_assessment->template->min_recommended_percentage
                             ? 'DIREKOMENDASIKAN'
@@ -122,9 +123,10 @@
                                 ? 'DIPERTIMBANGKAN'
                                 : 'TIDAK DIREKOMENDASIKAN');
 
-                        return [...$submission, 'recommendation' => $recommendation];
-                    }))
-                    ->sortByDesc('percentage');
+                        $allEvaluatorSubmissions->push(array_merge($submission, ['recommendation' => $recommendation]));
+                    }
+                }
+                $allEvaluatorSubmissions = $allEvaluatorSubmissions->sortByDesc('percentage');
             @endphp
 
             <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 print:hidden">
@@ -159,7 +161,7 @@
                                     <td class="px-6 py-3 text-right text-gray-700">{{ $submission['total_score'] ?? 0 }}</td>
                                     <td class="px-6 py-3 text-right font-bold text-gray-900">{{ $submission['percentage'] ?? 0 }}%</td>
                                     <td class="px-6 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $resultColor }}">{{ $submission['recommendation'] }}</span></td>
-                                    <td class="px-6 py-3 text-gray-500">{{ !empty($submission['submitted_at']) ? CarbonCarbon::parse($submission['submitted_at'])->format('d M Y H:i') : '-' }}</td>
+                                    <td class="px-6 py-3 text-gray-500">{{ !empty($submission['submitted_at']) ? \Carbon\Carbon::parse($submission['submitted_at'])->format('d M Y H:i') : '-' }}</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="6" class="px-6 py-6 text-center text-sm text-gray-500">Belum ada user yang mengisi penilaian.</td></tr>
