@@ -273,6 +273,21 @@
             flex-wrap: wrap;
         }
 
+        .score-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .score-caption {
+            font-size: 0.58rem;
+            line-height: 1.1;
+            color: #6f4933;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         .score-btn {
             width: 36px;
             height: 36px;
@@ -521,14 +536,17 @@
                                             <div class="score-group" x-data="{ score: {{ old("scores.{$aspect->id}.score", 0) }} }">
                                                 <div class="score-buttons">
                                                     @for ($s = 1; $s <= 5; $s++)
-                                                        <button type="button"
-                                                            class="score-btn {{ old("scores.{$aspect->id}.score") == $s ? 'active' : '' }}"
-                                                            title="{{ [1 => 'Sangat Kurang', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Baik', 5 => 'Sangat Baik'][$s] }}"
-                                                            data-score="{{ $s }}"
-                                                            data-input="score_{{ $aspect->id }}"
-                                                            onclick="selectScore(this, 'score_{{ $aspect->id }}', {{ $s }})">
-                                                            {{ $s }}
-                                                        </button>
+                                                        <span class="score-option">
+                                                            <button type="button"
+                                                                class="score-btn {{ old("scores.{$aspect->id}.score") == $s ? 'active' : '' }}"
+                                                                title="{{ [1 => 'Sangat Kurang', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Baik', 5 => 'Sangat Baik'][$s] }}"
+                                                                data-score="{{ $s }}"
+                                                                data-input="score_{{ $aspect->id }}"
+                                                                onclick="selectScore(this, 'score_{{ $aspect->id }}', {{ $s }})">
+                                                                {{ $s }}
+                                                            </button>
+                                                            <span class="score-caption">{{ [1 => 'Sangat Kurang', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Baik', 5 => 'Sangat Baik'][$s] }}</span>
+                                                        </span>
                                                     @endfor
                                                 </div>
                                                 <div class="score-labels">
