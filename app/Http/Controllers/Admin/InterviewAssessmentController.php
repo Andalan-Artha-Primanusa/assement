@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class InterviewAssessmentController extends Controller
 {
@@ -191,8 +192,16 @@ class InterviewAssessmentController extends Controller
             }
         }
         $evaluatorSubmissions = $evaluatorSubmissions->sortByDesc('percentage')->values();
+        $evaluatorPage = max(1, (int) request()->query('evaluator_page', 1));
+        $paginatedEvaluators = new LengthAwarePaginator(
+            $evaluatorSubmissions->forPage($evaluatorPage, 1)->values(),
+            $evaluatorSubmissions->count(),
+            1,
+            $evaluatorPage,
+            ['path' => request()->url(), 'pageName' => 'evaluator_page']
+        );
 
-        return view('admin.interview-assessments.show', compact('interview_assessment', 'evaluatorSubmissions'));
+        return view('admin.interview-assessments.show', compact('interview_assessment', 'evaluatorSubmissions', 'paginatedEvaluators'));
     }
 
     public function pdf(InterviewAssessment $interview_assessment): View

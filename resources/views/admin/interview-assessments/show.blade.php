@@ -131,7 +131,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            @foreach($evaluatorSubmissions as $index => $submission)
+                            @foreach($paginatedEvaluators as $index => $submission)
                                 <tr>
                                     <td class="px-6 py-3 text-gray-500">{{ $index + 1 }}</td>
                                     <td class="px-6 py-3 font-semibold text-gray-900">{{ $submission['evaluator_name'] ?? '-' }}</td>
@@ -143,6 +143,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($paginatedEvaluators->hasPages())
+                    <div class="border-t border-gray-100 px-6 py-3">
+                        {{ $paginatedEvaluators->links() }}
+                    </div>
+                @endif
             </div>
 
             <div id="print-area" class="overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-8 print:shadow-none print:ring-1 print:p-0">
