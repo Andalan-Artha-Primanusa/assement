@@ -94,7 +94,9 @@
             </thead>
             <tbody>
                 @foreach($category->aspects as $index => $aspect)
-                    @php($score = $interview_assessment->scores->where('interview_aspect_id', $aspect->id)->first())
+                    @php
+                        $score = $interview_assessment->scores->where('interview_aspect_id', $aspect->id)->first();
+                    @endphp
                     <tr>
                         <td class="score">{{ $index + 1 }}</td>
                         <td>{{ $aspect->name }}</td>

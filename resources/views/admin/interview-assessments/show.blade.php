@@ -147,11 +147,19 @@
                         </tbody>
                     </table>
                 </div>
-                @if($paginatedEvaluators->hasPages())
-                    <div class="border-t border-gray-100 px-6 py-3">
-                        {{ $paginatedEvaluators->links() }}
-                    </div>
-                @endif
+                <div class="flex items-center justify-between border-t border-gray-100 px-6 py-3 text-sm">
+                    @if($paginatedEvaluators->onFirstPage())
+                        <span class="rounded border px-3 py-1 text-gray-400">&larr; Sebelumnya</span>
+                    @else
+                        <a href="{{ $paginatedEvaluators->previousPageUrl() }}" class="rounded border border-amber-300 px-3 py-1 font-semibold text-amber-800">&larr; Sebelumnya</a>
+                    @endif
+                    <span class="font-semibold text-gray-600">User {{ $paginatedEvaluators->currentPage() }} / {{ max(1, $paginatedEvaluators->lastPage()) }}</span>
+                    @if(!$paginatedEvaluators->hasMorePages())
+                        <span class="rounded border px-3 py-1 text-gray-400">Berikutnya &rarr;</span>
+                    @else
+                        <a href="{{ $paginatedEvaluators->nextPageUrl() }}" class="rounded border border-amber-300 px-3 py-1 font-semibold text-amber-800">Berikutnya &rarr;</a>
+                    @endif
+                </div>
             </div>
 
             <div id="print-area" class="overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-8 print:shadow-none print:ring-1 print:p-0">
