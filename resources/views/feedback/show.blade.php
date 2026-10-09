@@ -15,11 +15,11 @@
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #6f4933 0%, #b77a4b 100%);
             min-height: 100vh;
-            padding: 2rem 1rem;
+            padding: 2.5rem 1rem 3rem;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
@@ -27,7 +27,7 @@
             background: rgba(255,255,255,0.15);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255,255,255,0.25);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 2rem;
             text-align: center;
             margin-bottom: 1.5rem;
@@ -100,8 +100,8 @@
 
         .form-card {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(72,43,25,0.12);
             overflow: hidden;
             margin-bottom: 1.5rem;
         }
@@ -357,12 +357,12 @@
         }
 
         .info-box {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
+            background: #fbf4ed;
+            border: 1px solid #e7cdb7;
             border-radius: 8px;
             padding: 0.75rem 1rem;
             font-size: 0.78rem;
-            color: #1d4ed8;
+            color: #6f4933;
             margin-bottom: 1rem;
         }
 
@@ -407,12 +407,12 @@
             font-family: inherit;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+            box-shadow: 0 4px 15px rgba(111,73,51,0.3);
         }
 
         .btn-submit:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(99,102,241,0.5);
+            box-shadow: 0 6px 20px rgba(111,73,51,0.4);
         }
 
         .btn-submit:active {
@@ -505,7 +505,7 @@
                                 <tr>
                                     <th style="width:2.5rem">No</th>
                                     <th>Aspek Penilaian</th>
-                                    <th class="center" style="width:180px">Skor Diri (1–5)</th>
+                                    <th class="center" style="width:180px">Skor Penilaian (1–5)</th>
                                     <th style="width:200px">Catatan (opsional)</th>
                                 </tr>
                             </thead>
@@ -523,6 +523,7 @@
                                                     @for ($s = 1; $s <= 5; $s++)
                                                         <button type="button"
                                                             class="score-btn {{ old("scores.{$aspect->id}.score") == $s ? 'active' : '' }}"
+                                                            title="{{ [1 => 'Sangat Kurang', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Baik', 5 => 'Sangat Baik'][$s] }}"
                                                             data-score="{{ $s }}"
                                                             data-input="score_{{ $aspect->id }}"
                                                             onclick="selectScore(this, 'score_{{ $aspect->id }}', {{ $s }})">
@@ -571,7 +572,7 @@
                     </div>
                     <div class="scale-legend">
                         <span style="font-size:0.72rem;color:#6b7280;font-weight:600;margin-right:0.5rem">Skala Penilaian:</span>
-                        @php $labels = ['Sangat Kurang','Kurang','Sedang','Baik','Sangat Baik']; @endphp
+                        @php $labels = ['Sangat Kurang','Kurang','Cukup','Baik','Sangat Baik']; @endphp
                         @foreach($labels as $i => $label)
                             <span class="scale-item">
                                 <span class="scale-dot">{{ $i + 1 }}</span>
