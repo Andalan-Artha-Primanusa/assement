@@ -21,6 +21,10 @@
             #print-area .ring-1 {
                 box-shadow: none !important;
             }
+            .evaluator-print-page {
+                break-before: page;
+                page-break-before: always;
+            }
             @@page {
                 size: auto;
                 margin: 1.5cm;
@@ -236,7 +240,7 @@
                 </div>
 
                 @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
-                    <div class="mb-8 border-t pt-6" style="page-break-before: always;">
+                    <div class="evaluator-print-page mb-8 border-t pt-6">
                         <h3 class="mb-3 bg-gray-100 p-2 text-center text-base font-bold text-gray-900">
                             PENILAIAN USER {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}
                         </h3>
