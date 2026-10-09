@@ -236,7 +236,7 @@
                 </div>
 
                 @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
-                    <div class="mb-8 border-t pt-6">
+                    <div class="mb-8 border-t pt-6" style="page-break-before: always;">
                         <h3 class="mb-3 bg-gray-100 p-2 text-center text-base font-bold text-gray-900">
                             PENILAIAN USER {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}
                         </h3>
