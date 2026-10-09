@@ -206,11 +206,25 @@ class InterviewAssessmentController extends Controller
 
     public function pdf(InterviewAssessment $interview_assessment): View
     {
-        $interview_assessment->load(['template.categories.aspects', 'scores']);
+        $interview_assessment->load(['template.categories.aspects', 'scores', 'candidateFeedbacks']);
         $this->authorizeInterviewType($interview_assessment->template->type);
         $this->authorizeInterviewSite($interview_assessment, auth()->user());
 
-        return view('admin.interview-assessments.pdf', compact('interview_assessment'));
+        $evaluatorSubmissions = collect();
+        foreach ($interview_assessment->candidateFeedbacks as $link) {
+            foreach (($link->submissions ?? []) as $submission) {
+                $percentage = (float) ($submission['percentage'] ?? 0);
+                $submission['recommendation'] = $percentage >= (float) $interview_assessment->template->min_recommended_percentage
+                    ? 'DIREKOMENDASIKAN'
+                    : ($percentage >= (float) $interview_assessment->template->min_considered_percentage
+                        ? 'DIPERTIMBANGKAN'
+                        : 'TIDAK DIREKOMENDASIKAN');
+                $evaluatorSubmissions->push($submission);
+            }
+        }
+        $evaluatorSubmissions = $evaluatorSubmissions->sortByDesc('percentage')->values();
+
+        return view('admin.interview-assessments.pdf', compact('interview_assessment', 'evaluatorSubmissions'));
     }
 
     public function destroy(InterviewAssessment $interview_assessment): RedirectResponse

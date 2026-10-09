@@ -106,6 +106,47 @@
         </table>
     @endforeach
 
+    @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
+        <div style="page-break-before: always;"></div>
+        <div class="section-title">Form Penilaian Interview User {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Kategori</th>
+                    <th>Aspek Penilaian</th>
+                    <th style="width: 48px;">Skor</th>
+                    <th>Catatan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($interview_assessment->template->categories as $category)
+                    @foreach($category->aspects as $aspect)
+                        @php
+                            $userScore = $submission['scores'][$aspect->id]['score'] ?? '-';
+                            $userNote = $submission['scores'][$aspect->id]['notes'] ?? '-';
+                        @endphp
+                        <tr>
+                            <td>{{ $category->name }}</td>
+                            <td>{{ $aspect->name }}</td>
+                            <td class="score">{{ $userScore }}</td>
+                            <td>{{ $userNote ?: '-' }}</td>
+                        </tr>
+                    @endforeach
+                @endforeach
+            </tbody>
+        </table>
+        <table class="summary">
+            <tr>
+                <td><strong>Total Nilai</strong></td>
+                <td>{{ $submission['total_score'] ?? 0 }}</td>
+                <td><strong>Persentase</strong></td>
+                <td>{{ $submission['percentage'] ?? 0 }}%</td>
+                <td><strong>Hasil</strong></td>
+                <td>{{ $submission['recommendation'] ?? '-' }}</td>
+            </tr>
+        </table>
+    @endforeach
+
     <div class="section-title">Ringkasan Hasil</div>
     <table class="summary">
         <tr>

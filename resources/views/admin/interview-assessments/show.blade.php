@@ -320,7 +320,10 @@
                 @endif
             </div>
 
-            @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
+            @foreach($paginatedEvaluators as $pageIndex => $submission)
+                @php
+                    $evaluatorIndex = $paginatedEvaluators->firstItem() - 1 + $pageIndex;
+                @endphp
                 <div class="evaluator-print-page mt-10 mb-8 overflow-hidden rounded-xl border-2 border-amber-200 bg-white p-6 shadow-md">
                     <h2 class="mb-4 text-lg font-bold text-amber-900">Form Penilaian Interview User</h2>
                     <h3 class="mb-4 border-b border-amber-100 bg-amber-50 p-3 text-center text-base font-bold text-gray-900">
@@ -359,6 +362,12 @@
                     </div>
                 </div>
             @endforeach
+
+            @if($paginatedEvaluators->hasPages())
+                <div class="mb-8 flex justify-center print:hidden">
+                    {{ $paginatedEvaluators->links() }}
+                </div>
+            @endif
 
         </div>
     </div>
