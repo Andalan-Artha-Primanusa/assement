@@ -239,45 +239,6 @@
                     @endforeach
                 </div>
 
-                @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
-                    <div class="evaluator-print-page mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <h3 class="mb-3 bg-gray-100 p-2 text-center text-base font-bold text-gray-900">
-                            PENILAIAN USER {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}
-                        </h3>
-                        <table class="min-w-full divide-y divide-gray-200 border text-sm">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-3 py-2 text-left">Kategori</th>
-                                    <th class="px-3 py-2 text-left">Aspek Penilaian</th>
-                                    <th class="px-3 py-2 text-center">Skor</th>
-                                    <th class="px-3 py-2 text-left">Catatan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($interview_assessment->template->categories as $category)
-                                    @foreach($category->aspects as $aspect)
-                                        @php
-                                            $userScore = $submission['scores'][$aspect->id]['score'] ?? '-';
-                                            $userNote = $submission['scores'][$aspect->id]['notes'] ?? '-';
-                                        @endphp
-                                        <tr>
-                                            <td class="border-b px-3 py-2">{{ $category->name }}</td>
-                                            <td class="border-b px-3 py-2">{{ $aspect->name }}</td>
-                                            <td class="border-b px-3 py-2 text-center font-semibold">{{ $userScore }}</td>
-                                            <td class="border-b px-3 py-2">{{ $userNote ?: '-' }}</td>
-                                        </tr>
-                                    @endforeach
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="mt-3 grid grid-cols-3 gap-3 text-sm">
-                            <div class="rounded border p-2"><strong>Total:</strong> {{ $submission['total_score'] ?? 0 }}</div>
-                            <div class="rounded border p-2"><strong>Persentase:</strong> {{ $submission['percentage'] ?? 0 }}%</div>
-                            <div class="rounded border p-2"><strong>Hasil:</strong> {{ $submission['recommendation'] ?? '-' }}</div>
-                        </div>
-                    </div>
-                @endforeach
-
                 <div class="grid grid-cols-2 gap-8 mt-8 border-t pt-8">
                     <div>
                         <h3 class="text-lg font-bold text-gray-900 mb-4 bg-gray-100 p-2 text-center">RINGKASAN HASIL</h3>
@@ -358,6 +319,47 @@
                     </div>
                 @endif
             </div>
+
+            @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
+                <div class="evaluator-print-page mt-10 mb-8 overflow-hidden rounded-xl border-2 border-amber-200 bg-white p-6 shadow-md">
+                    <h2 class="mb-4 text-lg font-bold text-amber-900">Form Penilaian Interview User</h2>
+                    <h3 class="mb-4 border-b border-amber-100 bg-amber-50 p-3 text-center text-base font-bold text-gray-900">
+                        PENILAIAN USER {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}
+                    </h3>
+                    <table class="min-w-full divide-y divide-gray-200 border text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Kategori</th>
+                                <th class="px-3 py-2 text-left">Aspek Penilaian</th>
+                                <th class="px-3 py-2 text-center">Skor</th>
+                                <th class="px-3 py-2 text-left">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($interview_assessment->template->categories as $category)
+                                @foreach($category->aspects as $aspect)
+                                    @php
+                                        $userScore = $submission['scores'][$aspect->id]['score'] ?? '-';
+                                        $userNote = $submission['scores'][$aspect->id]['notes'] ?? '-';
+                                    @endphp
+                                    <tr>
+                                        <td class="border-b px-3 py-2">{{ $category->name }}</td>
+                                        <td class="border-b px-3 py-2">{{ $aspect->name }}</td>
+                                        <td class="border-b px-3 py-2 text-center font-semibold">{{ $userScore }}</td>
+                                        <td class="border-b px-3 py-2">{{ $userNote ?: '-' }}</td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                    <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+                        <div class="rounded border p-2"><strong>Total:</strong> {{ $submission['total_score'] ?? 0 }}</div>
+                        <div class="rounded border p-2"><strong>Persentase:</strong> {{ $submission['percentage'] ?? 0 }}%</div>
+                        <div class="rounded border p-2"><strong>Hasil:</strong> {{ $submission['recommendation'] ?? '-' }}</div>
+                    </div>
+                </div>
+            @endforeach
+
         </div>
     </div>
 
