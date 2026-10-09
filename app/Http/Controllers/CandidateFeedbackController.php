@@ -40,6 +40,7 @@ class CandidateFeedbackController extends Controller
 
         $request->validate([
             'evaluator_name'  => ['required', 'string', 'max:255'],
+            'interview_date' => ['required', 'date'],
             'feedback'       => ['nullable', 'string', 'max:3000'],
             'scores'         => ['nullable', 'array'],
             'scores.*.score' => ['nullable', 'integer', 'min:1', 'max:5'],
@@ -94,6 +95,10 @@ class CandidateFeedbackController extends Controller
         $feedback->update([
             'submissions' => $submissions,
             'submitted_at' => count($submissions) >= 5 ? now() : null,
+        ]);
+
+        $feedback->assessment->update([
+            'interview_date' => $request->interview_date,
         ]);
 
         $bestFeedback = collect($submissions)->sortByDesc('percentage')->first();

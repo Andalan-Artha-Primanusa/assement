@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6f4933 0%, #b77a4b 100%);
             min-height: 100vh;
             padding: 2rem 1rem;
         }
@@ -65,6 +65,37 @@
             margin-top: 1rem;
             font-size: 0.8rem;
             opacity: 0.9;
+        }
+
+        .candidate-details {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem 1.25rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .candidate-detail-label {
+            display: block;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            opacity: 0.72;
+        }
+
+        .candidate-detail-value {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 640px) {
+            .candidate-details { grid-template-columns: 1fr; }
         }
 
         .form-card {
@@ -126,7 +157,7 @@
         input[type="text"]:focus,
         textarea:focus {
             outline: none;
-            border-color: #6366f1;
+            border-color: #9a6745;
             box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
         }
 
@@ -144,7 +175,7 @@
         }
 
         .category-header {
-            background: linear-gradient(135deg, #6366f1, #818cf8);
+            background: linear-gradient(135deg, #8a5a3b, #b77a4b);
             color: white;
             padding: 0.875rem 1.25rem;
             font-size: 0.875rem;
@@ -195,7 +226,7 @@
 
         .aspect-weight {
             font-size: 0.7rem;
-            color: #6366f1;
+            color: #8a5a3b;
             font-weight: 600;
             margin-top: 0.15rem;
         }
@@ -259,14 +290,14 @@
         }
 
         .score-btn:hover {
-            border-color: #6366f1;
-            color: #6366f1;
-            background: #eef2ff;
+            border-color: #9a6745;
+            color: #8a5a3b;
+            background: #f5ebe3;
         }
 
         .score-btn.active {
-            background: #6366f1;
-            border-color: #6366f1;
+            background: #8a5a3b;
+            border-color: #8a5a3b;
             color: white;
             transform: scale(1.1);
         }
@@ -297,7 +328,7 @@
 
         .notes-input input:focus {
             outline: none;
-            border-color: #6366f1;
+            border-color: #9a6745;
             background: white;
         }
 
@@ -354,7 +385,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #6366f1;
+            background: #8a5a3b;
             color: white;
             font-size: 0.65rem;
             font-weight: 700;
@@ -367,7 +398,7 @@
             display: block;
             width: 100%;
             padding: 0.875rem;
-            background: linear-gradient(135deg, #6366f1, #818cf8);
+            background: linear-gradient(135deg, #8a5a3b, #b77a4b);
             color: white;
             border: none;
             border-radius: 10px;
@@ -403,12 +434,32 @@
             <div class="template-badge">{{ $feedback->assessment->template->name }}</div>
             <h1>Form Penilaian Kandidat</h1>
             <p>Silakan isi penilaian kandidat berdasarkan hasil interview.</p>
-            @if($feedback->assessment->candidate_name)
-                <div class="candidate-info">
-                    Kandidat: <strong>{{ $feedback->assessment->candidate_name }}</strong>
-                    &nbsp;|&nbsp; Posisi: <strong>{{ $feedback->assessment->job_title ?? '-' }}</strong>
+            <div class="candidate-details">
+                <div>
+                    <span class="candidate-detail-label">Nama Kandidat</span>
+                    <span class="candidate-detail-value">{{ $feedback->assessment->candidate_name ?: '-' }}</span>
                 </div>
-            @endif
+                <div>
+                    <span class="candidate-detail-label">Posisi yang Dilamar</span>
+                    <span class="candidate-detail-value">{{ $feedback->assessment->job_title ?: '-' }}</span>
+                </div>
+                <div>
+                    <span class="candidate-detail-label">Penempatan</span>
+                    <span class="candidate-detail-value">{{ $feedback->assessment->location ?: '-' }}</span>
+                </div>
+                <div>
+                    <span class="candidate-detail-label">Tanggal Interview</span>
+                    <span class="candidate-detail-value">{{ $feedback->assessment->interview_date?->format('d M Y') ?: 'Diisi pada form' }}</span>
+                </div>
+                <div>
+                    <span class="candidate-detail-label">Interviewer HR</span>
+                    <span class="candidate-detail-value">{{ $feedback->assessment->hr_interviewer_name ?: '-' }}</span>
+                </div>
+                <div>
+                    <span class="candidate-detail-label">Interviewer User</span>
+                    <span class="candidate-detail-value">{{ $feedback->assessment->user_interviewer_name ?: '-' }}</span>
+                </div>
+            </div>
         </div>
 
         <form method="POST" action="{{ route('feedback.store', $feedback->token) }}">
@@ -435,6 +486,11 @@
                     <div class="form-group">
                         <label for="evaluator_name">Nama Penilai <span style="color:#ef4444">*</span></label>
                         <input type="text" id="evaluator_name" name="evaluator_name" value="{{ old('evaluator_name') }}" placeholder="Masukkan nama user/interviewer" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="interview_date">Tanggal Interview <span style="color:#ef4444">*</span></label>
+                        <input type="date" id="interview_date" name="interview_date" value="{{ old('interview_date', $feedback->assessment->interview_date?->format('Y-m-d')) }}" required>
                     </div>
                 </div>
             </div>
