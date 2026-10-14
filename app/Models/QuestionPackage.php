@@ -84,6 +84,8 @@ class QuestionPackage extends Model
             'Admin Engineering' => 'Admin Engineering',
             'Admin General' => 'Admin General',
             'Assistant Grade Control' => 'Assistant Grade Control',
+            'Dispatcher Plant' => 'Dispatcher Plant',
+            'Toolkeeper' => 'Toolkeeper',
         ],
     ];
 
