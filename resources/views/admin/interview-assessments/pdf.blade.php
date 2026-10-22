@@ -13,6 +13,9 @@
         .title { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 0; }
         .subtitle { color: #4b5563; margin-top: 3px; }
         .section-title { background: #111827; color: #fff; font-weight: bold; padding: 6px 8px; margin-top: 14px; }
+        .user-section-title { background: #8a5a3b; color: #fff; font-weight: bold; padding: 8px 10px; margin-top: 14px; border-left: 5px solid #d6a16f; }
+        .user-table th { background: #fbf0e5; color: #6f4933; }
+        .user-summary td { background: #fffaf5; border-color: #e7cdb7; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #d1d5db; padding: 5px 6px; vertical-align: top; }
         th { background: #f3f4f6; font-weight: bold; }
@@ -110,8 +113,8 @@
 
     @foreach($evaluatorSubmissions as $evaluatorIndex => $submission)
         <div style="page-break-before: always;"></div>
-        <div class="section-title">Form Penilaian Interview User {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}</div>
-        <table>
+        <div class="user-section-title">Form Penilaian Interview User {{ $evaluatorIndex + 1 }}: {{ $submission['evaluator_name'] ?? '-' }}</div>
+        <table class="user-table">
             <thead>
                 <tr>
                     <th>Kategori</th>
@@ -137,7 +140,7 @@
                 @endforeach
             </tbody>
         </table>
-        <table class="summary">
+        <table class="summary user-summary">
             <tr>
                 <td><strong>Total Nilai</strong></td>
                 <td>{{ $submission['total_score'] ?? 0 }}</td>

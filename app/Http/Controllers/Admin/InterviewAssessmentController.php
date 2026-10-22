@@ -178,7 +178,20 @@ class InterviewAssessmentController extends Controller
 
         $evaluatorSubmissions = collect();
         foreach ($interview_assessment->candidateFeedbacks as $link) {
-            foreach (($link->submissions ?? []) as $submission) {
+            $submissions = $link->submissions ?? [];
+            if ($submissions === [] && $link->submitted_at !== null) {
+                $submissions[] = [
+                    'evaluator_name' => $link->evaluator_name,
+                    'feedback' => $link->feedback,
+                    'scores' => $link->scores ?? [],
+                    'total_score' => $link->total_score,
+                    'average_score' => $link->average_score,
+                    'percentage' => $link->percentage,
+                    'submitted_at' => $link->submitted_at?->toISOString(),
+                ];
+            }
+
+            foreach ($submissions as $submission) {
                 $percentage = (float) ($submission['percentage'] ?? 0);
                 $recommendation = 'TIDAK DIREKOMENDASIKAN';
                 if ($percentage >= (float) $interview_assessment->template->min_recommended_percentage) {

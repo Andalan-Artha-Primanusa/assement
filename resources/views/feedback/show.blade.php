@@ -268,24 +268,25 @@
 
         .score-buttons {
             display: flex;
-            gap: 0.35rem;
+            gap: 0.55rem;
             justify-content: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
 
         .score-option {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.2rem;
+            gap: 0.3rem;
+            min-width: 3.25rem;
         }
 
         .score-caption {
-            font-size: 0.58rem;
-            line-height: 1.1;
+            font-size: 0.62rem;
+            line-height: 1.15;
             color: #6f4933;
             text-align: center;
-            white-space: nowrap;
+            white-space: normal;
         }
 
         .score-btn {
@@ -315,15 +316,6 @@
             border-color: #8a5a3b;
             color: white;
             transform: scale(1.1);
-        }
-
-        .score-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.6rem;
-            color: #9ca3af;
-            margin-top: 0.25rem;
-            padding: 0 0.25rem;
         }
 
         .notes-input {
@@ -548,10 +540,6 @@
                                                             <span class="score-caption">{{ [1 => 'Sangat Kurang', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Baik', 5 => 'Sangat Baik'][$s] }}</span>
                                                         </span>
                                                     @endfor
-                                                </div>
-                                                <div class="score-labels">
-                                                    <span>Sangat Kurang</span>
-                                                    <span>Sangat Baik</span>
                                                 </div>
                                                 <input type="hidden" name="scores[{{ $aspect->id }}][score]" id="score_{{ $aspect->id }}" value="{{ old("scores.{$aspect->id}.score", '') }}">
                                             </div>

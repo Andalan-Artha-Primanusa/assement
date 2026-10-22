@@ -309,9 +309,9 @@
                 </div>
 
                 <div class="mt-10 flex justify-end print:hidden">
-                    <button onclick="window.print()" class="rounded-md bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 shadow-sm">
+                    <a href="{{ route('admin.interview-assessments.pdf', $interview_assessment) }}" target="_blank" rel="noopener" class="rounded-md bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 shadow-sm">
                         Cetak / Print PDF
-                    </button>
+                    </a>
                 </div>
 
                 @if(!empty($interview_assessment->photos))
