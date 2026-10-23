@@ -33,15 +33,35 @@
                     </div>
                 </div>
 
-                <div class="grid gap-6 sm:grid-cols-2 rounded-lg bg-gray-50 p-4 border border-gray-100">
-                    <div>
-                        <x-input-label for="password" :value="$method === 'POST' ? 'Password' : 'Password Baru (Opsional)'" />
-                        <x-text-input id="password" name="password" type="password" class="mt-1 block w-full border-gray-300 focus:border-emerald-500 focus:ring-emerald-500" :required="$method === 'POST'" autocomplete="new-password" placeholder="Minimal 8 karakter" />
-                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                <div class="rounded-lg bg-gray-50 p-4 border border-gray-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-gray-900">Pengaturan Password</h4>
+                        <button type="button" onclick="generatePesertaPassword()" class="inline-flex items-center gap-1.5 rounded-md bg-emerald-100 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 transition-colors">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                            Generate Password
+                        </button>
                     </div>
-                    <div>
-                        <x-input-label for="password_confirmation" value="Konfirmasi Password" />
-                        <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full border-gray-300 focus:border-emerald-500 focus:ring-emerald-500" :required="$method === 'POST'" autocomplete="new-password" placeholder="Ketik ulang password" />
+
+                    <div class="grid gap-6 sm:grid-cols-2 mt-4">
+                        <div>
+                            <x-input-label for="password" :value="$method === 'POST' ? 'Password' : 'Password Baru (Opsional)'" />
+                            <div class="relative mt-1">
+                                <x-text-input id="password" name="password" type="password" class="block w-full border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 pr-10" :required="$method === 'POST'" autocomplete="new-password" placeholder="Minimal 8 karakter" />
+                                <button type="button" onclick="togglePesertaPasswordVisibility('password')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                </button>
+                            </div>
+                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                        </div>
+                        <div>
+                            <x-input-label for="password_confirmation" value="Konfirmasi Password" />
+                            <div class="relative mt-1">
+                                <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="block w-full border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 pr-10" :required="$method === 'POST'" autocomplete="new-password" placeholder="Ketik ulang password" />
+                                <button type="button" onclick="togglePesertaPasswordVisibility('password_confirmation')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -345,4 +365,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+function generatePesertaPassword() {
+    const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let retVal = "";
+    for (let i = 0; i < 6; ++i) {
+        retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    
+    const pwdInput = document.getElementById('password');
+    const confirmInput = document.getElementById('password_confirmation');
+    
+    if (pwdInput && confirmInput) {
+        pwdInput.value = retVal;
+        confirmInput.value = retVal;
+        pwdInput.type = "text";
+        confirmInput.type = "text";
+        alert("Password peserta baru: " + retVal + "\n\nSilakan simpan/salin password ini dan klik 'Update Peserta'.");
+    }
+}
+
+function togglePesertaPasswordVisibility(fieldId) {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    input.type = input.type === "password" ? "text" : "password";
+}
 </script>
