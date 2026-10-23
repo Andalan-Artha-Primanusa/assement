@@ -531,6 +531,10 @@ class UserController extends Controller
 
         $data = $this->validated($request);
 
+        if (!empty($data['password'])) {
+            $data['plain_password'] = $data['password'];
+        }
+
         User::create($data);
 
         ActivityLog::log('user_create', 'Membuat user '.$data['email'], User::class);
@@ -580,6 +584,8 @@ class UserController extends Controller
 
         if (blank($data['password'] ?? null)) {
             unset($data['password']);
+        } else {
+            $data['plain_password'] = $data['password'];
         }
 
         $user->update($data);
@@ -987,6 +993,7 @@ class UserController extends Controller
             'name' => filled($name) ? $name : ($user?->name ?? $this->nameFromEmail($email)),
             'email' => $email,
             'password' => $password,
+            'plain_password' => $password,
             'role' => User::ROLE_USER,
             'question_package_id' => $packageId,
             'operator_assessment_category_id' => $operatorCategoryId,
