@@ -42,6 +42,25 @@
                         </button>
                     </div>
 
+                    @if ($method !== 'POST' && ($user->plain_password ?? null))
+                        <div class="mb-4 rounded-md border border-sky-200 bg-sky-50 p-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-medium text-sky-600">Password Terakhir (tersimpan)</p>
+                                    <p class="mt-1 text-sm font-bold text-sky-900 tracking-wider" id="stored-plain-password">{{ $user->plain_password }}</p>
+                                </div>
+                                <button type="button" onclick="copyStoredPassword()" class="inline-flex items-center gap-1 rounded-md bg-sky-100 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-200 transition-colors" title="Salin password">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                                    <span id="copy-btn-text">Salin</span>
+                                </button>
+                            </div>
+                        </div>
+                    @elseif ($method !== 'POST')
+                        <div class="mb-4 rounded-md border border-gray-200 bg-gray-100 p-3">
+                            <p class="text-xs text-gray-500 italic">Password lama tidak tersedia. Gunakan "Generate Password" untuk membuat password baru.</p>
+                        </div>
+                    @endif
+
                     <div class="grid gap-6 sm:grid-cols-2 mt-4">
                         <div>
                             <x-input-label for="password" :value="$method === 'POST' ? 'Password' : 'Password Baru (Opsional)'" />
@@ -369,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function generatePesertaPassword() {
     const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let retVal = "";
-    for (let i = 0; i < 6; ++i) {
+    for (let i = 0; i < 8; ++i) {
         retVal += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     
@@ -389,5 +408,20 @@ function togglePesertaPasswordVisibility(fieldId) {
     const input = document.getElementById(fieldId);
     if (!input) return;
     input.type = input.type === "password" ? "text" : "password";
+}
+
+function copyStoredPassword() {
+    const textEl = document.getElementById('stored-plain-password');
+    if (!textEl) return;
+    const pwd = textEl.textContent.trim();
+    navigator.clipboard.writeText(pwd).then(() => {
+        const btnText = document.getElementById('copy-btn-text');
+        if (btnText) {
+            btnText.textContent = 'Tersalin!';
+            setTimeout(() => { btnText.textContent = 'Salin'; }, 2000);
+        }
+    }).catch(() => {
+        prompt('Salin password:', pwd);
+    });
 }
 </script>

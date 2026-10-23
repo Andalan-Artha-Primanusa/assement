@@ -631,9 +631,14 @@ class UserController extends Controller
     private function validated(Request $request, ?User $user = null): array
     {
         $adminUser = $request->user();
+        $targetRole = $request->input('role') ?? $user?->role ?? User::ROLE_USER;
+        $passwordRule = ($targetRole === User::ROLE_USER)
+            ? 'min:4'
+            : Rules\Password::defaults();
+
         $passwordRules = $user
-            ? ['nullable', 'confirmed', Rules\Password::defaults()]
-            : ['required', 'confirmed', Rules\Password::defaults()];
+            ? ['nullable', 'confirmed', $passwordRule]
+            : ['required', 'confirmed', $passwordRule];
 
         $roles = $adminUser->isSuperAdmin()
             ? ['nullable', 'string', 'in:user,admin_mekanik,admin_operation,admin_she,admin_hr,super_admin']
