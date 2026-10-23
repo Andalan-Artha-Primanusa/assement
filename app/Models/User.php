@@ -30,6 +30,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'plain_password',
         'role',
         'assessment_access_expires_at',
         'assessment_duration_minutes',
