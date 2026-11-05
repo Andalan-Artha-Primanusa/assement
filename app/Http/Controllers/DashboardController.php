@@ -93,9 +93,6 @@ class DashboardController extends Controller
                 ->count(),
             'pending_review' => (clone $baseQuery)
                 ->where('status', Assessment::STATUS_PENDING_REVIEW)
-                ->whereHas('questionPackage', function ($q): void {
-                    $q->where('type', QuestionPackage::TYPE_SHE);
-                })
                 ->count(),
             'average_score' => round($averageScore, 1),
         ];

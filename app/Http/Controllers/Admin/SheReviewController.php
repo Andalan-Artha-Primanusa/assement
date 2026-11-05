@@ -20,14 +20,15 @@ class SheReviewController extends Controller
     {
         $adminUser = $request->user();
         $visibleTypes = $adminUser->visiblePackageTypes();
-        $selectedType = QuestionPackage::TYPE_SHE;
-
-        abort_unless(in_array(QuestionPackage::TYPE_SHE, $visibleTypes, true), 403);
+        $selectedType = $request->string('type')->toString();
+        if ($selectedType && ! in_array($selectedType, $visibleTypes, true)) {
+            abort(403);
+        }
 
         $assessments = Assessment::with('user', 'questionPackage', 'answers')
             ->where('status', Assessment::STATUS_PENDING_REVIEW)
-            ->whereHas('questionPackage', function ($q) use ($selectedType): void {
-                $q->where('type', $selectedType);
+            ->whereHas('questionPackage', function ($q) use ($visibleTypes, $selectedType): void {
+                $q->whereIn('type', $selectedType ? [$selectedType] : $visibleTypes);
             })
             ->when($adminUser->hasSiteRestriction(), function ($query) use ($adminUser): void {
                 $this->applyAssessmentSiteScope($query, $adminUser);
@@ -51,7 +52,6 @@ class SheReviewController extends Controller
         abort_unless($assessment->submitted_at !== null, 404);
 
         $assessment->load('user', 'questionPackage', 'answers.question');
-        abort_unless($assessment->questionPackage?->type === QuestionPackage::TYPE_SHE, 404);
         abort_unless(request()->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
         $this->authorizeAssessmentSite($assessment, request()->user());
 
@@ -69,7 +69,6 @@ class SheReviewController extends Controller
         abort_unless($assessment->status === Assessment::STATUS_PENDING_REVIEW, 400);
 
         $assessment->load('questionPackage', 'user');
-        abort_unless($assessment->questionPackage?->type === QuestionPackage::TYPE_SHE, 404);
         abort_unless($request->user()->canManageType($assessment->questionPackage?->type ?? ''), 403);
         $this->authorizeAssessmentSite($assessment, $request->user());
 

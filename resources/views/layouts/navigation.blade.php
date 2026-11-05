@@ -134,8 +134,8 @@
                     </svg>
                 </button>
                 <div x-show="open" class="mt-1 space-y-0.5" style="display: none;">
-                    @if (in_array(\App\Models\QuestionPackage::TYPE_SHE, $visibleTypes, true))
-                        <a href="{{ route('admin.she-review.index') }}" class="{{ $subLinkBase }} {{ $isReview ? $activeSubLink : $inactiveSubLink }}">SHE</a>
+                    @if (array_intersect([\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR, \App\Models\QuestionPackage::TYPE_SHE, \App\Models\QuestionPackage::TYPE_HR], $visibleTypes))
+                        <a href="{{ route('admin.she-review.index') }}" class="{{ $subLinkBase }} {{ $isReview ? $activeSubLink : $inactiveSubLink }}">Essay / Upload</a>
                     @endif
                 </div>
             </div>
@@ -204,9 +204,9 @@
                     {{ __('Kategori Invite') }}
                 </x-nav-link>
             @endif
-            @if ($adminType === \App\Models\QuestionPackage::TYPE_SHE)
+            @if (in_array($adminType, [\App\Models\QuestionPackage::TYPE_MEKANIK, \App\Models\QuestionPackage::TYPE_OPERATOR, \App\Models\QuestionPackage::TYPE_SHE, \App\Models\QuestionPackage::TYPE_HR], true))
                 <x-nav-link :href="route('admin.she-review.index')" :active="request()->routeIs('admin.she-review.*')">
-                    {{ __('Review SHE') }}
+                    {{ __('Review Essay / Upload') }}
                 </x-nav-link>
             @endif
             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*') && !request()->routeIs('admin.invite')">

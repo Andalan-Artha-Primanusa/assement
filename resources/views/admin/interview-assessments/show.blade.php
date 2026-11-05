@@ -81,9 +81,9 @@
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
                                     @if($fb->isSubmitted())
-                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">✓ 5/5 penilai</span>
+                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">✓ 10/10 penilai</span>
                                     @else
-                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ count($fb->submissions ?? []) }}/5 penilai</span>
+                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{{ count($fb->submissions ?? []) }}/10 penilai</span>
                                     @endif
                                     <button type="button" onclick="copyLink('{{ route('feedback.show', $fb->token) }}')" class="rounded bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-200">
                                         Salin Link

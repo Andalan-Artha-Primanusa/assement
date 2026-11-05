@@ -188,13 +188,8 @@ class QuestionImportController extends Controller
                     $type = 'multiple_choice';
                 }
 
-                if (! in_array($type, [Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_TRUE_FALSE], true) && $package?->type !== QuestionPackage::TYPE_SHE) {
-                    $errors[] = "Baris ke-{$rowNumber}: Essay/Upload khusus untuk paket SHE. Paket lain wajib menggunakan multiple_choice atau true_false.";
-                    continue;
-                }
-
-                if ($type === Question::TYPE_TRUE_FALSE && $package?->type === QuestionPackage::TYPE_SHE) {
-                    $errors[] = "Baris ke-{$rowNumber}: true_false dipakai untuk Mekanik, Operator, atau HR. Paket SHE tetap memakai multiple_choice, essay, dan upload.";
+                if ($type === 'upload' && $package?->type !== QuestionPackage::TYPE_SHE) {
+                    $errors[] = "Baris ke-{$rowNumber}: Upload hanya tersedia untuk paket SHE. PG dan Essay boleh dipakai semua tipe paket.";
                     continue;
                 }
 

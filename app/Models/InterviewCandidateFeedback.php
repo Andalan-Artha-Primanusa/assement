@@ -47,7 +47,7 @@ class InterviewCandidateFeedback extends Model
 
     public function isSubmitted(): bool
     {
-        return count($this->submissions ?? []) >= 5;
+        return count($this->submissions ?? []) >= 10;
     }
 
     public function getFeedbackLinkAttribute(): string

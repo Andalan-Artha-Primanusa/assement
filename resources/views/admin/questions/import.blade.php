@@ -34,10 +34,10 @@
                     <ul class="mt-1 list-inside list-disc space-y-0.5">
                         <li><strong>multiple_choice</strong> - wajib isi option_a s/d option_d + correct_option (a/b/c/d)</li>
                         <li><strong>true_false</strong> - Benar/Salah, correct_option isi <strong>a</strong> untuk Benar atau <strong>b</strong> untuk Salah</li>
-                        <li><strong>essay</strong> - khusus paket SHE, kolom pilihan & correct_option dikosongkan</li>
+                        <li><strong>essay</strong> - bisa digunakan semua paket, kolom pilihan & correct_option dikosongkan</li>
                         <li><strong>upload</strong> - khusus paket SHE, peserta upload file</li>
                     </ul>
-                    <p class="mt-1">Mekanik, Operator, dan HR memakai multiple_choice atau true_false. Kolom <strong>points</strong> dipakai khusus Operator dan HR sebagai nilai/bobot per soal.</p>
+                    <p class="mt-1">PG dan Essay bisa dicampur atau digunakan sendiri pada semua paket. Upload tetap khusus SHE. Kolom <strong>points</strong> dipakai khusus Operator dan HR sebagai nilai/bobot per soal.</p>
                 </div>
 
                 <form method="POST" action="{{ route('admin.questions.import') }}" enctype="multipart/form-data" class="mt-6 space-y-5" data-confirm
@@ -149,7 +149,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Untuk Operator dan HR, isi points dengan nilai/bobot soal; contoh essay/upload hanya dipakai saat paket yang dipilih adalah SHE.</p>
+                <p class="mt-3 text-xs text-gray-500">Baris pertama (header) otomatis di-skip. Untuk Operator dan HR, isi points dengan nilai/bobot soal.</p>
             </div>
         </div>
     </div>

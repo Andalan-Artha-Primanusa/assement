@@ -31,10 +31,34 @@ class InterviewAssessmentController extends Controller
         
         $query->whereHas('template', fn ($q) => $q->whereIn('type', $visibleTypes));
         $this->applyInterviewSiteScope($query, $user);
+
+        $query->when($request->filled('q'), function ($query) use ($request): void {
+            $term = $request->string('q')->trim()->toString();
+            $query->where(function ($query) use ($term): void {
+                $query->where('candidate_name', 'like', "%{$term}%")
+                    ->orWhere('job_title', 'like', "%{$term}%");
+            });
+        });
+        $query->when($request->filled('location'), fn ($query) => $query->where('location', $request->string('location')));
+        $query->when($request->filled('recommendation'), fn ($query) => $query->where('recommendation', $request->string('recommendation')));
+        $query->when($request->filled('template_id'), fn ($query) => $query->where('interview_template_id', $request->integer('template_id')));
+        $query->when($request->filled('date_from'), fn ($query) => $query->whereDate('interview_date', '>=', $request->date('date_from')));
+        $query->when($request->filled('date_to'), fn ($query) => $query->whereDate('interview_date', '<=', $request->date('date_to')));
+
+        $assessments = $query->paginate(15)->withQueryString();
+        $filterTemplates = InterviewTemplate::where('is_active', true)
+            ->whereIn('type', $visibleTypes)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        $filterSites = InterviewAssessment::query()
+            ->select('location')
+            ->whereNotNull('location')
+            ->when(! $user->canViewAllSites(), fn ($query) => $query->where('location', $user->normalizedSite()))
+            ->distinct()
+            ->orderBy('location')
+            ->pluck('location');
         
-        $assessments = $query->paginate(15);
-        
-        return view('admin.interview-assessments.index', compact('assessments'));
+        return view('admin.interview-assessments.index', compact('assessments', 'filterTemplates', 'filterSites'));
     }
 
     public function create(Request $request)

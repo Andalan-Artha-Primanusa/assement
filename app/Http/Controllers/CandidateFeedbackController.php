@@ -94,7 +94,7 @@ class CandidateFeedbackController extends Controller
 
         $feedback->update([
             'submissions' => $submissions,
-            'submitted_at' => count($submissions) >= 5 ? now() : null,
+            'submitted_at' => count($submissions) >= 10 ? now() : null,
         ]);
 
         $feedback->assessment->update([

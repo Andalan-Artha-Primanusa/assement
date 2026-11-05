@@ -61,10 +61,7 @@ class AssessmentController extends Controller
                     'submitted' => $query->whereNotNull('submitted_at'),
                     'pending' => $query->whereNull('submitted_at')->whereNull('blocked_at'),
                     'blocked' => $query->whereNotNull('blocked_at')->whereNull('submitted_at'),
-                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW)
-                        ->whereHas('questionPackage', function ($q): void {
-                            $q->where('type', QuestionPackage::TYPE_SHE);
-                        }),
+                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW),
                     'graded' => $query->where('status', Assessment::STATUS_GRADED),
                     default => null,
                 };
@@ -146,10 +143,7 @@ class AssessmentController extends Controller
                     'submitted' => $query->whereNotNull('submitted_at'),
                     'pending' => $query->whereNull('submitted_at')->whereNull('blocked_at'),
                     'blocked' => $query->whereNotNull('blocked_at')->whereNull('submitted_at'),
-                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW)
-                        ->whereHas('questionPackage', function ($q): void {
-                            $q->where('type', QuestionPackage::TYPE_SHE);
-                        }),
+                    'pending_review' => $query->where('status', Assessment::STATUS_PENDING_REVIEW),
                     'graded' => $query->where('status', Assessment::STATUS_GRADED),
                     default => null,
                 };

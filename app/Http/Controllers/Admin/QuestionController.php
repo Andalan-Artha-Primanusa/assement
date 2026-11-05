@@ -247,13 +247,7 @@ class QuestionController extends Controller
         $package = $this->packageForData($request, $data);
         $type = $data['type'] ?? null;
 
-        if ($type === Question::TYPE_TRUE_FALSE && $package?->type === QuestionPackage::TYPE_SHE) {
-            throw ValidationException::withMessages([
-                'type' => 'Benar/Salah dipakai untuk paket Mekanik, Operator, atau HR. Paket SHE tetap memakai PG, Essay, dan Portfolio.',
-            ]);
-        }
-
-        if (in_array($type, [Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_TRUE_FALSE], true)) {
+        if (in_array($type, [Question::TYPE_MULTIPLE_CHOICE, Question::TYPE_TRUE_FALSE, Question::TYPE_ESSAY], true)) {
             return;
         }
 
@@ -262,7 +256,7 @@ class QuestionController extends Controller
         }
 
         throw ValidationException::withMessages([
-            'type' => 'Essay dan Upload File khusus untuk paket SHE. Paket Mekanik, Operator, dan HR hanya menggunakan PG atau Benar/Salah.',
+            'type' => 'Upload File hanya tersedia untuk paket SHE. Semua paket dapat menggunakan PG dan Essay.',
         ]);
     }
 

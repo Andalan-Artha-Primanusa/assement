@@ -22,10 +22,10 @@
             <x-input-label for="type" value="Tipe Soal" />
             <select id="type" name="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 @foreach (['multiple_choice' => 'Multiple Choice', 'true_false' => 'Benar / Salah', 'essay' => 'Essay', 'upload' => 'Upload File'] as $value => $label)
-                    <option value="{{ $value }}" data-manual-review="{{ in_array($value, ['essay', 'upload'], true) ? 'true' : 'false' }}" @selected(old('type', $question->type) === $value)>{{ $label }}</option>
+                    <option value="{{ $value }}" data-manual-review="{{ $value === 'upload' ? 'true' : 'false' }}" @selected(old('type', $question->type) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
-            <p id="manual-type-note" class="mt-1 text-xs text-gray-500">Essay dan Upload File hanya tersedia untuk paket SHE.</p>
+            <p id="manual-type-note" class="mt-1 text-xs text-gray-500">Essay tersedia untuk semua paket. Upload File hanya untuk SHE.</p>
             <x-input-error :messages="$errors->get('type')" class="mt-2" />
         </div>
         <div>
@@ -167,7 +167,7 @@
             const isShePackage = packageType === 'she';
             const usesQuestionPoints = ['operator', 'hr'].includes(packageType);
 
-            typeSelect.querySelectorAll('option[data-manual-review="true"]').forEach((option) => {
+            typeSelect.querySelectorAll('option[value="upload"]').forEach((option) => {
                 option.disabled = ! isShePackage;
                 option.hidden = ! isShePackage;
             });
@@ -176,7 +176,7 @@
             trueFalseOption.disabled = isShePackage;
             trueFalseOption.hidden = isShePackage;
 
-            if (! isShePackage && ['essay', 'upload'].includes(typeSelect.value)) {
+            if (! isShePackage && typeSelect.value === 'upload') {
                 typeSelect.value = 'multiple_choice';
             }
 
@@ -184,8 +184,8 @@
                 typeSelect.value = 'multiple_choice';
             }
 
-            manualTypeNote.classList.toggle('text-amber-600', ! isShePackage);
-            manualTypeNote.classList.toggle('text-gray-500', isShePackage);
+            manualTypeNote.classList.toggle('text-amber-600', isShePackage);
+            manualTypeNote.classList.toggle('text-gray-500', ! isShePackage);
             pointsField.classList.toggle('hidden', ! usesQuestionPoints);
 
             if (! usesQuestionPoints) {

@@ -52,8 +52,7 @@ class AssessmentSecurity
             return $answer->question && ($answer->question->isEssay() || $answer->question->isUpload());
         });
 
-        $needsManualReview = $assessment->questionPackage?->type === QuestionPackage::TYPE_SHE
-            && $hasEssayOrUpload;
+        $needsManualReview = $hasEssayOrUpload;
         $usesWeightedScore = QuestionPackage::usesQuestionPoints($assessment->questionPackage?->type);
 
         $correctAnswers = 0;

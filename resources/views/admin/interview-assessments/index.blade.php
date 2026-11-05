@@ -28,6 +28,36 @@
                 </div>
             @endif
 
+            <form method="GET" class="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                    <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari kandidat / jabatan" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 xl:col-span-2">
+                    <select name="location" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Semua site</option>
+                        @foreach($filterSites as $site)
+                            <option value="{{ $site }}" @selected(request('location') === $site)>{{ $site }}</option>
+                        @endforeach
+                    </select>
+                    <select name="template_id" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Semua template</option>
+                        @foreach($filterTemplates as $template)
+                            <option value="{{ $template->id }}" @selected((string) request('template_id') === (string) $template->id)>{{ $template->name }}</option>
+                        @endforeach
+                    </select>
+                    <select name="recommendation" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Semua rekomendasi</option>
+                        @foreach(['DIREKOMENDASIKAN', 'DIPERTIMBANGKAN', 'TIDAK DIREKOMENDASIKAN'] as $recommendation)
+                            <option value="{{ $recommendation }}" @selected(request('recommendation') === $recommendation)>{{ $recommendation }}</option>
+                        @endforeach
+                    </select>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" title="Tanggal mulai" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" title="Tanggal sampai" class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                <div class="mt-3 flex items-center gap-2">
+                    <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Terapkan Filter</button>
+                    <a href="{{ route('admin.interview-assessments.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Reset</a>
+                </div>
+            </form>
+
             <div class="overflow-hidden bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
