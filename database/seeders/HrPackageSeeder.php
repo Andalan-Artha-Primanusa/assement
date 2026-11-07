@@ -20,6 +20,7 @@ class HrPackageSeeder extends Seeder
     public const HR_ASSISTANT_GRADE_CONTROL = 'Screening HR Assistant Grade Control';
     public const HR_DISPATCHER_PLANT = 'Screening HR Dispatcher Plant';
     public const HR_TOOLKEEPER = 'Screening HR Toolkeeper';
+    public const HR_SECTION_HEAD_PRODUCTION = 'Screening HR Section Head Production';
 
     public const PACKAGES = [
         'Dispatch Plant' => self::HR_DISPATCH_PLANT,
@@ -34,6 +35,7 @@ class HrPackageSeeder extends Seeder
         'Assistant Grade Control' => self::HR_ASSISTANT_GRADE_CONTROL,
         'Dispatcher Plant' => self::HR_DISPATCHER_PLANT,
         'Toolkeeper' => self::HR_TOOLKEEPER,
+        'Section Head Production' => self::HR_SECTION_HEAD_PRODUCTION,
     ];
 
     public function run(): void

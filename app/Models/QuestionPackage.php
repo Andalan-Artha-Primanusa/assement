@@ -86,6 +86,7 @@ class QuestionPackage extends Model
             'Assistant Grade Control' => 'Assistant Grade Control',
             'Dispatcher Plant' => 'Dispatcher Plant',
             'Toolkeeper' => 'Toolkeeper',
+            'Section Head Production' => 'Section Head Production',
         ],
     ];
 
