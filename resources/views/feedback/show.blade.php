@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f8fafc;
+            background: linear-gradient(180deg, #f5f7f9 0%, #ffffff 42%, #f7f3ef 100%);
             min-height: 100vh;
             padding: 1.25rem 1rem 2rem;
             color: #1f2937;
@@ -26,13 +26,13 @@
 
         .header-card {
             background: #fff;
-            border: 1px solid #eadfd6;
+            border: 1px solid #e4d4c7;
             border-radius: 18px;
             padding: 1.5rem;
             text-align: center;
             margin-bottom: 1.5rem;
             color: #3f2a1e;
-            box-shadow: 0 8px 24px rgba(91, 61, 42, 0.08);
+            box-shadow: 0 12px 32px rgba(79, 55, 39, 0.10);
         }
 
         .brand-logo { height: 42px; width: auto; object-fit: contain; margin: 0 auto 1rem; }
@@ -106,21 +106,22 @@
         .form-card {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(72,43,25,0.12);
+            border: 1px solid #eee5de;
+            box-shadow: 0 8px 22px rgba(79, 55, 39, 0.08);
             overflow: hidden;
             margin-bottom: 1.5rem;
         }
 
         .form-card-header {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-bottom: 1px solid #e2e8f0;
+            background: #fffaf6;
+            border-bottom: 1px solid #eadfd6;
             padding: 1.5rem;
         }
 
         .form-card-header h2 {
             font-size: 1rem;
             font-weight: 700;
-            color: #1e293b;
+            color: #4f3020;
         }
 
         .form-card-header p {
@@ -180,11 +181,12 @@
         }
 
         .category-header {
-            background: linear-gradient(135deg, #8a5a3b, #b77a4b);
-            color: #7b4d31;
+            background: linear-gradient(135deg, #68432e 0%, #95603c 100%);
+            color: #fff !important;
             padding: 0.875rem 1.25rem;
             font-size: 0.875rem;
             font-weight: 700;
+            letter-spacing: .01em;
         }
 
         .aspect-table {
@@ -193,7 +195,7 @@
         }
 
         .aspect-table thead {
-            background: #f8fafc;
+            background: #fbf7f3;
         }
 
         .aspect-table th {
@@ -410,7 +412,7 @@
             display: block;
             width: 100%;
             padding: 0.875rem;
-            background: linear-gradient(135deg, #8a5a3b, #b77a4b);
+            background: linear-gradient(135deg, #68432e, #95603c);
             color: white;
             border: none;
             border-radius: 10px;
@@ -436,6 +438,10 @@
             color: #8a6a55;
             font-size: 0.75rem;
             padding-top: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .45rem;
         }
 
         .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
