@@ -36,6 +36,9 @@
         }
 
         .brand-logo { height: 42px; width: auto; object-fit: contain; margin: 0 auto 1rem; }
+        .header-brand { display: inline-flex; align-items: center; gap: .9rem; padding: .65rem 1rem; margin-bottom: 1rem; background: #fffaf6; border: 1px solid #eadfd6; border-radius: 999px; }
+        .header-brand .brand-logo { height: 40px; margin: 0; }
+        .header-brand .template-badge { margin: 0; }
         .powered-by { display: inline-flex; align-items: center; gap: .45rem; }
         .powered-by img { height: 22px; width: auto; object-fit: contain; }
 
@@ -52,8 +55,8 @@
 
         .header-card .template-badge {
             display: inline-block;
-            background: #f7eee8;
-            border: 1px solid #e7cdbb;
+            background: #68432e;
+            border: 0;
             border-radius: 20px;
             padding: 0.25rem 1rem;
             font-size: 0.75rem;
@@ -61,6 +64,7 @@
             margin-bottom: 0.75rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            color: #fff;
         }
 
         .candidate-info {
@@ -450,6 +454,9 @@
             body { padding: .75rem .6rem 1.5rem; }
             .header-card { padding: 1.1rem .85rem; border-radius: 14px; }
             .header-card h1 { font-size: 1.2rem; }
+            .header-brand { gap: .55rem; padding: .5rem .7rem; max-width: 100%; }
+            .header-brand .brand-logo { height: 32px; }
+            .header-brand .template-badge { font-size: .62rem; padding: .35rem .65rem; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .header-card p { font-size: .78rem; line-height: 1.4; }
             .candidate-details { grid-template-columns: 1fr 1fr; gap: .65rem .75rem; padding: .8rem; }
             .candidate-detail-label { font-size: .58rem; }
@@ -471,8 +478,10 @@
     <div class="container">
         {{-- Header --}}
         <div class="header-card">
-            <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="brand-logo">
-            <div class="template-badge">{{ $feedback->assessment->template->name }}</div>
+            <div class="header-brand">
+                <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="brand-logo">
+                <div class="template-badge">{{ $feedback->assessment->template->name }}</div>
+            </div>
             <h1>Form Penilaian Kandidat</h1>
             <p>Silakan isi penilaian kandidat berdasarkan hasil interview.</p>
             <div class="candidate-details">
