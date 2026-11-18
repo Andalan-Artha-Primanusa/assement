@@ -13,9 +13,10 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #6f4933 0%, #b77a4b 100%);
+            background: #f8fafc;
             min-height: 100vh;
-            padding: 2.5rem 1rem 3rem;
+            padding: 1.25rem 1rem 2rem;
+            color: #1f2937;
         }
 
         .container {
@@ -24,15 +25,19 @@
         }
 
         .header-card {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.25);
+            background: #fff;
+            border: 1px solid #eadfd6;
             border-radius: 18px;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
             margin-bottom: 1.5rem;
-            color: white;
+            color: #3f2a1e;
+            box-shadow: 0 8px 24px rgba(91, 61, 42, 0.08);
         }
+
+        .brand-logo { height: 42px; width: auto; object-fit: contain; margin: 0 auto 1rem; }
+        .powered-by { display: inline-flex; align-items: center; gap: .45rem; }
+        .powered-by img { height: 22px; width: auto; object-fit: contain; }
 
         .header-card h1 {
             font-size: 1.5rem;
@@ -42,13 +47,13 @@
 
         .header-card p {
             font-size: 0.875rem;
-            opacity: 0.85;
+            color: #7c6658;
         }
 
         .header-card .template-badge {
             display: inline-block;
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: #f7eee8;
+            border: 1px solid #e7cdbb;
             border-radius: 20px;
             padding: 0.25rem 1rem;
             font-size: 0.75rem;
@@ -73,8 +78,8 @@
             gap: 0.75rem 1.25rem;
             margin-top: 1rem;
             padding: 1rem;
-            background: rgba(255,255,255,0.14);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: #fbf7f3;
+            border: 1px solid #eadfd6;
             border-radius: 10px;
             text-align: left;
         }
@@ -84,7 +89,7 @@
             font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            opacity: 0.72;
+            color: #8a6a55;
         }
 
         .candidate-detail-value {
@@ -176,7 +181,7 @@
 
         .category-header {
             background: linear-gradient(135deg, #8a5a3b, #b77a4b);
-            color: white;
+            color: #7b4d31;
             padding: 0.875rem 1.25rem;
             font-size: 0.875rem;
             font-weight: 700;
@@ -428,9 +433,31 @@
 
         .footer {
             text-align: center;
-            color: rgba(255,255,255,0.6);
+            color: #8a6a55;
             font-size: 0.75rem;
             padding-top: 0.5rem;
+        }
+
+        .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+        @media (max-width: 640px) {
+            body { padding: .75rem .6rem 1.5rem; }
+            .header-card { padding: 1.1rem .85rem; border-radius: 14px; }
+            .header-card h1 { font-size: 1.2rem; }
+            .header-card p { font-size: .78rem; line-height: 1.4; }
+            .candidate-details { grid-template-columns: 1fr 1fr; gap: .65rem .75rem; padding: .8rem; }
+            .candidate-detail-label { font-size: .58rem; }
+            .candidate-detail-value { font-size: .72rem; overflow-wrap: anywhere; }
+            .form-card { border-radius: 10px; margin-bottom: .85rem; }
+            .form-card-header, .form-card-body, .submit-section { padding: 1rem; }
+            .table-scroll { margin: 0 -1rem; width: calc(100% + 2rem); padding: 0 1rem; }
+            .aspect-table { min-width: 690px; }
+            .aspect-table th, .aspect-row td { padding: .65rem .55rem; }
+            .score-buttons { gap: .25rem; }
+            .score-option { min-width: 2.8rem; }
+            .score-btn { width: 32px; height: 32px; }
+            .score-caption { font-size: .55rem; }
+            .notes-input input { min-width: 150px; }
         }
     </style>
 </head>
@@ -438,6 +465,7 @@
     <div class="container">
         {{-- Header --}}
         <div class="header-card">
+            <img src="{{ asset('images/competra-logo.png') }}" alt="Competra" class="brand-logo">
             <div class="template-badge">{{ $feedback->assessment->template->name }}</div>
             <h1>Form Penilaian Kandidat</h1>
             <p>Silakan isi penilaian kandidat berdasarkan hasil interview.</p>
@@ -507,6 +535,7 @@
                 <div class="form-card">
                     <div class="form-card-body" style="padding:0">
                         <div class="category-header">{{ $category->name }}</div>
+                        <div class="table-scroll">
                         <table class="aspect-table">
                             <thead>
                                 <tr>
@@ -553,6 +582,7 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             @endforeach
@@ -594,7 +624,8 @@
         </form>
 
         <div class="footer">
-            &copy; {{ date('Y') }} &mdash; Form ini hanya berlaku untuk sesi ini.
+            <span>Form ini hanya berlaku untuk sesi ini.</span>
+            <span class="powered-by">Powered by <img src="{{ asset('images/andalan-logo.png') }}" alt="Andalan"></span>
         </div>
     </div>
 
