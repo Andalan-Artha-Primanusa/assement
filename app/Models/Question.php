@@ -105,9 +105,9 @@ class Question extends Model
             return null;
         }
 
-        // Gambar soal disajikan langsung oleh web server melalui storage link.
-        // Ini menghindari request PHP /files yang dapat gagal pada hosting.
-        return asset('storage/'.ltrim(str_replace('\\', '/', $this->image), '/'))
-            .'?v='.($this->updated_at?->timestamp ?? time());
+        return route('files.show', [
+            'path' => $this->image,
+            'v' => $this->updated_at?->timestamp ?? time(),
+        ]);
     }
 }
