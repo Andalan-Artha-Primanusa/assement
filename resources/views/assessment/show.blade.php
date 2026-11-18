@@ -351,9 +351,6 @@
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
                         showScreenshotOverlay();
-                        if (isOperator) {
-                            reportViolation('Peserta meninggalkan tab assessment.', true);
-                        }
                     } else {
                         hideScreenshotOverlay();
                     }
@@ -365,10 +362,6 @@
                 // });
 
                 // window.addEventListener('focus', hideScreenshotOverlay);
-
-                window.addEventListener('beforeunload', () => {
-                    reportViolation('Peserta membuka halaman lain saat assessment berlangsung.', true);
-                });
 
                 document.addEventListener('contextmenu', (event) => event.preventDefault());
                 document.addEventListener('copy', (event) => event.preventDefault());

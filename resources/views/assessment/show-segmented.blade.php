@@ -238,9 +238,8 @@
                 });
 
                 document.addEventListener('visibilitychange', function () {
-                    if (document.hidden && isOperator) {
-                        reportViolation('Peserta meninggalkan tab assessment.');
-                    }
+                    // Refresh/reload dapat memicu visibility hidden. Jangan catat
+                    // kondisi ini sebagai pelanggaran agar peserta tidak terblokir.
                 });
 
                 // window.addEventListener('blur', () => {
