@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class StorageFileController extends Controller
 {
-    public function show(Request $request, string $path): BinaryFileResponse
+    public function show(Request $request, string $path): Response
     {
         $path = str_replace('\\', '/', $path);
 
@@ -19,7 +19,7 @@ class StorageFileController extends Controller
 
         $fullPath = $this->resolvePublicFilePath($path);
 
-        if ($fullPath === null) {
+        if ($fullPath === null || ! is_file($fullPath) || ! is_readable($fullPath)) {
             abort(404);
         }
 
@@ -27,8 +27,24 @@ class StorageFileController extends Controller
             return response()->download($fullPath, basename($path));
         }
 
-        return response()->file($fullPath, [
+        $mimeType = function_exists('mime_content_type')
+            ? (mime_content_type($fullPath) ?: 'application/octet-stream')
+            : 'application/octet-stream';
+
+        return response()->stream(function () use ($fullPath): void {
+            $handle = fopen($fullPath, 'rb');
+
+            if ($handle === false) {
+                return;
+            }
+
+            fpassthru($handle);
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => (string) filesize($fullPath),
             'Cache-Control' => 'public, max-age=86400',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
